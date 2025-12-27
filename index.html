@@ -1,6 +1,281 @@
 <!DOCTYPE html>
-<html>
-  <body>
-    <h1>Hello from NewChummyGames!</h1>
-  </body>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PeerJS Mobile Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+  body {
+    margin: 0;
+    background: #20262e;
+    color: white;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #controls {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  input, button {
+    padding: 8px;
+    border-radius: 6px;
+    border: none;
+  }
+
+  #gameCanvas {
+    background: #111;
+    margin-top: 10px;
+    touch-action: none;
+  }
+
+  /* Joystick */
+  #joystickArea {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    width: 140px;
+    height: 140px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+    touch-action: none;
+  }
+
+  #joystick {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 50%;
+    left: 40px;
+    top: 40px;
+    pointer-events: none;
+  }
+</style>
+
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+</head>
+<body>
+
+<h2>PeerJS Mobile Game</h2>
+
+<div id="status">Initializing…</div>
+
+<div id="controls">
+  <button id="hostBtn" disabled>Host</button>
+  <span id="myIdLabel" style="display:none;">
+    My ID: <span id="myId"></span>
+  </span>
+  <input id="remoteIdInput" placeholder="Opponent ID">
+  <button id="joinBtn" disabled>Join</button>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<!-- Joystick -->
+<div id="joystickArea">
+  <div id="joystick"></div>
+</div>
+
+<script>
+/* ---------------- Canvas Setup ---------------- */
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth * 0.95;
+  canvas.height = window.innerHeight * 0.55;
+}
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
+
+/* ---------------- Game State ---------------- */
+const state = {
+  role: null,
+  connected: false,
+  size: 40,
+  speed: 3,
+  myPlayer: { x: 50, y: 50, color: "#33aaff" },
+  otherPlayer: { x: 200, y: 150, color: "#ff4444" },
+  lastWinner: null
+};
+
+/* ---------------- PeerJS ---------------- */
+let peer = new Peer();
+let conn = null;
+
+const statusEl = document.getElementById("status");
+const hostBtn = document.getElementById("hostBtn");
+const joinBtn = document.getElementById("joinBtn");
+const myIdSpan = document.getElementById("myId");
+const myIdLabel = document.getElementById("myIdLabel");
+const remoteIdInput = document.getElementById("remoteIdInput");
+
+peer.on("open", id => {
+  statusEl.textContent = "Ready.";
+  myIdSpan.textContent = id;
+  myIdLabel.style.display = "inline";
+  hostBtn.disabled = false;
+  joinBtn.disabled = false;
+});
+
+peer.on("connection", c => {
+  if (conn) return;
+  conn = c;
+  setupConnection("host");
+});
+
+hostBtn.onclick = () => {
+  state.role = "host";
+  statusEl.textContent = "Hosting… share your ID.";
+  hostBtn.disabled = true;
+  joinBtn.disabled = true;
+};
+
+joinBtn.onclick = () => {
+  const id = remoteIdInput.value.trim();
+  if (!id) return alert("Enter ID");
+  conn = peer.connect(id);
+  setupConnection("guest");
+  hostBtn.disabled = true;
+  joinBtn.disabled = true;
+};
+
+function setupConnection(role) {
+  state.role = role;
+
+  conn.on("open", () => {
+    state.connected = true;
+    statusEl.textContent = "Connected!";
+  });
+
+  conn.on("data", data => {
+    if (data.type === "state") {
+      state.otherPlayer.x = data.x;
+      state.otherPlayer.y = data.y;
+    }
+    if (data.type === "win") {
+      announceWinner(data.winner);
+    }
+  });
+}
+
+function sendState() {
+  if (!state.connected) return;
+  conn.send({
+    type: "state",
+    x: state.myPlayer.x,
+    y: state.myPlayer.y
+  });
+}
+
+function sendWin() {
+  if (!state.connected) return;
+  conn.send({ type: "win", winner: state.role });
+}
+
+/* ---------------- Movement (Joystick + Keyboard) ---------------- */
+let joyX = 0, joyY = 0;
+
+const joyArea = document.getElementById("joystickArea");
+const joy = document.getElementById("joystick");
+
+joyArea.addEventListener("touchmove", e => {
+  const rect = joyArea.getBoundingClientRect();
+  const touch = e.touches[0];
+
+  const x = touch.clientX - rect.left - rect.width/2;
+  const y = touch.clientY - rect.top - rect.height/2;
+
+  const dist = Math.min(Math.sqrt(x*x + y*y), 50);
+  const angle = Math.atan2(y, x);
+
+  joyX = Math.cos(angle) * (dist/50);
+  joyY = Math.sin(angle) * (dist/50);
+
+  joy.style.left = (40 + joyX*40) + "px";
+  joy.style.top = (40 + joyY*40) + "px";
+
+  e.preventDefault();
+});
+
+joyArea.addEventListener("touchend", () => {
+  joyX = joyY = 0;
+  joy.style.left = "40px";
+  joy.style.top = "40px";
+});
+
+const keys = {};
+window.addEventListener("keydown", e => keys[e.key] = true);
+window.addEventListener("keyup", e => keys[e.key] = false);
+
+function updateMovement() {
+  let dx = joyX * state.speed;
+  let dy = joyY * state.speed;
+
+  if (keys.ArrowUp || keys.w) dy -= state.speed;
+  if (keys.ArrowDown || keys.s) dy += state.speed;
+  if (keys.ArrowLeft || keys.a) dx -= state.speed;
+  if (keys.ArrowRight || keys.d) dx += state.speed;
+
+  state.myPlayer.x += dx;
+  state.myPlayer.y += dy;
+
+  state.myPlayer.x = Math.max(0, Math.min(canvas.width - state.size, state.myPlayer.x));
+  state.myPlayer.y = Math.max(0, Math.min(canvas.height - state.size, state.myPlayer.y));
+}
+
+/* ---------------- Collision ---------------- */
+function checkCollision() {
+  const a = state.myPlayer;
+  const b = state.otherPlayer;
+  const s = state.size;
+
+  if (a.x < b.x+s && a.x+s > b.x && a.y < b.y+s && a.y+s > b.y) {
+    sendWin();
+    announceWinner(state.role);
+  }
+}
+
+function announceWinner(winner) {
+  statusEl.textContent = winner === state.role ? "You WIN!" : "You LOSE!";
+}
+
+/* ---------------- Draw ---------------- */
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = a = state.myPlayer.color;
+  ctx.fillRect(state.myPlayer.x, state.myPlayer.y, state.size, state.size);
+
+  ctx.fillStyle = state.otherPlayer.color;
+  ctx.fillRect(state.otherPlayer.x, state.otherPlayer.y, state.size, state.size);
+}
+
+/* ---------------- Game Loop ---------------- */
+let lastSend = 0;
+
+function loop(ts) {
+  updateMovement();
+  checkCollision();
+  draw();
+
+  if (ts - lastSend > 50) {
+    sendState();
+    lastSend = ts;
+  }
+
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+
+</body>
 </html>

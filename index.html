@@ -14,13 +14,21 @@
     background:rgba(255,255,255,0.05); border-radius:50%; touch-action:none; }
   #joystick { position:absolute; width:60px; height:60px; background:rgba(255,255,255,0.3);
     border-radius:50%; left:40px; top:40px; pointer-events:none; }
+  #winModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+    background:rgba(0,0,0,0.8); z-index:100; }
+  #winContent { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    background:#2a3138; padding:30px; border-radius:12px; text-align:center; }
+  #winContent h2 { margin:0 0 20px 0; font-size:2em; }
+  #winContent button { padding:12px 24px; font-size:1.1em; cursor:pointer; 
+    background:#33aaff; color:white; border:none; border-radius:6px; }
+  #winContent button:hover { background:#2288dd; }
 </style>
 
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
 <body>
 
-<h2>Collect the Yellow Blocks</h2>
+<h2>Collect the Yellow Blocks - First to 50 Wins!</h2>
 <div id="status">Initializing…</div>
 
 <div id="controls">
@@ -33,6 +41,14 @@
 <canvas id="gameCanvas"></canvas>
 
 <div id="joystickArea"><div id="joystick"></div></div>
+
+<div id="winModal">
+  <div id="winContent">
+    <h2 id="winMessage"></h2>
+    <p id="finalScore"></p>
+    <button id="restartBtn">Play Again</button>
+  </div>
+</div>
 
 <script>
 /* ---------------- Canvas ---------------- */
@@ -53,10 +69,13 @@ const state = {
   speed:3,
   score:0,
   otherScore:0,
+  gameOver:false,
   my:{x:50,y:50,color:"#33aaff"},
   other:{x:200,y:150,color:"#ff4444"},
   block:{x:150,y:100,size:25}
 };
+
+const WIN_SCORE = 50;
 
 /* ---------------- PeerJS (3‑char IDs) ---------------- */
 function randomID() {
@@ -73,6 +92,10 @@ const joinBtn=document.getElementById("joinBtn");
 const myIdSpan=document.getElementById("myId");
 const myIdLabel=document.getElementById("myIdLabel");
 const remoteIdInput=document.getElementById("remoteIdInput");
+const winModal=document.getElementById("winModal");
+const winMessage=document.getElementById("winMessage");
+const finalScore=document.getElementById("finalScore");
+const restartBtn=document.getElementById("restartBtn");
 
 peer.on("open", id=>{
   statusEl.textContent="Ready.";
@@ -116,6 +139,9 @@ function setup(role){
       state.other.y=data.y;
       state.otherScore=data.score;
       state.block=data.block;
+      state.gameOver=data.gameOver;
+    } else if(data.type==="restart"){
+      resetGame();
     }
   });
 }
@@ -127,8 +153,14 @@ function sendState(){
     x:state.my.x,
     y:state.my.y,
     score:state.score,
-    block:state.block
+    block:state.block,
+    gameOver:state.gameOver
   });
+}
+
+function sendRestart(){
+  if(!state.connected) return;
+  conn.send({type:"restart"});
 }
 
 /* ---------------- Movement (Joystick + Keyboard) ---------------- */
@@ -160,6 +192,8 @@ onkeydown=e=>keys[e.key]=true;
 onkeyup=e=>keys[e.key]=false;
 
 function move(){
+  if(state.gameOver) return;
+  
   let dx=joyX*state.speed;
   let dy=joyY*state.speed;
   if(keys.ArrowUp||keys.w) dy-=state.speed;
@@ -181,14 +215,57 @@ function newBlock(){
 }
 
 function checkCollect(){
+  if(state.gameOver) return;
+  
   const p=state.my;
   const b=state.block;
   if(p.x < b.x+b.size && p.x+state.size > b.x &&
      p.y < b.y+b.size && p.y+state.size > b.y){
     state.score++;
     newBlock();
+    
+    // Check for win
+    if(state.score >= WIN_SCORE){
+      state.gameOver=true;
+      showWinScreen(true);
+    }
+  }
+  
+  // Check if opponent won
+  if(state.otherScore >= WIN_SCORE && !state.gameOver){
+    state.gameOver=true;
+    showWinScreen(false);
   }
 }
+
+function showWinScreen(didWin){
+  if(didWin){
+    winMessage.textContent="🎉 You Win! 🎉";
+    winMessage.style.color="#4CAF50";
+  } else {
+    winMessage.textContent="😔 You Lose";
+    winMessage.style.color="#ff4444";
+  }
+  finalScore.textContent=`Final Score: ${state.score} - ${state.otherScore}`;
+  winModal.style.display="block";
+}
+
+function resetGame(){
+  state.score=0;
+  state.otherScore=0;
+  state.gameOver=false;
+  state.my.x=50;
+  state.my.y=50;
+  state.other.x=200;
+  state.other.y=150;
+  newBlock();
+  winModal.style.display="none";
+}
+
+restartBtn.onclick=()=>{
+  resetGame();
+  sendRestart();
+};
 
 /* ---------------- Draw ---------------- */
 function draw(){
@@ -205,9 +282,20 @@ function draw(){
   ctx.fillStyle=state.other.color;
   ctx.fillRect(state.other.x,state.other.y,state.size,state.size);
 
+  // scores
   ctx.fillStyle="white";
-  ctx.fillText("You: "+state.score,10,20);
-  ctx.fillText("Opponent: "+state.otherScore,10,40);
+  ctx.font="18px Arial";
+  ctx.fillText("You: "+state.score+" / "+WIN_SCORE,10,25);
+  ctx.fillText("Opponent: "+state.otherScore+" / "+WIN_SCORE,10,50);
+  
+  // game over overlay
+  if(state.gameOver){
+    ctx.fillStyle="rgba(0,0,0,0.5)";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle="white";
+    ctx.font="30px Arial";
+    ctx.fillText("Game Over",canvas.width/2-70,canvas.height/2);
+  }
 }
 
 /* ---------------- Loop ---------------- */

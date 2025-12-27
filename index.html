@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>PeerJS Collect Game</title>
+<title>Firebase Collect Game</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -22,9 +22,11 @@
   #winContent button { padding:12px 24px; font-size:1.1em; cursor:pointer; 
     background:#33aaff; color:white; border:none; border-radius:6px; }
   #winContent button:hover { background:#2288dd; }
+  .info-box { background:#2a3138; padding:10px; border-radius:6px; margin:5px; display:inline-block; }
 </style>
 
-<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -32,10 +34,10 @@
 <div id="status">Initializing…</div>
 
 <div id="controls">
-  <button id="hostBtn" disabled>Host</button>
-  <span id="myIdLabel" style="display:none;">ID: <span id="myId"></span></span>
-  <input id="remoteIdInput" placeholder="Opponent ID">
-  <button id="joinBtn" disabled>Join</button>
+  <div class="info-box">Your ID: <span id="myId"></span></div>
+  <input id="roomCodeInput" placeholder="Room Code (4 chars)" maxlength="4" style="text-transform:uppercase;">
+  <button id="createRoomBtn">Create Room</button>
+  <button id="joinRoomBtn">Join Room</button>
 </div>
 
 <canvas id="gameCanvas"></canvas>
@@ -51,6 +53,45 @@
 </div>
 
 <script>
+/* ---------------- Firebase Setup ---------------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyDVbt_8GuRuHJRPAN7jFXXbs_lJUfUHNxHE",
+  authDomain: "chummy-games.firebaseapp.com",
+  databaseURL: "https://chummy-games-default-rtdb.firebaseio.com",
+  projectId: "chummy-games",
+  storageBucket: "chummy-games.firebasestorage.app",
+  messagingSenderId: "869241598273",
+  appId: "1:869241598273:web:d97492b7308f785c37f1c0"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+/* ---------------- Player ID Management ---------------- */
+function getOrCreatePCID() {
+  const storageKey = 'ChummyGames-PC-ID';
+  let pcID = localStorage.getItem(storageKey);
+  
+  if (!pcID || pcID.length !== 12) {
+    pcID = generateCode(12);
+    localStorage.setItem(storageKey, pcID);
+  }
+  return pcID;
+}
+
+function generateCode(length) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  return Array.from({ length }, () => 
+    chars[Math.floor(Math.random() * chars.length)]
+  ).join('');
+}
+
+const myPCID = getOrCreatePCID();
+let roomCode = null;
+let myRole = null; // 'player1' or 'player2'
+let roomRef = null;
+let gameRef = null;
+
 /* ---------------- Canvas ---------------- */
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -63,104 +104,146 @@ window.onresize = resize;
 
 /* ---------------- Game State ---------------- */
 const state = {
-  role:null,
-  connected:false,
   size:40,
   speed:3,
-  score:0,
-  otherScore:0,
   gameOver:false,
+  myScore:0,
+  opponentScore:0,
   my:{x:50,y:50,color:"#33aaff"},
-  other:{x:200,y:150,color:"#ff4444"},
+  opponent:{x:200,y:150,color:"#ff4444"},
   block:{x:150,y:100,size:25}
 };
 
-const WIN_SCORE = 10;
+const WIN_SCORE = 50;
 
-/* ---------------- PeerJS (3‑char IDs) ---------------- */
-function randomID() {
-  const chars="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  return [...Array(3)].map(()=>chars[Math.floor(Math.random()*chars.length)]).join("");
-}
+/* ---------------- UI Elements ---------------- */
+const statusEl = document.getElementById("status");
+const myIdSpan = document.getElementById("myId");
+const roomCodeInput = document.getElementById("roomCodeInput");
+const createRoomBtn = document.getElementById("createRoomBtn");
+const joinRoomBtn = document.getElementById("joinRoomBtn");
+const winModal = document.getElementById("winModal");
+const winMessage = document.getElementById("winMessage");
+const finalScore = document.getElementById("finalScore");
+const restartBtn = document.getElementById("restartBtn");
 
-let peer = new Peer(randomID());
-let conn=null;
+myIdSpan.textContent = myPCID;
+statusEl.textContent = "Ready to play!";
 
-const statusEl=document.getElementById("status");
-const hostBtn=document.getElementById("hostBtn");
-const joinBtn=document.getElementById("joinBtn");
-const myIdSpan=document.getElementById("myId");
-const myIdLabel=document.getElementById("myIdLabel");
-const remoteIdInput=document.getElementById("remoteIdInput");
-const winModal=document.getElementById("winModal");
-const winMessage=document.getElementById("winMessage");
-const finalScore=document.getElementById("finalScore");
-const restartBtn=document.getElementById("restartBtn");
-
-peer.on("open", id=>{
-  statusEl.textContent="Ready.";
-  myIdSpan.textContent=id;
-  myIdLabel.style.display="inline";
-  hostBtn.disabled=false;
-  joinBtn.disabled=false;
-});
-
-peer.on("connection", c=>{
-  if(conn) return;
-  conn=c;
-  setup("host");
-});
-
-hostBtn.onclick=()=>{
-  state.role="host";
-  statusEl.textContent="Hosting… share your ID.";
-  hostBtn.disabled=true;
-  joinBtn.disabled=true;
-};
-
-joinBtn.onclick=()=>{
-  const id=remoteIdInput.value.trim();
-  if(!id) return alert("Enter ID");
-  conn=peer.connect(id);
-  setup("guest");
-  hostBtn.disabled=true;
-  joinBtn.disabled=true;
-};
-
-function setup(role){
-  state.role=role;
-  conn.on("open",()=>{
-    state.connected=true;
-    statusEl.textContent="Connected!";
+/* ---------------- Room Management ---------------- */
+createRoomBtn.onclick = async () => {
+  roomCode = generateCode(4);
+  roomCodeInput.value = roomCode;
+  myRole = 'player1';
+  
+  roomRef = db.ref(`collectGame/rooms/${roomCode}`);
+  
+  // Initialize room
+  await roomRef.set({
+    player1: myPCID,
+    player2: null,
+    status: 'waiting',
+    createdAt: Date.now()
   });
-  conn.on("data",data=>{
-    if(data.type==="state"){
-      state.other.x=data.x;
-      state.other.y=data.y;
-      state.otherScore=data.score;
-      state.block=data.block;
-      state.gameOver=data.gameOver;
-    } else if(data.type==="restart"){
-      resetGame();
+  
+  statusEl.textContent = `Room created: ${roomCode}. Waiting for opponent...`;
+  createRoomBtn.disabled = true;
+  joinRoomBtn.disabled = true;
+  
+  // Listen for player 2 joining
+  roomRef.on('value', (snapshot) => {
+    const room = snapshot.val();
+    if (room && room.player2 && room.status === 'playing') {
+      startGame();
+    }
+  });
+};
+
+joinRoomBtn.onclick = async () => {
+  const code = roomCodeInput.value.trim().toUpperCase();
+  if (!code || code.length !== 4) {
+    return alert("Enter a 4-character room code");
+  }
+  
+  roomCode = code;
+  roomRef = db.ref(`collectGame/rooms/${roomCode}`);
+  
+  const snapshot = await roomRef.once('value');
+  const room = snapshot.val();
+  
+  if (!room) {
+    return alert("Room not found!");
+  }
+  
+  if (room.player2) {
+    return alert("Room is full!");
+  }
+  
+  myRole = 'player2';
+  
+  // Join room
+  await roomRef.update({
+    player2: myPCID,
+    status: 'playing'
+  });
+  
+  statusEl.textContent = `Joined room: ${roomCode}`;
+  createRoomBtn.disabled = true;
+  joinRoomBtn.disabled = true;
+  
+  startGame();
+};
+
+function startGame() {
+  gameRef = db.ref(`collectGame/games/${roomCode}`);
+  
+  // Initialize game state if player1
+  if (myRole === 'player1') {
+    gameRef.set({
+      block: {x: 150, y: 100, size: 25},
+      player1: {x: 50, y: 50, score: 0},
+      player2: {x: 200, y: 150, score: 0},
+      gameOver: false,
+      winner: null
+    });
+  }
+  
+  statusEl.textContent = "Game started!";
+  
+  // Listen to game state
+  gameRef.on('value', (snapshot) => {
+    const game = snapshot.val();
+    if (!game) return;
+    
+    const otherRole = myRole === 'player1' ? 'player2' : 'player1';
+    
+    state.opponent.x = game[otherRole].x;
+    state.opponent.y = game[otherRole].y;
+    state.opponentScore = game[otherRole].score;
+    state.block = game.block;
+    state.gameOver = game.gameOver;
+    
+    // Check if game just ended
+    if (game.gameOver && !winModal.style.display) {
+      const didWin = game.winner === myRole;
+      showWinScreen(didWin);
     }
   });
 }
 
-function sendState(){
-  if(!state.connected) return;
-  conn.send({
-    type:"state",
-    x:state.my.x,
-    y:state.my.y,
-    score:state.score,
-    block:state.block,
-    gameOver:state.gameOver
+function updateMyPosition() {
+  if (!gameRef || state.gameOver) return;
+  
+  gameRef.child(myRole).update({
+    x: state.my.x,
+    y: state.my.y,
+    score: state.myScore
   });
 }
 
-function sendRestart(){
-  if(!state.connected) return;
-  conn.send({type:"restart"});
+function updateBlock() {
+  if (!gameRef) return;
+  gameRef.child('block').set(state.block);
 }
 
 /* ---------------- Movement (Joystick + Keyboard) ---------------- */
@@ -215,26 +298,23 @@ function newBlock(){
 }
 
 function checkCollect(){
-  if(state.gameOver) return;
+  if(state.gameOver || !gameRef) return;
   
   const p=state.my;
   const b=state.block;
   if(p.x < b.x+b.size && p.x+state.size > b.x &&
      p.y < b.y+b.size && p.y+state.size > b.y){
-    state.score++;
+    state.myScore++;
     newBlock();
+    updateBlock();
     
     // Check for win
-    if(state.score >= WIN_SCORE){
-      state.gameOver=true;
-      showWinScreen(true);
+    if(state.myScore >= WIN_SCORE){
+      gameRef.update({
+        gameOver: true,
+        winner: myRole
+      });
     }
-  }
-  
-  // Check if opponent won
-  if(state.otherScore >= WIN_SCORE && !state.gameOver){
-    state.gameOver=true;
-    showWinScreen(false);
   }
 }
 
@@ -246,26 +326,33 @@ function showWinScreen(didWin){
     winMessage.textContent="😔 You Lose";
     winMessage.style.color="#ff4444";
   }
-  finalScore.textContent=`Final Score: ${state.score} - ${state.otherScore}`;
+  finalScore.textContent=`Final Score: ${state.myScore} - ${state.opponentScore}`;
   winModal.style.display="block";
 }
 
 function resetGame(){
-  state.score=0;
-  state.otherScore=0;
+  state.myScore=0;
+  state.opponentScore=0;
   state.gameOver=false;
   state.my.x=50;
   state.my.y=50;
-  state.other.x=200;
-  state.other.y=150;
+  state.opponent.x=200;
+  state.opponent.y=150;
   newBlock();
   winModal.style.display="none";
+  
+  if(gameRef){
+    gameRef.set({
+      block: state.block,
+      player1: {x: 50, y: 50, score: 0},
+      player2: {x: 200, y: 150, score: 0},
+      gameOver: false,
+      winner: null
+    });
+  }
 }
 
-restartBtn.onclick=()=>{
-  resetGame();
-  sendRestart();
-};
+restartBtn.onclick = resetGame;
 
 /* ---------------- Draw ---------------- */
 function draw(){
@@ -279,14 +366,14 @@ function draw(){
   ctx.fillStyle=state.my.color;
   ctx.fillRect(state.my.x,state.my.y,state.size,state.size);
 
-  ctx.fillStyle=state.other.color;
-  ctx.fillRect(state.other.x,state.other.y,state.size,state.size);
+  ctx.fillStyle=state.opponent.color;
+  ctx.fillRect(state.opponent.x,state.opponent.y,state.size,state.size);
 
   // scores
   ctx.fillStyle="white";
   ctx.font="18px Arial";
-  ctx.fillText("You: "+state.score+" / "+WIN_SCORE,10,25);
-  ctx.fillText("Opponent: "+state.otherScore+" / "+WIN_SCORE,10,50);
+  ctx.fillText("You: "+state.myScore+" / "+WIN_SCORE,10,25);
+  ctx.fillText("Opponent: "+state.opponentScore+" / "+WIN_SCORE,10,50);
   
   // game over overlay
   if(state.gameOver){
@@ -299,15 +386,15 @@ function draw(){
 }
 
 /* ---------------- Loop ---------------- */
-let lastSend=0;
+let lastUpdate=0;
 function loop(ts){
   move();
   checkCollect();
   draw();
 
-  if(ts-lastSend>50){
-    sendState();
-    lastSend=ts;
+  if(ts-lastUpdate>50 && gameRef){
+    updateMyPosition();
+    lastUpdate=ts;
   }
   requestAnimationFrame(loop);
 }

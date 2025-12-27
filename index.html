@@ -1,277 +1,226 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>PeerJS Mobile Game</title>
+<title>PeerJS Collect Game</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-  body {
-    margin: 0;
-    background: #20262e;
-    color: white;
-    font-family: Arial, sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  #controls {
-    margin-top: 10px;
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  input, button {
-    padding: 8px;
-    border-radius: 6px;
-    border: none;
-  }
-
-  #gameCanvas {
-    background: #111;
-    margin-top: 10px;
-    touch-action: none;
-  }
-
-  /* Joystick */
-  #joystickArea {
-    position: fixed;
-    bottom: 20px;
-    left: 20px;
-    width: 140px;
-    height: 140px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 50%;
-    touch-action: none;
-  }
-
-  #joystick {
-    position: absolute;
-    width: 60px;
-    height: 60px;
-    background: rgba(255,255,255,0.3);
-    border-radius: 50%;
-    left: 40px;
-    top: 40px;
-    pointer-events: none;
-  }
+  body { margin:0; background:#20262e; color:white; font-family:Arial; text-align:center; }
+  #controls { margin-top:10px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+  input,button { padding:8px; border-radius:6px; border:none; }
+  #gameCanvas { background:#111; margin-top:10px; touch-action:none; }
+  #joystickArea { position:fixed; bottom:20px; left:20px; width:140px; height:140px;
+    background:rgba(255,255,255,0.05); border-radius:50%; touch-action:none; }
+  #joystick { position:absolute; width:60px; height:60px; background:rgba(255,255,255,0.3);
+    border-radius:50%; left:40px; top:40px; pointer-events:none; }
 </style>
 
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
 <body>
 
-<h2>PeerJS Mobile Game</h2>
-
+<h2>Collect the Yellow Blocks</h2>
 <div id="status">Initializing…</div>
 
 <div id="controls">
   <button id="hostBtn" disabled>Host</button>
-  <span id="myIdLabel" style="display:none;">
-    My ID: <span id="myId"></span>
-  </span>
+  <span id="myIdLabel" style="display:none;">ID: <span id="myId"></span></span>
   <input id="remoteIdInput" placeholder="Opponent ID">
   <button id="joinBtn" disabled>Join</button>
 </div>
 
 <canvas id="gameCanvas"></canvas>
 
-<!-- Joystick -->
-<div id="joystickArea">
-  <div id="joystick"></div>
-</div>
+<div id="joystickArea"><div id="joystick"></div></div>
 
 <script>
-/* ---------------- Canvas Setup ---------------- */
+/* ---------------- Canvas ---------------- */
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
-
-function resizeCanvas() {
+function resize() {
   canvas.width = window.innerWidth * 0.95;
   canvas.height = window.innerHeight * 0.55;
 }
-resizeCanvas();
-window.addEventListener("resize", resizeCanvas);
+resize();
+window.onresize = resize;
 
 /* ---------------- Game State ---------------- */
 const state = {
-  role: null,
-  connected: false,
-  size: 40,
-  speed: 3,
-  myPlayer: { x: 50, y: 50, color: "#33aaff" },
-  otherPlayer: { x: 200, y: 150, color: "#ff4444" },
-  lastWinner: null
+  role:null,
+  connected:false,
+  size:40,
+  speed:3,
+  score:0,
+  otherScore:0,
+  my:{x:50,y:50,color:"#33aaff"},
+  other:{x:200,y:150,color:"#ff4444"},
+  block:{x:150,y:100,size:25}
 };
 
-/* ---------------- PeerJS ---------------- */
-let peer = new Peer();
-let conn = null;
+/* ---------------- PeerJS (3‑char IDs) ---------------- */
+function randomID() {
+  const chars="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  return [...Array(3)].map(()=>chars[Math.floor(Math.random()*chars.length)]).join("");
+}
 
-const statusEl = document.getElementById("status");
-const hostBtn = document.getElementById("hostBtn");
-const joinBtn = document.getElementById("joinBtn");
-const myIdSpan = document.getElementById("myId");
-const myIdLabel = document.getElementById("myIdLabel");
-const remoteIdInput = document.getElementById("remoteIdInput");
+let peer = new Peer(randomID());
+let conn=null;
 
-peer.on("open", id => {
-  statusEl.textContent = "Ready.";
-  myIdSpan.textContent = id;
-  myIdLabel.style.display = "inline";
-  hostBtn.disabled = false;
-  joinBtn.disabled = false;
+const statusEl=document.getElementById("status");
+const hostBtn=document.getElementById("hostBtn");
+const joinBtn=document.getElementById("joinBtn");
+const myIdSpan=document.getElementById("myId");
+const myIdLabel=document.getElementById("myIdLabel");
+const remoteIdInput=document.getElementById("remoteIdInput");
+
+peer.on("open", id=>{
+  statusEl.textContent="Ready.";
+  myIdSpan.textContent=id;
+  myIdLabel.style.display="inline";
+  hostBtn.disabled=false;
+  joinBtn.disabled=false;
 });
 
-peer.on("connection", c => {
-  if (conn) return;
-  conn = c;
-  setupConnection("host");
+peer.on("connection", c=>{
+  if(conn) return;
+  conn=c;
+  setup("host");
 });
 
-hostBtn.onclick = () => {
-  state.role = "host";
-  statusEl.textContent = "Hosting… share your ID.";
-  hostBtn.disabled = true;
-  joinBtn.disabled = true;
+hostBtn.onclick=()=>{
+  state.role="host";
+  statusEl.textContent="Hosting… share your ID.";
+  hostBtn.disabled=true;
+  joinBtn.disabled=true;
 };
 
-joinBtn.onclick = () => {
-  const id = remoteIdInput.value.trim();
-  if (!id) return alert("Enter ID");
-  conn = peer.connect(id);
-  setupConnection("guest");
-  hostBtn.disabled = true;
-  joinBtn.disabled = true;
+joinBtn.onclick=()=>{
+  const id=remoteIdInput.value.trim();
+  if(!id) return alert("Enter ID");
+  conn=peer.connect(id);
+  setup("guest");
+  hostBtn.disabled=true;
+  joinBtn.disabled=true;
 };
 
-function setupConnection(role) {
-  state.role = role;
-
-  conn.on("open", () => {
-    state.connected = true;
-    statusEl.textContent = "Connected!";
+function setup(role){
+  state.role=role;
+  conn.on("open",()=>{
+    state.connected=true;
+    statusEl.textContent="Connected!";
   });
-
-  conn.on("data", data => {
-    if (data.type === "state") {
-      state.otherPlayer.x = data.x;
-      state.otherPlayer.y = data.y;
-    }
-    if (data.type === "win") {
-      announceWinner(data.winner);
+  conn.on("data",data=>{
+    if(data.type==="state"){
+      state.other.x=data.x;
+      state.other.y=data.y;
+      state.otherScore=data.score;
+      state.block=data.block;
     }
   });
 }
 
-function sendState() {
-  if (!state.connected) return;
+function sendState(){
+  if(!state.connected) return;
   conn.send({
-    type: "state",
-    x: state.myPlayer.x,
-    y: state.myPlayer.y
+    type:"state",
+    x:state.my.x,
+    y:state.my.y,
+    score:state.score,
+    block:state.block
   });
-}
-
-function sendWin() {
-  if (!state.connected) return;
-  conn.send({ type: "win", winner: state.role });
 }
 
 /* ---------------- Movement (Joystick + Keyboard) ---------------- */
-let joyX = 0, joyY = 0;
+let joyX=0, joyY=0;
+const joyArea=document.getElementById("joystickArea");
+const joy=document.getElementById("joystick");
 
-const joyArea = document.getElementById("joystickArea");
-const joy = document.getElementById("joystick");
-
-joyArea.addEventListener("touchmove", e => {
-  const rect = joyArea.getBoundingClientRect();
-  const touch = e.touches[0];
-
-  const x = touch.clientX - rect.left - rect.width/2;
-  const y = touch.clientY - rect.top - rect.height/2;
-
-  const dist = Math.min(Math.sqrt(x*x + y*y), 50);
-  const angle = Math.atan2(y, x);
-
-  joyX = Math.cos(angle) * (dist/50);
-  joyY = Math.sin(angle) * (dist/50);
-
-  joy.style.left = (40 + joyX*40) + "px";
-  joy.style.top = (40 + joyY*40) + "px";
-
+joyArea.addEventListener("touchmove",e=>{
+  const r=joyArea.getBoundingClientRect();
+  const t=e.touches[0];
+  const x=t.clientX-r.left-r.width/2;
+  const y=t.clientY-r.top-r.height/2;
+  const d=Math.min(Math.sqrt(x*x+y*y),50);
+  const a=Math.atan2(y,x);
+  joyX=Math.cos(a)*(d/50);
+  joyY=Math.sin(a)*(d/50);
+  joy.style.left=(40+joyX*40)+"px";
+  joy.style.top=(40+joyY*40)+"px";
   e.preventDefault();
 });
-
-joyArea.addEventListener("touchend", () => {
-  joyX = joyY = 0;
-  joy.style.left = "40px";
-  joy.style.top = "40px";
+joyArea.addEventListener("touchend",()=>{
+  joyX=joyY=0;
+  joy.style.left="40px";
+  joy.style.top="40px";
 });
 
-const keys = {};
-window.addEventListener("keydown", e => keys[e.key] = true);
-window.addEventListener("keyup", e => keys[e.key] = false);
+const keys={};
+onkeydown=e=>keys[e.key]=true;
+onkeyup=e=>keys[e.key]=false;
 
-function updateMovement() {
-  let dx = joyX * state.speed;
-  let dy = joyY * state.speed;
+function move(){
+  let dx=joyX*state.speed;
+  let dy=joyY*state.speed;
+  if(keys.ArrowUp||keys.w) dy-=state.speed;
+  if(keys.ArrowDown||keys.s) dy+=state.speed;
+  if(keys.ArrowLeft||keys.a) dx-=state.speed;
+  if(keys.ArrowRight||keys.d) dx+=state.speed;
 
-  if (keys.ArrowUp || keys.w) dy -= state.speed;
-  if (keys.ArrowDown || keys.s) dy += state.speed;
-  if (keys.ArrowLeft || keys.a) dx -= state.speed;
-  if (keys.ArrowRight || keys.d) dx += state.speed;
+  state.my.x+=dx;
+  state.my.y+=dy;
 
-  state.myPlayer.x += dx;
-  state.myPlayer.y += dy;
-
-  state.myPlayer.x = Math.max(0, Math.min(canvas.width - state.size, state.myPlayer.x));
-  state.myPlayer.y = Math.max(0, Math.min(canvas.height - state.size, state.myPlayer.y));
+  state.my.x=Math.max(0,Math.min(canvas.width-state.size,state.my.x));
+  state.my.y=Math.max(0,Math.min(canvas.height-state.size,state.my.y));
 }
 
-/* ---------------- Collision ---------------- */
-function checkCollision() {
-  const a = state.myPlayer;
-  const b = state.otherPlayer;
-  const s = state.size;
+/* ---------------- Block Collecting ---------------- */
+function newBlock(){
+  state.block.x=Math.random()*(canvas.width-30);
+  state.block.y=Math.random()*(canvas.height-30);
+}
 
-  if (a.x < b.x+s && a.x+s > b.x && a.y < b.y+s && a.y+s > b.y) {
-    sendWin();
-    announceWinner(state.role);
+function checkCollect(){
+  const p=state.my;
+  const b=state.block;
+  if(p.x < b.x+b.size && p.x+state.size > b.x &&
+     p.y < b.y+b.size && p.y+state.size > b.y){
+    state.score++;
+    newBlock();
   }
-}
-
-function announceWinner(winner) {
-  statusEl.textContent = winner === state.role ? "You WIN!" : "You LOSE!";
 }
 
 /* ---------------- Draw ---------------- */
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  ctx.fillStyle = a = state.myPlayer.color;
-  ctx.fillRect(state.myPlayer.x, state.myPlayer.y, state.size, state.size);
+  // block
+  ctx.fillStyle="yellow";
+  ctx.fillRect(state.block.x,state.block.y,state.block.size,state.block.size);
 
-  ctx.fillStyle = state.otherPlayer.color;
-  ctx.fillRect(state.otherPlayer.x, state.otherPlayer.y, state.size, state.size);
+  // players
+  ctx.fillStyle=state.my.color;
+  ctx.fillRect(state.my.x,state.my.y,state.size,state.size);
+
+  ctx.fillStyle=state.other.color;
+  ctx.fillRect(state.other.x,state.other.y,state.size,state.size);
+
+  ctx.fillStyle="white";
+  ctx.fillText("You: "+state.score,10,20);
+  ctx.fillText("Opponent: "+state.otherScore,10,40);
 }
 
-/* ---------------- Game Loop ---------------- */
-let lastSend = 0;
-
-function loop(ts) {
-  updateMovement();
-  checkCollision();
+/* ---------------- Loop ---------------- */
+let lastSend=0;
+function loop(ts){
+  move();
+  checkCollect();
   draw();
 
-  if (ts - lastSend > 50) {
+  if(ts-lastSend>50){
     sendState();
-    lastSend = ts;
+    lastSend=ts;
   }
-
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);

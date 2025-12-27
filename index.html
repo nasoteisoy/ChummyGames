@@ -2,27 +2,302 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Firebase Collect Game</title>
+<title>Secret Spy - Social Deduction Game</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-  body { margin:0; background:#20262e; color:white; font-family:Arial; text-align:center; }
-  #controls { margin-top:10px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
-  input,button { padding:8px; border-radius:6px; border:none; }
-  #gameCanvas { background:#111; margin-top:10px; touch-action:none; }
-  #joystickArea { position:fixed; bottom:20px; left:20px; width:140px; height:140px;
-    background:rgba(255,255,255,0.05); border-radius:50%; touch-action:none; }
-  #joystick { position:absolute; width:60px; height:60px; background:rgba(255,255,255,0.3);
-    border-radius:50%; left:40px; top:40px; pointer-events:none; }
-  #winModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%;
-    background:rgba(0,0,0,0.8); z-index:100; }
-  #winContent { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-    background:#2a3138; padding:30px; border-radius:12px; text-align:center; }
-  #winContent h2 { margin:0 0 20px 0; font-size:2em; }
-  #winContent button { padding:12px 24px; font-size:1.1em; cursor:pointer; 
-    background:#33aaff; color:white; border:none; border-radius:6px; }
-  #winContent button:hover { background:#2288dd; }
-  .info-box { background:#2a3138; padding:10px; border-radius:6px; margin:5px; display:inline-block; }
+  * { box-sizing: border-box; }
+  body { 
+    margin:0; 
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    color:white; 
+    font-family:'Segoe UI', Arial, sans-serif; 
+    padding:20px;
+    min-height:100vh;
+  }
+  
+  .container { max-width:900px; margin:0 auto; }
+  h1 { text-align:center; margin:0 0 30px 0; font-size:2.5em; text-shadow:2px 2px 4px rgba(0,0,0,0.3); }
+  
+  .card { 
+    background:rgba(255,255,255,0.1); 
+    backdrop-filter:blur(10px);
+    border-radius:12px; 
+    padding:20px; 
+    margin-bottom:20px;
+    border:1px solid rgba(255,255,255,0.2);
+  }
+  
+  input, button { 
+    padding:12px 20px; 
+    border-radius:8px; 
+    border:none; 
+    font-size:16px;
+    margin:5px;
+  }
+  
+  input {
+    background:rgba(255,255,255,0.9);
+    color:#333;
+  }
+  
+  button { 
+    background:#4CAF50; 
+    color:white; 
+    cursor:pointer;
+    font-weight:bold;
+    transition:all 0.3s;
+  }
+  
+  button:hover:not(:disabled) { 
+    background:#45a049; 
+    transform:translateY(-2px);
+    box-shadow:0 4px 8px rgba(0,0,0,0.3);
+  }
+  
+  button:disabled { 
+    background:#666; 
+    cursor:not-allowed;
+    opacity:0.6;
+  }
+  
+  button.danger { background:#f44336; }
+  button.danger:hover:not(:disabled) { background:#da190b; }
+  
+  button.primary { background:#2196F3; }
+  button.primary:hover:not(:disabled) { background:#0b7dda; }
+  
+  .player-list {
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(200px, 1fr));
+    gap:10px;
+    margin-top:15px;
+  }
+  
+  .player-card {
+    background:rgba(255,255,255,0.15);
+    padding:15px;
+    border-radius:8px;
+    border:2px solid transparent;
+    transition:all 0.3s;
+    cursor:pointer;
+  }
+  
+  .player-card:hover {
+    border-color:rgba(255,255,255,0.5);
+    transform:scale(1.05);
+  }
+  
+  .player-card.selected {
+    border-color:#4CAF50;
+    background:rgba(76,175,80,0.3);
+  }
+  
+  .player-card.president {
+    border-color:#FFD700;
+    background:rgba(255,215,0,0.2);
+  }
+  
+  .player-card.chancellor {
+    border-color:#FFA500;
+    background:rgba(255,165,0,0.2);
+  }
+  
+  .player-card.dead {
+    opacity:0.4;
+    filter:grayscale(100%);
+    cursor:not-allowed;
+  }
+  
+  .player-name {
+    font-weight:bold;
+    margin-bottom:5px;
+  }
+  
+  .player-role {
+    font-size:12px;
+    color:#FFD700;
+  }
+  
+  .role-card {
+    background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding:30px;
+    border-radius:12px;
+    text-align:center;
+    margin:20px 0;
+    font-size:1.5em;
+    font-weight:bold;
+    box-shadow:0 8px 16px rgba(0,0,0,0.3);
+  }
+  
+  .role-card.loyalist {
+    background:linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+  }
+  
+  .role-card.spy {
+    background:linear-gradient(135deg, #f44336 0%, #c62828 100%);
+  }
+  
+  .role-card.secret-spy {
+    background:linear-gradient(135deg, #9C27B0 0%, #4A148C 100%);
+  }
+  
+  .policy-cards {
+    display:flex;
+    gap:15px;
+    justify-content:center;
+    flex-wrap:wrap;
+    margin:20px 0;
+  }
+  
+  .policy-card {
+    width:120px;
+    height:180px;
+    border-radius:8px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+    font-size:1.2em;
+    cursor:pointer;
+    transition:all 0.3s;
+    border:3px solid transparent;
+  }
+  
+  .policy-card.loyalist-policy {
+    background:linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+  }
+  
+  .policy-card.spy-policy {
+    background:linear-gradient(135deg, #f44336 0%, #c62828 100%);
+  }
+  
+  .policy-card:hover {
+    transform:scale(1.1) rotate(5deg);
+    box-shadow:0 8px 16px rgba(0,0,0,0.4);
+  }
+  
+  .policy-card.selected {
+    border-color:#FFD700;
+    transform:scale(1.1);
+  }
+  
+  .board {
+    display:flex;
+    justify-content:space-around;
+    margin:30px 0;
+    gap:20px;
+  }
+  
+  .policy-track {
+    flex:1;
+    background:rgba(0,0,0,0.3);
+    padding:20px;
+    border-radius:12px;
+  }
+  
+  .track-title {
+    text-align:center;
+    font-weight:bold;
+    margin-bottom:15px;
+    font-size:1.2em;
+  }
+  
+  .track-slots {
+    display:flex;
+    gap:10px;
+    justify-content:center;
+  }
+  
+  .track-slot {
+    width:50px;
+    height:70px;
+    border:2px dashed rgba(255,255,255,0.3);
+    border-radius:6px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:2em;
+  }
+  
+  .track-slot.filled {
+    border:none;
+  }
+  
+  .track-slot.loyalist {
+    background:linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+  }
+  
+  .track-slot.spy {
+    background:linear-gradient(135deg, #f44336 0%, #c62828 100%);
+  }
+  
+  .log {
+    background:rgba(0,0,0,0.3);
+    padding:15px;
+    border-radius:8px;
+    max-height:200px;
+    overflow-y:auto;
+    font-size:14px;
+  }
+  
+  .log-entry {
+    margin:5px 0;
+    padding:5px;
+    border-left:3px solid #4CAF50;
+    padding-left:10px;
+  }
+  
+  .vote-section {
+    text-align:center;
+    margin:20px 0;
+  }
+  
+  .vote-buttons {
+    display:flex;
+    gap:20px;
+    justify-content:center;
+    margin-top:15px;
+  }
+  
+  .vote-button {
+    padding:20px 40px;
+    font-size:1.2em;
+    border-radius:12px;
+  }
+  
+  .hidden { display:none !important; }
+  
+  .info-box {
+    background:rgba(33,150,243,0.2);
+    border-left:4px solid #2196F3;
+    padding:15px;
+    margin:15px 0;
+    border-radius:4px;
+  }
+  
+  .warning-box {
+    background:rgba(255,152,0,0.2);
+    border-left:4px solid #FF9800;
+    padding:15px;
+    margin:15px 0;
+    border-radius:4px;
+  }
+  
+  .success-box {
+    background:rgba(76,175,80,0.2);
+    border-left:4px solid #4CAF50;
+    padding:15px;
+    margin:15px 0;
+    border-radius:4px;
+  }
+  
+  #playerIdDisplay {
+    text-align:center;
+    font-size:0.9em;
+    opacity:0.8;
+    margin-bottom:20px;
+  }
 </style>
 
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -30,25 +305,156 @@
 </head>
 <body>
 
-<h2>Collect the Yellow Blocks - First to 50 Wins!</h2>
-<div id="status">Initializing…</div>
-
-<div id="controls">
-  <div class="info-box">Your ID: <span id="myId"></span></div>
-  <input id="roomCodeInput" placeholder="Room Code (4 chars)" maxlength="4" style="text-transform:uppercase;">
-  <button id="createRoomBtn">Create Room</button>
-  <button id="joinRoomBtn">Join Room</button>
-</div>
-
-<canvas id="gameCanvas"></canvas>
-
-<div id="joystickArea"><div id="joystick"></div></div>
-
-<div id="winModal">
-  <div id="winContent">
-    <h2 id="winMessage"></h2>
-    <p id="finalScore"></p>
-    <button id="restartBtn">Play Again</button>
+<div class="container">
+  <h1>🕵️ Secret Spy 🕵️</h1>
+  <div id="playerIdDisplay"></div>
+  
+  <!-- Lobby Screen -->
+  <div id="lobbyScreen">
+    <div class="card">
+      <h2>Join or Create Game</h2>
+      <div>
+        <input id="playerNameInput" placeholder="Your Name" maxlength="20">
+        <input id="roomCodeInput" placeholder="Room Code (4 chars)" maxlength="4" style="text-transform:uppercase;">
+      </div>
+      <div>
+        <button id="createRoomBtn" class="primary">Create Room</button>
+        <button id="joinRoomBtn" class="primary">Join Room</button>
+      </div>
+    </div>
+    
+    <div class="card">
+      <h3>How to Play</h3>
+      <p><strong>Goal:</strong> Loyalists try to pass 5 Loyalist policies. Spies try to pass 6 Spy policies or assassinate the Secret Spy.</p>
+      <p><strong>Roles:</strong></p>
+      <ul>
+        <li><strong>Loyalists:</strong> Don't know each other, must deduce who to trust</li>
+        <li><strong>Spies:</strong> Know each other (except Secret Spy), work together secretly</li>
+        <li><strong>Secret Spy:</strong> Special spy that Loyalists must protect</li>
+      </ul>
+      <p><strong>Gameplay:</strong> Each round, a President nominates a Chancellor. Players vote. If approved, they pass policies from a random draw.</p>
+    </div>
+  </div>
+  
+  <!-- Waiting Room -->
+  <div id="waitingScreen" class="hidden">
+    <div class="card">
+      <h2>Room: <span id="roomCodeDisplay"></span></h2>
+      <div class="info-box">
+        <strong>Players in lobby:</strong>
+        <div id="lobbyPlayers" class="player-list"></div>
+      </div>
+      <div style="text-align:center; margin-top:20px;">
+        <button id="startGameBtn" class="hidden" style="font-size:1.2em; padding:15px 40px;">Start Game (5-10 players)</button>
+        <button id="leaveRoomBtn" class="danger">Leave Room</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Game Screen -->
+  <div id="gameScreen" class="hidden">
+    <div class="card">
+      <h2>Room: <span id="gameRoomCode"></span></h2>
+      
+      <!-- Role Display -->
+      <div id="roleDisplay"></div>
+      
+      <!-- Game Board -->
+      <div class="board">
+        <div class="policy-track">
+          <div class="track-title" style="color:#4CAF50;">✓ Loyalist Policies</div>
+          <div class="track-slots" id="loyalistTrack">
+            <div class="track-slot" data-index="0"></div>
+            <div class="track-slot" data-index="1"></div>
+            <div class="track-slot" data-index="2"></div>
+            <div class="track-slot" data-index="3"></div>
+            <div class="track-slot" data-index="4"></div>
+          </div>
+        </div>
+        
+        <div class="policy-track">
+          <div class="track-title" style="color:#f44336;">✗ Spy Policies</div>
+          <div class="track-slots" id="spyTrack">
+            <div class="track-slot" data-index="0"></div>
+            <div class="track-slot" data-index="1"></div>
+            <div class="track-slot" data-index="2"></div>
+            <div class="track-slot" data-index="3"></div>
+            <div class="track-slot" data-index="4"></div>
+            <div class="track-slot" data-index="5"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Game Status -->
+      <div id="gameStatus" class="info-box"></div>
+      
+      <!-- President Actions -->
+      <div id="presidentNomination" class="card hidden">
+        <h3>You are President! Nominate a Chancellor</h3>
+        <div id="nominationPlayers" class="player-list"></div>
+        <button id="nominateBtn" class="primary" disabled>Nominate Selected Player</button>
+      </div>
+      
+      <!-- Voting -->
+      <div id="votingSection" class="card hidden">
+        <h3 id="votingPrompt"></h3>
+        <div class="vote-section">
+          <div class="vote-buttons">
+            <button id="voteYesBtn" class="vote-button" style="background:#4CAF50;">👍 JA (Yes)</button>
+            <button id="voteNoBtn" class="vote-button danger">👎 NEIN (No)</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Policy Selection (President) -->
+      <div id="presidentPolicySelect" class="card hidden">
+        <h3>President: Choose 2 policies to pass to Chancellor</h3>
+        <div id="presidentPolicies" class="policy-cards"></div>
+        <button id="presidentPassBtn" class="primary" disabled>Pass to Chancellor</button>
+      </div>
+      
+      <!-- Policy Selection (Chancellor) -->
+      <div id="chancellorPolicySelect" class="card hidden">
+        <h3>Chancellor: Choose 1 policy to enact</h3>
+        <div id="chancellorPolicies" class="policy-cards"></div>
+        <button id="chancellorEnactBtn" class="primary" disabled>Enact Policy</button>
+      </div>
+      
+      <!-- Executive Action -->
+      <div id="executiveAction" class="card hidden">
+        <h3 id="executiveActionTitle"></h3>
+        <div id="executivePlayers" class="player-list"></div>
+        <button id="executeActionBtn" class="primary" disabled>Confirm Action</button>
+      </div>
+      
+      <!-- Players -->
+      <div class="card">
+        <h3>Players</h3>
+        <div id="gamePlayers" class="player-list"></div>
+      </div>
+      
+      <!-- Game Log -->
+      <div class="card">
+        <h3>Game Log</h3>
+        <div id="gameLog" class="log"></div>
+      </div>
+      
+      <div style="text-align:center; margin-top:20px;">
+        <button id="leaveGameBtn" class="danger">Leave Game</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Game Over Screen -->
+  <div id="gameOverScreen" class="hidden">
+    <div class="card">
+      <h2 id="gameOverTitle"></h2>
+      <div id="gameOverMessage" class="role-card"></div>
+      <div id="finalRoles" class="card"></div>
+      <div style="text-align:center; margin-top:20px;">
+        <button id="newGameBtn" class="primary" style="font-size:1.2em; padding:15px 40px;">New Game</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -88,317 +494,883 @@ function generateCode(length) {
 
 const myPCID = getOrCreatePCID();
 let roomCode = null;
-let myRole = null; // 'player1' or 'player2'
 let roomRef = null;
 let gameRef = null;
+let myPlayerData = null;
 
-/* ---------------- Canvas ---------------- */
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-function resize() {
-  canvas.width = window.innerWidth * 0.95;
-  canvas.height = window.innerHeight * 0.55;
-}
-resize();
-window.onresize = resize;
+document.getElementById('playerIdDisplay').textContent = `Your ID: ${myPCID}`;
 
-/* ---------------- Game State ---------------- */
-const state = {
-  size:40,
-  speed:3,
-  gameOver:false,
-  myScore:0,
-  opponentScore:0,
-  my:{x:50,y:50,color:"#33aaff"},
-  opponent:{x:200,y:150,color:"#ff4444"},
-  block:{x:150,y:100,size:25}
+/* ---------------- Game Constants ---------------- */
+const ROLE_DISTRIBUTION = {
+  5: { loyalists: 3, spies: 1, secretSpy: 1 },
+  6: { loyalists: 4, spies: 1, secretSpy: 1 },
+  7: { loyalists: 4, spies: 2, secretSpy: 1 },
+  8: { loyalists: 5, spies: 2, secretSpy: 1 },
+  9: { loyalists: 5, spies: 3, secretSpy: 1 },
+  10: { loyalists: 6, spies: 3, secretSpy: 1 }
 };
 
-const WIN_SCORE = 50;
+/* ---------------- UI References ---------------- */
+const lobbyScreen = document.getElementById('lobbyScreen');
+const waitingScreen = document.getElementById('waitingScreen');
+const gameScreen = document.getElementById('gameScreen');
+const gameOverScreen = document.getElementById('gameOverScreen');
 
-/* ---------------- UI Elements ---------------- */
-const statusEl = document.getElementById("status");
-const myIdSpan = document.getElementById("myId");
-const roomCodeInput = document.getElementById("roomCodeInput");
-const createRoomBtn = document.getElementById("createRoomBtn");
-const joinRoomBtn = document.getElementById("joinRoomBtn");
-const winModal = document.getElementById("winModal");
-const winMessage = document.getElementById("winMessage");
-const finalScore = document.getElementById("finalScore");
-const restartBtn = document.getElementById("restartBtn");
+const playerNameInput = document.getElementById('playerNameInput');
+const roomCodeInput = document.getElementById('roomCodeInput');
+const createRoomBtn = document.getElementById('createRoomBtn');
+const joinRoomBtn = document.getElementById('joinRoomBtn');
+const startGameBtn = document.getElementById('startGameBtn');
+const leaveRoomBtn = document.getElementById('leaveRoomBtn');
+const leaveGameBtn = document.getElementById('leaveGameBtn');
 
-myIdSpan.textContent = myPCID;
-statusEl.textContent = "Ready to play!";
-
-/* ---------------- Room Management ---------------- */
+/* ---------------- Create Room ---------------- */
 createRoomBtn.onclick = async () => {
+  const playerName = playerNameInput.value.trim();
+  if (!playerName) return alert('Please enter your name');
+  
   roomCode = generateCode(4);
-  roomCodeInput.value = roomCode;
-  myRole = 'player1';
+  roomRef = db.ref(`secretSpy/rooms/${roomCode}`);
   
-  roomRef = db.ref(`collectGame/rooms/${roomCode}`);
-  
-  // Initialize room
   await roomRef.set({
-    player1: myPCID,
-    player2: null,
+    host: myPCID,
     status: 'waiting',
-    createdAt: Date.now()
-  });
-  
-  statusEl.textContent = `Room created: ${roomCode}. Waiting for opponent...`;
-  createRoomBtn.disabled = true;
-  joinRoomBtn.disabled = true;
-  
-  // Listen for player 2 joining
-  roomRef.on('value', (snapshot) => {
-    const room = snapshot.val();
-    if (room && room.player2 && room.status === 'playing') {
-      startGame();
+    createdAt: Date.now(),
+    players: {
+      [myPCID]: {
+        name: playerName,
+        id: myPCID,
+        connected: true,
+        joinedAt: Date.now()
+      }
     }
   });
+  
+  joinRoom(roomCode, playerName);
 };
 
+/* ---------------- Join Room ---------------- */
 joinRoomBtn.onclick = async () => {
+  const playerName = playerNameInput.value.trim();
   const code = roomCodeInput.value.trim().toUpperCase();
-  if (!code || code.length !== 4) {
-    return alert("Enter a 4-character room code");
+  
+  if (!playerName) return alert('Please enter your name');
+  if (!code || code.length !== 4) return alert('Please enter a 4-character room code');
+  
+  const snapshot = await db.ref(`secretSpy/rooms/${code}`).once('value');
+  if (!snapshot.exists()) return alert('Room not found!');
+  
+  const room = snapshot.val();
+  if (room.status !== 'waiting') return alert('Game already in progress!');
+  
+  const playerCount = Object.keys(room.players || {}).length;
+  if (playerCount >= 10) return alert('Room is full!');
+  
+  await db.ref(`secretSpy/rooms/${code}/players/${myPCID}`).set({
+    name: playerName,
+    id: myPCID,
+    connected: true,
+    joinedAt: Date.now()
+  });
+  
+  joinRoom(code, playerName);
+};
+
+function joinRoom(code, playerName) {
+  roomCode = code;
+  roomRef = db.ref(`secretSpy/rooms/${roomCode}`);
+  
+  myPlayerData = {
+    name: playerName,
+    id: myPCID
+  };
+  
+  lobbyScreen.classList.add('hidden');
+  waitingScreen.classList.remove('hidden');
+  document.getElementById('roomCodeDisplay').textContent = roomCode;
+  
+  // Listen to room changes
+  roomRef.on('value', handleRoomUpdate);
+  
+  // Handle disconnect
+  const playerRef = roomRef.child(`players/${myPCID}`);
+  playerRef.onDisconnect().remove();
+}
+
+/* ---------------- Handle Room Updates ---------------- */
+function handleRoomUpdate(snapshot) {
+  const room = snapshot.val();
+  if (!room) {
+    returnToLobby();
+    return;
   }
   
-  roomCode = code;
-  roomRef = db.ref(`collectGame/rooms/${roomCode}`);
+  const players = room.players || {};
+  const playerCount = Object.keys(players).length;
   
+  // Update lobby players
+  const lobbyPlayersDiv = document.getElementById('lobbyPlayers');
+  lobbyPlayersDiv.innerHTML = '';
+  
+  Object.values(players).forEach(player => {
+    const div = document.createElement('div');
+    div.className = 'player-card';
+    div.innerHTML = `<div class="player-name">${player.name}</div>`;
+    if (player.id === room.host) {
+      div.innerHTML += '<div class="player-role">👑 Host</div>';
+    }
+    lobbyPlayersDiv.appendChild(div);
+  });
+  
+  // Show start button if host and enough players
+  if (room.host === myPCID && playerCount >= 5 && playerCount <= 10) {
+    startGameBtn.classList.remove('hidden');
+  } else {
+    startGameBtn.classList.add('hidden');
+  }
+  
+  // Check if game started
+  if (room.status === 'playing') {
+    startGame();
+  }
+}
+
+/* ---------------- Start Game ---------------- */
+startGameBtn.onclick = async () => {
   const snapshot = await roomRef.once('value');
   const room = snapshot.val();
+  const players = Object.values(room.players);
+  const playerCount = players.length;
   
-  if (!room) {
-    return alert("Room not found!");
-  }
+  // Assign roles
+  const roles = assignRoles(playerCount);
+  const shuffledPlayers = shuffleArray([...players]);
   
-  if (room.player2) {
-    return alert("Room is full!");
-  }
+  const gameState = {
+    status: 'playing',
+    phase: 'nomination',
+    round: 1,
+    presidentIndex: 0,
+    failedVotes: 0,
+    loyalistPolicies: 0,
+    spyPolicies: 0,
+    deck: shuffleDeck(),
+    discard: [],
+    players: {},
+    log: [],
+    currentPresident: shuffledPlayers[0].id,
+    currentChancellor: null,
+    lastPresident: null,
+    lastChancellor: null,
+    votes: {},
+    selectedPolicies: [],
+    nominatedChancellor: null
+  };
   
-  myRole = 'player2';
-  
-  // Join room
-  await roomRef.update({
-    player2: myPCID,
-    status: 'playing'
+  // Assign roles to players
+  shuffledPlayers.forEach((player, index) => {
+    gameState.players[player.id] = {
+      ...player,
+      role: roles[index],
+      alive: true,
+      investigated: false
+    };
   });
   
-  statusEl.textContent = `Joined room: ${roomCode}`;
-  createRoomBtn.disabled = true;
-  joinRoomBtn.disabled = true;
+  // Add initial log
+  gameState.log.push({
+    time: Date.now(),
+    message: 'Game started! Good luck!'
+  });
   
-  startGame();
+  await roomRef.update({ status: 'playing' });
+  gameRef = db.ref(`secretSpy/games/${roomCode}`);
+  await gameRef.set(gameState);
 };
 
+function assignRoles(playerCount) {
+  const dist = ROLE_DISTRIBUTION[playerCount];
+  const roles = [
+    ...Array(dist.loyalists).fill('loyalist'),
+    ...Array(dist.spies).fill('spy'),
+    'secretSpy'
+  ];
+  return shuffleArray(roles);
+}
+
+function shuffleDeck() {
+  const deck = [
+    ...Array(6).fill('loyalist'),
+    ...Array(11).fill('spy')
+  ];
+  return shuffleArray(deck);
+}
+
+function shuffleArray(array) {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+/* ---------------- Start Game View ---------------- */
 function startGame() {
-  gameRef = db.ref(`collectGame/games/${roomCode}`);
+  waitingScreen.classList.add('hidden');
+  gameScreen.classList.remove('hidden');
+  document.getElementById('gameRoomCode').textContent = roomCode;
   
-  // Initialize game state if player1
-  if (myRole === 'player1') {
-    gameRef.set({
-      block: {x: 150, y: 100, size: 25},
-      player1: {x: 50, y: 50, score: 0},
-      player2: {x: 200, y: 150, score: 0},
-      gameOver: false,
-      winner: null
-    });
+  gameRef = db.ref(`secretSpy/games/${roomCode}`);
+  gameRef.on('value', handleGameUpdate);
+}
+
+/* ---------------- Handle Game Updates ---------------- */
+let currentGameState = null;
+
+function handleGameUpdate(snapshot) {
+  const game = snapshot.val();
+  if (!game) return;
+  
+  currentGameState = game;
+  const myPlayer = game.players[myPCID];
+  
+  if (!myPlayer) return;
+  
+  // Display role
+  displayRole(myPlayer, game.players);
+  
+  // Update board
+  updateBoard(game);
+  
+  // Update game status
+  updateGameStatus(game, myPlayer);
+  
+  // Update players display
+  updatePlayersDisplay(game);
+  
+  // Update game log
+  updateGameLog(game.log || []);
+  
+  // Handle phases
+  handleGamePhase(game, myPlayer);
+  
+  // Check win conditions
+  checkWinConditions(game);
+}
+
+function displayRole(myPlayer, allPlayers) {
+  const roleDisplay = document.getElementById('roleDisplay');
+  
+  let roleHTML = '';
+  
+  if (myPlayer.role === 'loyalist') {
+    roleHTML = `
+      <div class="role-card loyalist">
+        <div>Your Role: LOYALIST ✓</div>
+        <div style="font-size:0.7em; margin-top:10px;">Pass 5 Loyalist policies to win!</div>
+      </div>
+    `;
+  } else if (myPlayer.role === 'spy') {
+    const otherSpies = Object.values(allPlayers).filter(p => 
+      p.role === 'spy' && p.id !== myPCID
+    ).map(p => p.name);
+    
+    roleHTML = `
+      <div class="role-card spy">
+        <div>Your Role: SPY ✗</div>
+        <div style="font-size:0.7em; margin-top:10px;">Pass 6 Spy policies or kill the Secret Spy!</div>
+        ${otherSpies.length > 0 ? `<div style="font-size:0.6em; margin-top:10px;">Fellow Spies: ${otherSpies.join(', ')}</div>` : ''}
+      </div>
+    `;
+  } else if (myPlayer.role === 'secretSpy') {
+    roleHTML = `
+      <div class="role-card secret-spy">
+        <div>Your Role: SECRET SPY 👑</div>
+        <div style="font-size:0.7em; margin-top:10px;">You're a spy but other spies don't know you!</div>
+        <div style="font-size:0.7em;">If you're killed by execution, spies win!</div>
+      </div>
+    `;
   }
   
-  statusEl.textContent = "Game started!";
+  roleDisplay.innerHTML = roleHTML;
+}
+
+function updateBoard(game) {
+  // Update loyalist track
+  const loyalistTrack = document.getElementById('loyalistTrack');
+  loyalistTrack.querySelectorAll('.track-slot').forEach((slot, index) => {
+    if (index < game.loyalistPolicies) {
+      slot.classList.add('filled', 'loyalist');
+      slot.textContent = '✓';
+    } else {
+      slot.classList.remove('filled', 'loyalist');
+      slot.textContent = '';
+    }
+  });
   
-  // Listen to game state
-  gameRef.on('value', (snapshot) => {
-    const game = snapshot.val();
-    if (!game) return;
-    
-    const otherRole = myRole === 'player1' ? 'player2' : 'player1';
-    
-    state.opponent.x = game[otherRole].x;
-    state.opponent.y = game[otherRole].y;
-    state.opponentScore = game[otherRole].score;
-    state.block = game.block;
-    state.gameOver = game.gameOver;
-    
-    // Check if game just ended
-    if (game.gameOver && !winModal.style.display) {
-      const didWin = game.winner === myRole;
-      showWinScreen(didWin);
+  // Update spy track
+  const spyTrack = document.getElementById('spyTrack');
+  spyTrack.querySelectorAll('.track-slot').forEach((slot, index) => {
+    if (index < game.spyPolicies) {
+      slot.classList.add('filled', 'spy');
+      slot.textContent = '✗';
+    } else {
+      slot.classList.remove('filled', 'spy');
+      slot.textContent = '';
     }
   });
 }
 
-function updateMyPosition() {
-  if (!gameRef || state.gameOver) return;
+function updateGameStatus(game, myPlayer) {
+  const statusDiv = document.getElementById('gameStatus');
+  const president = game.players[game.currentPresident];
+  const chancellor = game.currentChancellor ? game.players[game.currentChancellor] : null;
   
-  gameRef.child(myRole).update({
-    x: state.my.x,
-    y: state.my.y,
-    score: state.myScore
+  let statusText = `<strong>Round ${game.round}</strong><br>`;
+  statusText += `President: ${president.name}`;
+  if (chancellor) {
+    statusText += ` | Chancellor: ${chancellor.name}`;
+  }
+  statusText += `<br>Phase: ${game.phase}`;
+  
+  if (game.failedVotes > 0) {
+    statusText += ` | Failed votes: ${game.failedVotes}/3`;
+  }
+  
+  statusDiv.innerHTML = statusText;
+}
+
+function updatePlayersDisplay(game) {
+  const playersDiv = document.getElementById('gamePlayers');
+  playersDiv.innerHTML = '';
+  
+  Object.values(game.players).forEach(player => {
+    const div = document.createElement('div');
+    div.className = 'player-card';
+    
+    if (player.id === game.currentPresident) {
+      div.classList.add('president');
+    }
+    if (player.id === game.currentChancellor) {
+      div.classList.add('chancellor');
+    }
+    if (!player.alive) {
+      div.classList.add('dead');
+    }
+    
+    let html = `<div class="player-name">${player.name}</div>`;
+    
+    if (player.id === game.currentPresident) {
+      html += '<div class="player-role">📜 President</div>';
+    }
+    if (player.id === game.currentChancellor) {
+      html += '<div class="player-role">🏛️ Chancellor</div>';
+    }
+    if (!player.alive) {
+      html += '<div class="player-role">💀 Dead</div>';
+    }
+    
+    div.innerHTML = html;
+    playersDiv.appendChild(div);
   });
 }
 
-function updateBlock() {
-  if (!gameRef) return;
-  gameRef.child('block').set(state.block);
-}
-
-/* ---------------- Movement (Joystick + Keyboard) ---------------- */
-let joyX=0, joyY=0;
-const joyArea=document.getElementById("joystickArea");
-const joy=document.getElementById("joystick");
-
-joyArea.addEventListener("touchmove",e=>{
-  const r=joyArea.getBoundingClientRect();
-  const t=e.touches[0];
-  const x=t.clientX-r.left-r.width/2;
-  const y=t.clientY-r.top-r.height/2;
-  const d=Math.min(Math.sqrt(x*x+y*y),50);
-  const a=Math.atan2(y,x);
-  joyX=Math.cos(a)*(d/50);
-  joyY=Math.sin(a)*(d/50);
-  joy.style.left=(40+joyX*40)+"px";
-  joy.style.top=(40+joyY*40)+"px";
-  e.preventDefault();
-});
-joyArea.addEventListener("touchend",()=>{
-  joyX=joyY=0;
-  joy.style.left="40px";
-  joy.style.top="40px";
-});
-
-const keys={};
-onkeydown=e=>keys[e.key]=true;
-onkeyup=e=>keys[e.key]=false;
-
-function move(){
-  if(state.gameOver) return;
+function updateGameLog(log) {
+  const logDiv = document.getElementById('gameLog');
+  logDiv.innerHTML = '';
   
-  let dx=joyX*state.speed;
-  let dy=joyY*state.speed;
-  if(keys.ArrowUp||keys.w) dy-=state.speed;
-  if(keys.ArrowDown||keys.s) dy+=state.speed;
-  if(keys.ArrowLeft||keys.a) dx-=state.speed;
-  if(keys.ArrowRight||keys.d) dx+=state.speed;
-
-  state.my.x+=dx;
-  state.my.y+=dy;
-
-  state.my.x=Math.max(0,Math.min(canvas.width-state.size,state.my.x));
-  state.my.y=Math.max(0,Math.min(canvas.height-state.size,state.my.y));
+  [...log].reverse().slice(0, 20).forEach(entry => {
+    const div = document.createElement('div');
+    div.className = 'log-entry';
+    div.textContent = entry.message;
+    logDiv.appendChild(div);
+  });
 }
 
-/* ---------------- Block Collecting ---------------- */
-function newBlock(){
-  state.block.x=Math.random()*(canvas.width-30);
-  state.block.y=Math.random()*(canvas.height-30);
-}
-
-function checkCollect(){
-  if(state.gameOver || !gameRef) return;
+/* ---------------- Game Phase Handling ---------------- */
+function handleGamePhase(game, myPlayer) {
+  // Hide all action sections
+  document.getElementById('presidentNomination').classList.add('hidden');
+  document.getElementById('votingSection').classList.add('hidden');
+  document.getElementById('presidentPolicySelect').classList.add('hidden');
+  document.getElementById('chancellorPolicySelect').classList.add('hidden');
+  document.getElementById('executiveAction').classList.add('hidden');
   
-  const p=state.my;
-  const b=state.block;
-  if(p.x < b.x+b.size && p.x+state.size > b.x &&
-     p.y < b.y+b.size && p.y+state.size > b.y){
-    state.myScore++;
-    newBlock();
-    updateBlock();
-    
-    // Check for win
-    if(state.myScore >= WIN_SCORE){
-      gameRef.update({
-        gameOver: true,
-        winner: myRole
-      });
-    }
+  if (game.phase === 'nomination' && game.currentPresident === myPCID) {
+    showPresidentNomination(game);
+  } else if (game.phase === 'voting') {
+    showVoting(game);
+  } else if (game.phase === 'presidentPolicy' && game.currentPresident === myPCID) {
+    showPresidentPolicySelect(game);
+  } else if (game.phase === 'chancellorPolicy' && game.currentChancellor === myPCID) {
+    showChancellorPolicySelect(game);
+  } else if (game.phase === 'executiveAction' && game.currentPresident === myPCID) {
+    showExecutiveAction(game);
   }
 }
 
-function showWinScreen(didWin){
-  if(didWin){
-    winMessage.textContent="🎉 You Win! 🎉";
-    winMessage.style.color="#4CAF50";
+/* ---------------- President Nomination ---------------- */
+let selectedNominee = null;
+
+function showPresidentNomination(game) {
+  document.getElementById('presidentNomination').classList.remove('hidden');
+  
+  const playersDiv = document.getElementById('nominationPlayers');
+  playersDiv.innerHTML = '';
+  selectedNominee = null;
+  
+  Object.values(game.players).forEach(player => {
+    if (player.id === myPCID || !player.alive) return;
+    
+    // Can't nominate last government
+    if (Object.keys(game.players).length > 5) {
+      if (player.id === game.lastChancellor) return;
+      if (player.id === game.lastPresident && game.lastChancellor) return;
+    } else {
+      if (player.id === game.lastChancellor) return;
+    }
+    
+    const div = document.createElement('div');
+    div.className = 'player-card';
+    div.innerHTML = `<div class="player-name">${player.name}</div>`;
+    div.onclick = () => {
+      playersDiv.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
+      div.classList.add('selected');
+      selectedNominee = player.id;
+      document.getElementById('nominateBtn').disabled = false;
+    };
+    playersDiv.appendChild(div);
+  });
+}
+
+document.getElementById('nominateBtn').onclick = async () => {
+  if (!selectedNominee) return;
+  
+  await gameRef.update({
+    nominatedChancellor: selectedNominee,
+    phase: 'voting',
+    votes: {}
+  });
+  
+  await addLog(`${currentGameState.players[myPCID].name} nominated ${currentGameState.players[selectedNominee].name} for Chancellor`);
+};
+
+/* ---------------- Voting ---------------- */
+function showVoting(game) {
+  document.getElementById('votingSection').classList.remove('hidden');
+  
+  const president = game.players[game.currentPresident];
+  const nominee = game.players[game.nominatedChancellor];
+  
+  document.getElementById('votingPrompt').textContent = 
+    `${president.name} nominated ${nominee.name} for Chancellor`;
+  
+  // Check if already voted
+  if (game.votes && game.votes[myPCID] !== undefined) {
+    document.getElementById('voteYesBtn').disabled = true;
+    document.getElementById('voteNoBtn').disabled = true;
   } else {
-    winMessage.textContent="😔 You Lose";
-    winMessage.style.color="#ff4444";
+    document.getElementById('voteYesBtn').disabled = false;
+    document.getElementById('voteNoBtn').disabled = false;
   }
-  finalScore.textContent=`Final Score: ${state.myScore} - ${state.opponentScore}`;
-  winModal.style.display="block";
 }
 
-function resetGame(){
-  state.myScore=0;
-  state.opponentScore=0;
-  state.gameOver=false;
-  state.my.x=50;
-  state.my.y=50;
-  state.opponent.x=200;
-  state.opponent.y=150;
-  newBlock();
-  winModal.style.display="none";
+document.getElementById('voteYesBtn').onclick = () => castVote(true);
+document.getElementById('voteNoBtn').onclick = () => castVote(false);
+
+async function castVote(vote) {
+  await gameRef.child(`votes/${myPCID}`).set(vote);
   
-  if(gameRef){
-    gameRef.set({
-      block: state.block,
-      player1: {x: 50, y: 50, score: 0},
-      player2: {x: 200, y: 150, score: 0},
-      gameOver: false,
-      winner: null
-    });
-  }
-}
-
-restartBtn.onclick = resetGame;
-
-/* ---------------- Draw ---------------- */
-function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  // block
-  ctx.fillStyle="yellow";
-  ctx.fillRect(state.block.x,state.block.y,state.block.size,state.block.size);
-
-  // players
-  ctx.fillStyle=state.my.color;
-  ctx.fillRect(state.my.x,state.my.y,state.size,state.size);
-
-  ctx.fillStyle=state.opponent.color;
-  ctx.fillRect(state.opponent.x,state.opponent.y,state.size,state.size);
-
-  // scores
-  ctx.fillStyle="white";
-  ctx.font="18px Arial";
-  ctx.fillText("You: "+state.myScore+" / "+WIN_SCORE,10,25);
-  ctx.fillText("Opponent: "+state.opponentScore+" / "+WIN_SCORE,10,50);
+  document.getElementById('voteYesBtn').disabled = true;
+  document.getElementById('voteNoBtn').disabled = true;
   
-  // game over overlay
-  if(state.gameOver){
-    ctx.fillStyle="rgba(0,0,0,0.5)";
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.fillStyle="white";
-    ctx.font="30px Arial";
-    ctx.fillText("Game Over",canvas.width/2-70,canvas.height/2);
+  // Check if all players voted
+  setTimeout(checkVotingComplete, 500);
+}
+
+async function checkVotingComplete() {
+  const snapshot = await gameRef.once('value');
+  const game = snapshot.val();
+  
+  const alivePlayers = Object.values(game.players).filter(p => p.alive);
+  const votes = game.votes || {};
+  
+  if (Object.keys(votes).length === alivePlayers.length) {
+    // Count votes
+    const yesVotes = Object.values(votes).filter(v => v).length;
+    const noVotes = Object.values(votes).filter(v => !v).length;
+    
+    if (yesVotes > noVotes) {
+      // Government elected
+      await gameRef.update({
+        currentChancellor: game.nominatedChancellor,
+        phase: 'presidentPolicy',
+        failedVotes: 0,
+        lastPresident: game.currentPresident,
+        lastChancellor: game.nominatedChancellor
+      });
+      
+      await addLog(`Vote passed! ${yesVotes} Ja, ${noVotes} Nein`);
+      
+      // Draw 3 policies
+      const newDeck = [...game.deck];
+      const drawnPolicies = newDeck.splice(0, 3);
+      
+      await gameRef.update({
+        deck: newDeck,
+        selectedPolicies: drawnPolicies
+      });
+      
+    } else {
+      // Government rejected
+      const newFailedVotes = game.failedVotes + 1;
+      
+      await addLog(`Vote failed! ${yesVotes} Ja, ${noVotes} Nein`);
+      
+      if (newFailedVotes >= 3) {
+        // Chaos - enact top policy
+        const newDeck = [...game.deck];
+        const topPolicy = newDeck.shift();
+        
+        await addLog(`CHAOS! Top policy enacted: ${topPolicy === 'loyalist' ? 'Loyalist ✓' : 'Spy ✗'}`);
+        
+        if (topPolicy === 'loyalist') {
+          await gameRef.update({
+            loyalistPolicies: game.loyalistPolicies + 1,
+            deck: newDeck,
+            failedVotes: 0
+          });
+        } else {
+          await gameRef.update({
+            spyPolicies: game.spyPolicies + 1,
+            deck: newDeck,
+            failedVotes: 0
+          });
+        }
+        
+        nextRound();
+      } else {
+        await gameRef.update({
+          failedVotes: newFailedVotes
+        });
+        
+        nextRound();
+      }
+    }
   }
 }
 
-/* ---------------- Loop ---------------- */
-let lastUpdate=0;
-function loop(ts){
-  move();
-  checkCollect();
-  draw();
+/* ---------------- Policy Selection ---------------- */
+let selectedPolicies = [];
 
-  if(ts-lastUpdate>50 && gameRef){
-    updateMyPosition();
-    lastUpdate=ts;
-  }
-  requestAnimationFrame(loop);
+function showPresidentPolicySelect(game) {
+  document.getElementById('presidentPolicySelect').classList.remove('hidden');
+  
+  const policiesDiv = document.getElementById('presidentPolicies');
+  policiesDiv.innerHTML = '';
+  selectedPolicies = [];
+  
+  game.selectedPolicies.forEach((policy, index) => {
+    const div = document.createElement('div');
+    div.className = `policy-card ${policy}-policy`;
+    div.textContent = policy === 'loyalist' ? '✓' : '✗';
+    div.onclick = () => {
+      if (selectedPolicies.includes(index)) {
+        selectedPolicies = selectedPolicies.filter(i => i !== index);
+        div.classList.remove('selected');
+      } else if (selectedPolicies.length < 2) {
+        selectedPolicies.push(index);
+        div.classList.add('selected');
+      }
+      
+      document.getElementById('presidentPassBtn').disabled = selectedPolicies.length !== 2;
+    };
+    policiesDiv.appendChild(div);
+  });
 }
-requestAnimationFrame(loop);
+
+document.getElementById('presidentPassBtn').onclick = async () => {
+  const game = currentGameState;
+  const keptPolicies = selectedPolicies.map(i => game.selectedPolicies[i]);
+  const discardedPolicy = game.selectedPolicies.find((p, i) => !selectedPolicies.includes(i));
+  
+  await gameRef.update({
+    selectedPolicies: keptPolicies,
+    discard: [...game.discard, discardedPolicy],
+    phase: 'chancellorPolicy'
+  });
+  
+  await addLog('President passed 2 policies to Chancellor');
+};
+
+function showChancellorPolicySelect(game) {
+  document.getElementById('chancellorPolicySelect').classList.remove('hidden');
+  
+  const policiesDiv = document.getElementById('chancellorPolicies');
+  policiesDiv.innerHTML = '';
+  let selectedPolicy = null;
+  
+  game.selectedPolicies.forEach((policy, index) => {
+    const div = document.createElement('div');
+    div.className = `policy-card ${policy}-policy`;
+    div.textContent = policy === 'loyalist' ? '✓' : '✗';
+    div.onclick = () => {
+      policiesDiv.querySelectorAll('.policy-card').forEach(c => c.classList.remove('selected'));
+      div.classList.add('selected');
+      selectedPolicy = index;
+      document.getElementById('chancellorEnactBtn').disabled = false;
+    };
+    policiesDiv.appendChild(div);
+  });
+  
+  document.getElementById('chancellorEnactBtn').onclick = async () => {
+    const enactedPolicy = game.selectedPolicies[selectedPolicy];
+    const discardedPolicy = game.selectedPolicies[1 - selectedPolicy];
+    
+    await addLog(`Chancellor enacted a ${enactedPolicy === 'loyalist' ? 'Loyalist ✓' : 'Spy ✗'} policy`);
+    
+    const updates = {
+      discard: [...game.discard, discardedPolicy],
+      selectedPolicies: []
+    };
+    
+    if (enactedPolicy === 'loyalist') {
+      updates.loyalistPolicies = game.loyalistPolicies + 1;
+      updates.phase = 'nomination';
+      nextRound();
+    } else {
+      updates.spyPolicies = game.spyPolicies + 1;
+      
+      // Check for executive action
+      const spyCount = game.spyPolicies + 1;
+      const playerCount = Object.keys(game.players).length;
+      
+      if ((playerCount <= 6 && spyCount === 3) || 
+          (playerCount <= 8 && (spyCount === 2 || spyCount === 3)) ||
+          (playerCount >= 9 && (spyCount === 1 || spyCount === 2 || spyCount === 3))) {
+        updates.phase = 'executiveAction';
+        updates.executiveActionType = getExecutiveAction(playerCount, spyCount);
+      } else {
+        updates.phase = 'nomination';
+        nextRound();
+      }
+    }
+    
+    await gameRef.update(updates);
+  };
+}
+
+function getExecutiveAction(playerCount, spyPolicies) {
+  if (playerCount <= 6) {
+    if (spyPolicies === 3) return 'investigate';
+  } else if (playerCount <= 8) {
+    if (spyPolicies === 2) return 'investigate';
+    if (spyPolicies === 3) return 'execution';
+  } else {
+    if (spyPolicies === 1 || spyPolicies === 2) return 'investigate';
+    if (spyPolicies === 3) return 'execution';
+  }
+  return null;
+}
+
+/* ---------------- Executive Actions ---------------- */
+let selectedExecutiveTarget = null;
+
+function showExecutiveAction(game) {
+  document.getElementById('executiveAction').classList.remove('hidden');
+  
+  const actionType = game.executiveActionType;
+  let title = '';
+  
+  if (actionType === 'investigate') {
+    title = 'Investigate a player\'s loyalty';
+  } else if (actionType === 'execution') {
+    title = 'Execute a player';
+  }
+  
+  document.getElementById('executiveActionTitle').textContent = title;
+  
+  const playersDiv = document.getElementById('executivePlayers');
+  playersDiv.innerHTML = '';
+  selectedExecutiveTarget = null;
+  
+  Object.values(game.players).forEach(player => {
+    if (player.id === myPCID || !player.alive) return;
+    if (actionType === 'investigate' && player.investigated) return;
+    
+    const div = document.createElement('div');
+    div.className = 'player-card';
+    div.innerHTML = `<div class="player-name">${player.name}</div>`;
+    div.onclick = () => {
+      playersDiv.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
+      div.classList.add('selected');
+      selectedExecutiveTarget = player.id;
+      document.getElementById('executeActionBtn').disabled = false;
+    };
+    playersDiv.appendChild(div);
+  });
+}
+
+document.getElementById('executeActionBtn').onclick = async () => {
+  if (!selectedExecutiveTarget) return;
+  
+  const game = currentGameState;
+  const target = game.players[selectedExecutiveTarget];
+  
+  if (game.executiveActionType === 'investigate') {
+    const loyalty = target.role === 'loyalist' ? 'Loyalist' : 'Spy';
+    alert(`${target.name} is a ${loyalty}!`);
+    
+    await gameRef.child(`players/${selectedExecutiveTarget}`).update({ investigated: true });
+    await addLog(`President investigated ${target.name}`);
+    
+    nextRound();
+    
+  } else if (game.executiveActionType === 'execution') {
+    await gameRef.child(`players/${selectedExecutiveTarget}`).update({ alive: false });
+    await addLog(`President executed ${target.name}!`);
+    
+    // Check if Secret Spy was killed
+    if (target.role === 'secretSpy') {
+      await gameRef.update({
+        winner: 'spies',
+        phase: 'gameOver'
+      });
+      return;
+    }
+    
+    nextRound();
+  }
+};
+
+/* ---------------- Helper Functions ---------------- */
+async function nextRound() {
+  const snapshot = await gameRef.once('value');
+  const game = snapshot.val();
+  
+  const alivePlayers = Object.values(game.players).filter(p => p.alive);
+  const currentPresidentIdx = alivePlayers.findIndex(p => p.id === game.currentPresident);
+  const nextPresidentIdx = (currentPresidentIdx + 1) % alivePlayers.length;
+  const nextPresident = alivePlayers[nextPresidentIdx].id;
+  
+  // Reshuffle if deck is low
+  let newDeck = [...game.deck];
+  if (newDeck.length < 3) {
+    newDeck = [...newDeck, ...game.discard];
+    newDeck = shuffleArray(newDeck);
+    await gameRef.update({ discard: [] });
+  }
+  
+  await gameRef.update({
+    round: game.round + 1,
+    currentPresident: nextPresident,
+    currentChancellor: null,
+    nominatedChancellor: null,
+    phase: 'nomination',
+    votes: {},
+    deck: newDeck
+  });
+}
+
+async function addLog(message) {
+  const snapshot = await gameRef.child('log').once('value');
+  const log = snapshot.val() || [];
+  
+  log.push({
+    time: Date.now(),
+    message: message
+  });
+  
+  await gameRef.child('log').set(log);
+}
+
+/* ---------------- Win Conditions ---------------- */
+function checkWinConditions(game) {
+  if (game.loyalistPolicies >= 5) {
+    endGame('loyalists', 'Loyalists win! 5 Loyalist policies passed! ✓');
+  } else if (game.spyPolicies >= 6) {
+    endGame('spies', 'Spies win! 6 Spy policies passed! ✗');
+  } else if (game.winner === 'spies') {
+    endGame('spies', 'Spies win! The Secret Spy was executed! 👑');
+  }
+}
+
+async function endGame(winner, message) {
+  if (currentGameState.phase === 'gameOver') {
+    displayGameOver(winner, message);
+    return;
+  }
+  
+  await gameRef.update({
+    phase: 'gameOver',
+    winner: winner
+  });
+}
+
+function displayGameOver(winner, message) {
+  gameScreen.classList.add('hidden');
+  gameOverScreen.classList.remove('hidden');
+  
+  const myPlayer = currentGameState.players[myPCID];
+  const didWin = (winner === 'loyalists' && myPlayer.role === 'loyalist') ||
+                 (winner === 'spies' && (myPlayer.role === 'spy' || myPlayer.role === 'secretSpy'));
+  
+  document.getElementById('gameOverTitle').textContent = didWin ? '🎉 Victory! 🎉' : '😔 Defeat';
+  
+  const messageDiv = document.getElementById('gameOverMessage');
+  messageDiv.textContent = message;
+  messageDiv.className = 'role-card ' + (winner === 'loyalists' ? 'loyalist' : 'spy');
+  
+  // Show all roles
+  const rolesDiv = document.getElementById('finalRoles');
+  let rolesHTML = '<h3>Player Roles</h3><div class="player-list">';
+  
+  Object.values(currentGameState.players).forEach(player => {
+    const roleIcon = player.role === 'loyalist' ? '✓' : (player.role === 'secretSpy' ? '👑' : '✗');
+    const roleColor = player.role === 'loyalist' ? '#4CAF50' : '#f44336';
+    rolesHTML += `
+      <div class="player-card">
+        <div class="player-name">${player.name}</div>
+        <div class="player-role" style="color:${roleColor};">${roleIcon} ${player.role.toUpperCase()}</div>
+      </div>
+    `;
+  });
+  
+  rolesHTML += '</div>';
+  rolesDiv.innerHTML = rolesHTML;
+}
+
+/* ---------------- Leave/New Game ---------------- */
+leaveRoomBtn.onclick = () => {
+  if (roomRef) roomRef.off();
+  returnToLobby();
+};
+
+leaveGameBtn.onclick = () => {
+  if (gameRef) gameRef.off();
+  if (roomRef) roomRef.off();
+  returnToLobby();
+};
+
+document.getElementById('newGameBtn').onclick = () => {
+  if (gameRef) gameRef.off();
+  if (roomRef) roomRef.off();
+  returnToLobby();
+};
+
+function returnToLobby() {
+  lobbyScreen.classList.remove('hidden');
+  waitingScreen.classList.add('hidden');
+  gameScreen.classList.add('hidden');
+  gameOverScreen.classList.add('hidden');
+  
+  roomCode = null;
+  roomRef = null;
+  gameRef = null;
+  myPlayerData = null;
+  currentGameState = null;
+}
 </script>
 
 </body>

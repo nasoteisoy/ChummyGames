@@ -1,1377 +1,697 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Secret Spy - Social Deduction Game</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Military Rank Builder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-<style>
-  * { box-sizing: border-box; }
-  body { 
-    margin:0; 
-    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-    color:white; 
-    font-family:'Segoe UI', Arial, sans-serif; 
-    padding:20px;
-    min-height:100vh;
-  }
-  
-  .container { max-width:900px; margin:0 auto; }
-  h1 { text-align:center; margin:0 0 30px 0; font-size:2.5em; text-shadow:2px 2px 4px rgba(0,0,0,0.3); }
-  
-  .card { 
-    background:rgba(255,255,255,0.1); 
-    backdrop-filter:blur(10px);
-    border-radius:12px; 
-    padding:20px; 
-    margin-bottom:20px;
-    border:1px solid rgba(255,255,255,0.2);
-  }
-  
-  input, button { 
-    padding:12px 20px; 
-    border-radius:8px; 
-    border:none; 
-    font-size:16px;
-    margin:5px;
-  }
-  
-  input {
-    background:rgba(255,255,255,0.9);
-    color:#333;
-  }
-  
-  button { 
-    background:#4CAF50; 
-    color:white; 
-    cursor:pointer;
-    font-weight:bold;
-    transition:all 0.3s;
-  }
-  
-  button:hover:not(:disabled) { 
-    background:#45a049; 
-    transform:translateY(-2px);
-    box-shadow:0 4px 8px rgba(0,0,0,0.3);
-  }
-  
-  button:disabled { 
-    background:#666; 
-    cursor:not-allowed;
-    opacity:0.6;
-  }
-  
-  button.danger { background:#f44336; }
-  button.danger:hover:not(:disabled) { background:#da190b; }
-  
-  button.primary { background:#2196F3; }
-  button.primary:hover:not(:disabled) { background:#0b7dda; }
-  
-  .player-list {
-    display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(200px, 1fr));
-    gap:10px;
-    margin-top:15px;
-  }
-  
-  .player-card {
-    background:rgba(255,255,255,0.15);
-    padding:15px;
-    border-radius:8px;
-    border:2px solid transparent;
-    transition:all 0.3s;
-    cursor:pointer;
-  }
-  
-  .player-card:hover {
-    border-color:rgba(255,255,255,0.5);
-    transform:scale(1.05);
-  }
-  
-  .player-card.selected {
-    border-color:#4CAF50;
-    background:rgba(76,175,80,0.3);
-  }
-  
-  .player-card.president {
-    border-color:#FFD700;
-    background:rgba(255,215,0,0.2);
-  }
-  
-  .player-card.chancellor {
-    border-color:#FFA500;
-    background:rgba(255,165,0,0.2);
-  }
-  
-  .player-card.dead {
-    opacity:0.4;
-    filter:grayscale(100%);
-    cursor:not-allowed;
-  }
-  
-  .player-name {
-    font-weight:bold;
-    margin-bottom:5px;
-  }
-  
-  .player-role {
-    font-size:12px;
-    color:#FFD700;
-  }
-  
-  .role-card {
-    background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding:30px;
-    border-radius:12px;
-    text-align:center;
-    margin:20px 0;
-    font-size:1.5em;
-    font-weight:bold;
-    box-shadow:0 8px 16px rgba(0,0,0,0.3);
-  }
-  
-  .role-card.loyalist {
-    background:linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
-  }
-  
-  .role-card.spy {
-    background:linear-gradient(135deg, #f44336 0%, #c62828 100%);
-  }
-  
-  .role-card.secret-spy {
-    background:linear-gradient(135deg, #9C27B0 0%, #4A148C 100%);
-  }
-  
-  .policy-cards {
-    display:flex;
-    gap:15px;
-    justify-content:center;
-    flex-wrap:wrap;
-    margin:20px 0;
-  }
-  
-  .policy-card {
-    width:120px;
-    height:180px;
-    border-radius:8px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-weight:bold;
-    font-size:1.2em;
-    cursor:pointer;
-    transition:all 0.3s;
-    border:3px solid transparent;
-  }
-  
-  .policy-card.loyalist-policy {
-    background:linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
-  }
-  
-  .policy-card.spy-policy {
-    background:linear-gradient(135deg, #f44336 0%, #c62828 100%);
-  }
-  
-  .policy-card:hover {
-    transform:scale(1.1) rotate(5deg);
-    box-shadow:0 8px 16px rgba(0,0,0,0.4);
-  }
-  
-  .policy-card.selected {
-    border-color:#FFD700;
-    transform:scale(1.1);
-  }
-  
-  .board {
-    display:flex;
-    justify-content:space-around;
-    margin:30px 0;
-    gap:20px;
-  }
-  
-  .policy-track {
-    flex:1;
-    background:rgba(0,0,0,0.3);
-    padding:20px;
-    border-radius:12px;
-  }
-  
-  .track-title {
-    text-align:center;
-    font-weight:bold;
-    margin-bottom:15px;
-    font-size:1.2em;
-  }
-  
-  .track-slots {
-    display:flex;
-    gap:10px;
-    justify-content:center;
-  }
-  
-  .track-slot {
-    width:50px;
-    height:70px;
-    border:2px dashed rgba(255,255,255,0.3);
-    border-radius:6px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:2em;
-  }
-  
-  .track-slot.filled {
-    border:none;
-  }
-  
-  .track-slot.loyalist {
-    background:linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
-  }
-  
-  .track-slot.spy {
-    background:linear-gradient(135deg, #f44336 0%, #c62828 100%);
-  }
-  
-  .log {
-    background:rgba(0,0,0,0.3);
-    padding:15px;
-    border-radius:8px;
-    max-height:200px;
-    overflow-y:auto;
-    font-size:14px;
-  }
-  
-  .log-entry {
-    margin:5px 0;
-    padding:5px;
-    border-left:3px solid #4CAF50;
-    padding-left:10px;
-  }
-  
-  .vote-section {
-    text-align:center;
-    margin:20px 0;
-  }
-  
-  .vote-buttons {
-    display:flex;
-    gap:20px;
-    justify-content:center;
-    margin-top:15px;
-  }
-  
-  .vote-button {
-    padding:20px 40px;
-    font-size:1.2em;
-    border-radius:12px;
-  }
-  
-  .hidden { display:none !important; }
-  
-  .info-box {
-    background:rgba(33,150,243,0.2);
-    border-left:4px solid #2196F3;
-    padding:15px;
-    margin:15px 0;
-    border-radius:4px;
-  }
-  
-  .warning-box {
-    background:rgba(255,152,0,0.2);
-    border-left:4px solid #FF9800;
-    padding:15px;
-    margin:15px 0;
-    border-radius:4px;
-  }
-  
-  .success-box {
-    background:rgba(76,175,80,0.2);
-    border-left:4px solid #4CAF50;
-    padding:15px;
-    margin:15px 0;
-    border-radius:4px;
-  }
-  
-  #playerIdDisplay {
-    text-align:center;
-    font-size:0.9em;
-    opacity:0.8;
-    margin-bottom:20px;
-  }
-</style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a472a 0%, #2d5016 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
 
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #4a7c59;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            margin-bottom: 10px;
+        }
+
+        .settings-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        .settings-btn:hover {
+            background: #c82333;
+        }
+
+        .stats-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #4a7c59;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            color: #ffd700;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .progress-bar {
+            background: rgba(0, 0, 0, 0.5);
+            height: 20px;
+            border-radius: 10px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #4a7c59, #6ba36f);
+            height: 100%;
+            transition: width 0.5s;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 25px;
+            border-radius: 10px;
+            border: 2px solid #4a7c59;
+        }
+
+        .panel h2 {
+            color: #ffd700;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #4a7c59;
+            padding-bottom: 10px;
+        }
+
+        .mission-btn {
+            width: 100%;
+            padding: 20px;
+            font-size: 1.2em;
+            background: linear-gradient(135deg, #28a745, #20863a);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .mission-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .mission-btn:disabled {
+            background: #555;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .mission-cooldown {
+            text-align: center;
+            color: #ffd700;
+            margin-top: 10px;
+            font-size: 1.1em;
+        }
+
+        .unit-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: 1px solid #4a7c59;
+        }
+
+        .unit-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .unit-name {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .unit-count {
+            background: #4a7c59;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        .unit-stats {
+            font-size: 0.9em;
+            color: #ccc;
+            margin-bottom: 10px;
+        }
+
+        .buy-btn {
+            width: 100%;
+            padding: 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .buy-btn:hover:not(:disabled) {
+            background: #0056b3;
+        }
+
+        .buy-btn:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+
+        .rank-up-btn {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2em;
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .rank-up-btn:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(255, 215, 0, 0.5);
+        }
+
+        .rank-up-btn:disabled {
+            background: #555;
+            color: #999;
+            cursor: not-allowed;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #2d5016;
+            padding: 30px;
+            border-radius: 10px;
+            border: 3px solid #4a7c59;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .modal-content h2 {
+            color: #ffd700;
+            margin-bottom: 20px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .confirm-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .cancel-btn {
+            background: #6c757d;
+            color: white;
+        }
+
+        .notification {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: rgba(40, 167, 69, 0.95);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            border: 2px solid #28a745;
+            display: none;
+            z-index: 999;
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .locked {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .locked::after {
+            content: " 🔒";
+        }
+    </style>
 </head>
 <body>
-
-<div class="container">
-  <h1>🕵️ Secret Spy 🕵️</h1>
-  <div id="playerIdDisplay"></div>
-  
-  <!-- Lobby Screen -->
-  <div id="lobbyScreen">
-    <div class="card">
-      <h2>Join or Create Game</h2>
-      <div>
-        <input id="playerNameInput" placeholder="Your Name" maxlength="20">
-        <input id="roomCodeInput" placeholder="Room Code (4 chars)" maxlength="4" style="text-transform:uppercase;">
-      </div>
-      <div>
-        <button id="createRoomBtn" class="primary">Create Room</button>
-        <button id="joinRoomBtn" class="primary">Join Room</button>
-      </div>
-    </div>
-    
-    <div class="card">
-      <h3>How to Play</h3>
-      <p><strong>Goal:</strong> Loyalists try to pass 5 Loyalist policies. Spies try to pass 6 Spy policies or assassinate the Secret Spy.</p>
-      <p><strong>Roles:</strong></p>
-      <ul>
-        <li><strong>Loyalists:</strong> Don't know each other, must deduce who to trust</li>
-        <li><strong>Spies:</strong> Know each other (except Secret Spy), work together secretly</li>
-        <li><strong>Secret Spy:</strong> Special spy that Loyalists must protect</li>
-      </ul>
-      <p><strong>Gameplay:</strong> Each round, a President nominates a Chancellor. Players vote. If approved, they pass policies from a random draw.</p>
-    </div>
-  </div>
-  
-  <!-- Waiting Room -->
-  <div id="waitingScreen" class="hidden">
-    <div class="card">
-      <h2>Room: <span id="roomCodeDisplay"></span></h2>
-      <div class="info-box">
-        <strong>Players in lobby:</strong>
-        <div id="lobbyPlayers" class="player-list"></div>
-      </div>
-      <div style="text-align:center; margin-top:20px;">
-        <button id="startGameBtn" class="hidden" style="font-size:1.2em; padding:15px 40px;">Start Game (5-10 players)</button>
-        <button id="leaveRoomBtn" class="danger">Leave Room</button>
-      </div>
-    </div>
-  </div>
-  
-  <!-- Game Screen -->
-  <div id="gameScreen" class="hidden">
-    <div class="card">
-      <h2>Room: <span id="gameRoomCode"></span></h2>
-      
-      <!-- Role Display -->
-      <div id="roleDisplay"></div>
-      
-      <!-- Game Board -->
-      <div class="board">
-        <div class="policy-track">
-          <div class="track-title" style="color:#4CAF50;">✓ Loyalist Policies</div>
-          <div class="track-slots" id="loyalistTrack">
-            <div class="track-slot" data-index="0"></div>
-            <div class="track-slot" data-index="1"></div>
-            <div class="track-slot" data-index="2"></div>
-            <div class="track-slot" data-index="3"></div>
-            <div class="track-slot" data-index="4"></div>
-          </div>
-        </div>
+    <div class="container">
+        <button class="settings-btn" onclick="openSettings()">⚙️ Settings</button>
         
-        <div class="policy-track">
-          <div class="track-title" style="color:#f44336;">✗ Spy Policies</div>
-          <div class="track-slots" id="spyTrack">
-            <div class="track-slot" data-index="0"></div>
-            <div class="track-slot" data-index="1"></div>
-            <div class="track-slot" data-index="2"></div>
-            <div class="track-slot" data-index="3"></div>
-            <div class="track-slot" data-index="4"></div>
-            <div class="track-slot" data-index="5"></div>
-          </div>
+        <header>
+            <h1>🎖️ Military Rank Builder</h1>
+            <p>Complete missions, earn points, and rise through the ranks!</p>
+        </header>
+
+        <div class="stats-panel">
+            <div class="stat-card">
+                <h3>Current Rank</h3>
+                <div class="stat-value" id="currentRank">Private</div>
+            </div>
+            <div class="stat-card">
+                <h3>Points</h3>
+                <div class="stat-value" id="points">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Missions</h3>
+                <div class="stat-value" id="totalMissions">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Combat Power</h3>
+                <div class="stat-value" id="combatPower">1</div>
+            </div>
         </div>
-      </div>
-      
-      <!-- Game Status -->
-      <div id="gameStatus" class="info-box"></div>
-      
-      <!-- President Actions -->
-      <div id="presidentNomination" class="card hidden">
-        <h3>You are President! Nominate a Chancellor</h3>
-        <div id="nominationPlayers" class="player-list"></div>
-        <button id="nominateBtn" class="primary" disabled>Nominate Selected Player</button>
-      </div>
-      
-      <!-- Voting -->
-      <div id="votingSection" class="card hidden">
-        <h3 id="votingPrompt"></h3>
-        <div class="vote-section">
-          <div class="vote-buttons">
-            <button id="voteYesBtn" class="vote-button" style="background:#4CAF50;">👍 JA (Yes)</button>
-            <button id="voteNoBtn" class="vote-button danger">👎 NEIN (No)</button>
-          </div>
+
+        <div class="main-content">
+            <div class="panel">
+                <h2>⚔️ Missions</h2>
+                <button class="mission-btn" id="missionBtn" onclick="startMission()">
+                    Start Mission
+                </button>
+                <div class="mission-cooldown" id="cooldown"></div>
+                <div id="missionResult"></div>
+            </div>
+
+            <div class="panel">
+                <h2>⬆️ Rank Progression</h2>
+                <div style="margin-bottom: 15px;">
+                    <strong>Next Rank:</strong> <span id="nextRank">Corporal</span>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <strong>Cost:</strong> <span id="rankCost">100</span> points
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="rankProgress" style="width: 0%"></div>
+                </div>
+                <button class="rank-up-btn" id="rankUpBtn" onclick="rankUp()">
+                    Promote to <span id="rankUpText">Corporal</span>
+                </button>
+            </div>
         </div>
-      </div>
-      
-      <!-- Policy Selection (President) -->
-      <div id="presidentPolicySelect" class="card hidden">
-        <h3>President: Choose 2 policies to pass to Chancellor</h3>
-        <div id="presidentPolicies" class="policy-cards"></div>
-        <button id="presidentPassBtn" class="primary" disabled>Pass to Chancellor</button>
-      </div>
-      
-      <!-- Policy Selection (Chancellor) -->
-      <div id="chancellorPolicySelect" class="card hidden">
-        <h3>Chancellor: Choose 1 policy to enact</h3>
-        <div id="chancellorPolicies" class="policy-cards"></div>
-        <button id="chancellorEnactBtn" class="primary" disabled>Enact Policy</button>
-      </div>
-      
-      <!-- Executive Action -->
-      <div id="executiveAction" class="card hidden">
-        <h3 id="executiveActionTitle"></h3>
-        <div id="executivePlayers" class="player-list"></div>
-        <button id="executeActionBtn" class="primary" disabled>Confirm Action</button>
-      </div>
-      
-      <!-- Players -->
-      <div class="card">
-        <h3>Players</h3>
-        <div id="gamePlayers" class="player-list"></div>
-      </div>
-      
-      <!-- Game Log -->
-      <div class="card">
-        <h3>Game Log</h3>
-        <div id="gameLog" class="log"></div>
-      </div>
-      
-      <div style="text-align:center; margin-top:20px;">
-        <button id="leaveGameBtn" class="danger">Leave Game</button>
-      </div>
+
+        <div class="panel">
+            <h2>🪖 Unit Shop</h2>
+            <div id="unitShop"></div>
+        </div>
     </div>
-  </div>
-  
-  <!-- Game Over Screen -->
-  <div id="gameOverScreen" class="hidden">
-    <div class="card">
-      <h2 id="gameOverTitle"></h2>
-      <div id="gameOverMessage" class="role-card"></div>
-      <div id="finalRoles" class="card"></div>
-      <div style="text-align:center; margin-top:20px;">
-        <button id="newGameBtn" class="primary" style="font-size:1.2em; padding:15px 40px;">New Game</button>
-      </div>
+
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <h2>⚙️ Settings</h2>
+            <p>Are you sure you want to reset your game?</p>
+            <p style="color: #ff6b6b; margin-top: 10px;">This will delete all progress!</p>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel-btn" onclick="closeSettings()">Cancel</button>
+                <button class="modal-btn confirm-btn" onclick="resetGame()">Reset Game</button>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
 
-<script>
-/* ---------------- Firebase Setup ---------------- */
-const firebaseConfig = {
-  apiKey: "AIzaSyDVbt_8GuRuHJRPAN7jFXXbs_lJUfUHNxHE",
-  authDomain: "chummy-games.firebaseapp.com",
-  databaseURL: "https://chummy-games-default-rtdb.firebaseio.com",
-  projectId: "chummy-games",
-  storageBucket: "chummy-games.firebasestorage.app",
-  messagingSenderId: "869241598273",
-  appId: "1:869241598273:web:d97492b7308f785c37f1c0"
-};
+    <div class="notification" id="notification"></div>
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { getDatabase, ref, set, get, onValue } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js';
 
-/* ---------------- Player ID Management ---------------- */
-function getOrCreatePCID() {
-  const storageKey = 'ChummyGames-PC-ID';
-  let pcID = localStorage.getItem(storageKey);
-  
-  if (!pcID || pcID.length !== 12) {
-    pcID = generateCode(12);
-    localStorage.setItem(storageKey, pcID);
-  }
-  return pcID;
-}
+        const firebaseConfig = {
+            apiKey: "AIzaSyDVbt_8GuRuHJRPAN7jFXbs_lJUfUHNxHE",
+            authDomain: "chummy-games.firebaseapp.com",
+            databaseURL: "https://chummy-games-default-rtdb.firebaseio.com",
+            projectId: "chummy-games",
+            storageBucket: "chummy-games.firebasestorage.app",
+            messagingSenderId: "869241598273",
+            appId: "1:869241598273:web:d97492b7308f785c37f1c0"
+        };
 
-function generateCode(length) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  return Array.from({ length }, () => 
-    chars[Math.floor(Math.random() * chars.length)]
-  ).join('');
-}
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
 
-const myPCID = getOrCreatePCID();
-let roomCode = null;
-let roomRef = null;
-let gameRef = null;
-let myPlayerData = null;
-
-document.getElementById('playerIdDisplay').textContent = `Your ID: ${myPCID}`;
-
-/* ---------------- Game Constants ---------------- */
-const ROLE_DISTRIBUTION = {
-  5: { loyalists: 3, spies: 1, secretSpy: 1 },
-  6: { loyalists: 4, spies: 1, secretSpy: 1 },
-  7: { loyalists: 4, spies: 2, secretSpy: 1 },
-  8: { loyalists: 5, spies: 2, secretSpy: 1 },
-  9: { loyalists: 5, spies: 3, secretSpy: 1 },
-  10: { loyalists: 6, spies: 3, secretSpy: 1 }
-};
-
-/* ---------------- UI References ---------------- */
-const lobbyScreen = document.getElementById('lobbyScreen');
-const waitingScreen = document.getElementById('waitingScreen');
-const gameScreen = document.getElementById('gameScreen');
-const gameOverScreen = document.getElementById('gameOverScreen');
-
-const playerNameInput = document.getElementById('playerNameInput');
-const roomCodeInput = document.getElementById('roomCodeInput');
-const createRoomBtn = document.getElementById('createRoomBtn');
-const joinRoomBtn = document.getElementById('joinRoomBtn');
-const startGameBtn = document.getElementById('startGameBtn');
-const leaveRoomBtn = document.getElementById('leaveRoomBtn');
-const leaveGameBtn = document.getElementById('leaveGameBtn');
-
-/* ---------------- Create Room ---------------- */
-createRoomBtn.onclick = async () => {
-  const playerName = playerNameInput.value.trim();
-  if (!playerName) return alert('Please enter your name');
-  
-  roomCode = generateCode(4);
-  roomRef = db.ref(`secretSpy/rooms/${roomCode}`);
-  
-  await roomRef.set({
-    host: myPCID,
-    status: 'waiting',
-    createdAt: Date.now(),
-    players: {
-      [myPCID]: {
-        name: playerName,
-        id: myPCID,
-        connected: true,
-        joinedAt: Date.now()
-      }
-    }
-  });
-  
-  joinRoom(roomCode, playerName);
-};
-
-/* ---------------- Join Room ---------------- */
-joinRoomBtn.onclick = async () => {
-  const playerName = playerNameInput.value.trim();
-  const code = roomCodeInput.value.trim().toUpperCase();
-  
-  if (!playerName) return alert('Please enter your name');
-  if (!code || code.length !== 4) return alert('Please enter a 4-character room code');
-  
-  const snapshot = await db.ref(`secretSpy/rooms/${code}`).once('value');
-  if (!snapshot.exists()) return alert('Room not found!');
-  
-  const room = snapshot.val();
-  if (room.status !== 'waiting') return alert('Game already in progress!');
-  
-  const playerCount = Object.keys(room.players || {}).length;
-  if (playerCount >= 10) return alert('Room is full!');
-  
-  await db.ref(`secretSpy/rooms/${code}/players/${myPCID}`).set({
-    name: playerName,
-    id: myPCID,
-    connected: true,
-    joinedAt: Date.now()
-  });
-  
-  joinRoom(code, playerName);
-};
-
-function joinRoom(code, playerName) {
-  roomCode = code;
-  roomRef = db.ref(`secretSpy/rooms/${roomCode}`);
-  
-  myPlayerData = {
-    name: playerName,
-    id: myPCID
-  };
-  
-  lobbyScreen.classList.add('hidden');
-  waitingScreen.classList.remove('hidden');
-  document.getElementById('roomCodeDisplay').textContent = roomCode;
-  
-  // Listen to room changes
-  roomRef.on('value', handleRoomUpdate);
-  
-  // Handle disconnect
-  const playerRef = roomRef.child(`players/${myPCID}`);
-  playerRef.onDisconnect().remove();
-}
-
-/* ---------------- Handle Room Updates ---------------- */
-function handleRoomUpdate(snapshot) {
-  const room = snapshot.val();
-  if (!room) {
-    returnToLobby();
-    return;
-  }
-  
-  const players = room.players || {};
-  const playerCount = Object.keys(players).length;
-  
-  // Update lobby players
-  const lobbyPlayersDiv = document.getElementById('lobbyPlayers');
-  lobbyPlayersDiv.innerHTML = '';
-  
-  Object.values(players).forEach(player => {
-    const div = document.createElement('div');
-    div.className = 'player-card';
-    div.innerHTML = `<div class="player-name">${player.name}</div>`;
-    if (player.id === room.host) {
-      div.innerHTML += '<div class="player-role">👑 Host</div>';
-    }
-    lobbyPlayersDiv.appendChild(div);
-  });
-  
-  // Show start button if host and enough players
-  if (room.host === myPCID && playerCount >= 5 && playerCount <= 10) {
-    startGameBtn.classList.remove('hidden');
-  } else {
-    startGameBtn.classList.add('hidden');
-  }
-  
-  // Check if game started
-  if (room.status === 'playing') {
-    startGame();
-  }
-}
-
-/* ---------------- Start Game ---------------- */
-startGameBtn.onclick = async () => {
-  const snapshot = await roomRef.once('value');
-  const room = snapshot.val();
-  const players = Object.values(room.players);
-  const playerCount = players.length;
-  
-  // Assign roles
-  const roles = assignRoles(playerCount);
-  const shuffledPlayers = shuffleArray([...players]);
-  
-  const gameState = {
-    status: 'playing',
-    phase: 'nomination',
-    round: 1,
-    presidentIndex: 0,
-    failedVotes: 0,
-    loyalistPolicies: 0,
-    spyPolicies: 0,
-    deck: shuffleDeck(),
-    discard: [],
-    players: {},
-    log: [],
-    currentPresident: shuffledPlayers[0].id,
-    currentChancellor: null,
-    lastPresident: null,
-    lastChancellor: null,
-    votes: {},
-    selectedPolicies: [],
-    nominatedChancellor: null
-  };
-  
-  // Assign roles to players
-  shuffledPlayers.forEach((player, index) => {
-    gameState.players[player.id] = {
-      ...player,
-      role: roles[index],
-      alive: true,
-      investigated: false
-    };
-  });
-  
-  // Add initial log
-  gameState.log.push({
-    time: Date.now(),
-    message: 'Game started! Good luck!'
-  });
-  
-  await roomRef.update({ status: 'playing' });
-  gameRef = db.ref(`secretSpy/games/${roomCode}`);
-  await gameRef.set(gameState);
-};
-
-function assignRoles(playerCount) {
-  const dist = ROLE_DISTRIBUTION[playerCount];
-  const roles = [
-    ...Array(dist.loyalists).fill('loyalist'),
-    ...Array(dist.spies).fill('spy'),
-    'secretSpy'
-  ];
-  return shuffleArray(roles);
-}
-
-function shuffleDeck() {
-  const deck = [
-    ...Array(6).fill('loyalist'),
-    ...Array(11).fill('spy')
-  ];
-  return shuffleArray(deck);
-}
-
-function shuffleArray(array) {
-  const arr = [...array];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
-/* ---------------- Start Game View ---------------- */
-function startGame() {
-  waitingScreen.classList.add('hidden');
-  gameScreen.classList.remove('hidden');
-  document.getElementById('gameRoomCode').textContent = roomCode;
-  
-  gameRef = db.ref(`secretSpy/games/${roomCode}`);
-  gameRef.on('value', handleGameUpdate);
-}
-
-/* ---------------- Handle Game Updates ---------------- */
-let currentGameState = null;
-
-function handleGameUpdate(snapshot) {
-  const game = snapshot.val();
-  if (!game) return;
-  
-  currentGameState = game;
-  const myPlayer = game.players[myPCID];
-  
-  if (!myPlayer) return;
-  
-  // Display role
-  displayRole(myPlayer, game.players);
-  
-  // Update board
-  updateBoard(game);
-  
-  // Update game status
-  updateGameStatus(game, myPlayer);
-  
-  // Update players display
-  updatePlayersDisplay(game);
-  
-  // Update game log
-  updateGameLog(game.log || []);
-  
-  // Handle phases
-  handleGamePhase(game, myPlayer);
-  
-  // Check win conditions
-  checkWinConditions(game);
-}
-
-function displayRole(myPlayer, allPlayers) {
-  const roleDisplay = document.getElementById('roleDisplay');
-  
-  let roleHTML = '';
-  
-  if (myPlayer.role === 'loyalist') {
-    roleHTML = `
-      <div class="role-card loyalist">
-        <div>Your Role: LOYALIST ✓</div>
-        <div style="font-size:0.7em; margin-top:10px;">Pass 5 Loyalist policies to win!</div>
-      </div>
-    `;
-  } else if (myPlayer.role === 'spy') {
-    const otherSpies = Object.values(allPlayers).filter(p => 
-      p.role === 'spy' && p.id !== myPCID
-    ).map(p => p.name);
-    
-    roleHTML = `
-      <div class="role-card spy">
-        <div>Your Role: SPY ✗</div>
-        <div style="font-size:0.7em; margin-top:10px;">Pass 6 Spy policies or kill the Secret Spy!</div>
-        ${otherSpies.length > 0 ? `<div style="font-size:0.6em; margin-top:10px;">Fellow Spies: ${otherSpies.join(', ')}</div>` : ''}
-      </div>
-    `;
-  } else if (myPlayer.role === 'secretSpy') {
-    roleHTML = `
-      <div class="role-card secret-spy">
-        <div>Your Role: SECRET SPY 👑</div>
-        <div style="font-size:0.7em; margin-top:10px;">You're a spy but other spies don't know you!</div>
-        <div style="font-size:0.7em;">If you're killed by execution, spies win!</div>
-      </div>
-    `;
-  }
-  
-  roleDisplay.innerHTML = roleHTML;
-}
-
-function updateBoard(game) {
-  // Update loyalist track
-  const loyalistTrack = document.getElementById('loyalistTrack');
-  loyalistTrack.querySelectorAll('.track-slot').forEach((slot, index) => {
-    if (index < game.loyalistPolicies) {
-      slot.classList.add('filled', 'loyalist');
-      slot.textContent = '✓';
-    } else {
-      slot.classList.remove('filled', 'loyalist');
-      slot.textContent = '';
-    }
-  });
-  
-  // Update spy track
-  const spyTrack = document.getElementById('spyTrack');
-  spyTrack.querySelectorAll('.track-slot').forEach((slot, index) => {
-    if (index < game.spyPolicies) {
-      slot.classList.add('filled', 'spy');
-      slot.textContent = '✗';
-    } else {
-      slot.classList.remove('filled', 'spy');
-      slot.textContent = '';
-    }
-  });
-}
-
-function updateGameStatus(game, myPlayer) {
-  const statusDiv = document.getElementById('gameStatus');
-  const president = game.players[game.currentPresident];
-  const chancellor = game.currentChancellor ? game.players[game.currentChancellor] : null;
-  
-  let statusText = `<strong>Round ${game.round}</strong><br>`;
-  statusText += `President: ${president.name}`;
-  if (chancellor) {
-    statusText += ` | Chancellor: ${chancellor.name}`;
-  }
-  statusText += `<br>Phase: ${game.phase}`;
-  
-  if (game.failedVotes > 0) {
-    statusText += ` | Failed votes: ${game.failedVotes}/3`;
-  }
-  
-  statusDiv.innerHTML = statusText;
-}
-
-function updatePlayersDisplay(game) {
-  const playersDiv = document.getElementById('gamePlayers');
-  playersDiv.innerHTML = '';
-  
-  Object.values(game.players).forEach(player => {
-    const div = document.createElement('div');
-    div.className = 'player-card';
-    
-    if (player.id === game.currentPresident) {
-      div.classList.add('president');
-    }
-    if (player.id === game.currentChancellor) {
-      div.classList.add('chancellor');
-    }
-    if (!player.alive) {
-      div.classList.add('dead');
-    }
-    
-    let html = `<div class="player-name">${player.name}</div>`;
-    
-    if (player.id === game.currentPresident) {
-      html += '<div class="player-role">📜 President</div>';
-    }
-    if (player.id === game.currentChancellor) {
-      html += '<div class="player-role">🏛️ Chancellor</div>';
-    }
-    if (!player.alive) {
-      html += '<div class="player-role">💀 Dead</div>';
-    }
-    
-    div.innerHTML = html;
-    playersDiv.appendChild(div);
-  });
-}
-
-function updateGameLog(log) {
-  const logDiv = document.getElementById('gameLog');
-  logDiv.innerHTML = '';
-  
-  [...log].reverse().slice(0, 20).forEach(entry => {
-    const div = document.createElement('div');
-    div.className = 'log-entry';
-    div.textContent = entry.message;
-    logDiv.appendChild(div);
-  });
-}
-
-/* ---------------- Game Phase Handling ---------------- */
-function handleGamePhase(game, myPlayer) {
-  // Hide all action sections
-  document.getElementById('presidentNomination').classList.add('hidden');
-  document.getElementById('votingSection').classList.add('hidden');
-  document.getElementById('presidentPolicySelect').classList.add('hidden');
-  document.getElementById('chancellorPolicySelect').classList.add('hidden');
-  document.getElementById('executiveAction').classList.add('hidden');
-  
-  if (game.phase === 'nomination' && game.currentPresident === myPCID) {
-    showPresidentNomination(game);
-  } else if (game.phase === 'voting') {
-    showVoting(game);
-  } else if (game.phase === 'presidentPolicy' && game.currentPresident === myPCID) {
-    showPresidentPolicySelect(game);
-  } else if (game.phase === 'chancellorPolicy' && game.currentChancellor === myPCID) {
-    showChancellorPolicySelect(game);
-  } else if (game.phase === 'executiveAction' && game.currentPresident === myPCID) {
-    showExecutiveAction(game);
-  }
-}
-
-/* ---------------- President Nomination ---------------- */
-let selectedNominee = null;
-
-function showPresidentNomination(game) {
-  document.getElementById('presidentNomination').classList.remove('hidden');
-  
-  const playersDiv = document.getElementById('nominationPlayers');
-  playersDiv.innerHTML = '';
-  selectedNominee = null;
-  
-  Object.values(game.players).forEach(player => {
-    if (player.id === myPCID || !player.alive) return;
-    
-    // Can't nominate last government
-    if (Object.keys(game.players).length > 5) {
-      if (player.id === game.lastChancellor) return;
-      if (player.id === game.lastPresident && game.lastChancellor) return;
-    } else {
-      if (player.id === game.lastChancellor) return;
-    }
-    
-    const div = document.createElement('div');
-    div.className = 'player-card';
-    div.innerHTML = `<div class="player-name">${player.name}</div>`;
-    div.onclick = () => {
-      playersDiv.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
-      div.classList.add('selected');
-      selectedNominee = player.id;
-      document.getElementById('nominateBtn').disabled = false;
-    };
-    playersDiv.appendChild(div);
-  });
-}
-
-document.getElementById('nominateBtn').onclick = async () => {
-  if (!selectedNominee) return;
-  
-  await gameRef.update({
-    nominatedChancellor: selectedNominee,
-    phase: 'voting',
-    votes: {}
-  });
-  
-  await addLog(`${currentGameState.players[myPCID].name} nominated ${currentGameState.players[selectedNominee].name} for Chancellor`);
-};
-
-/* ---------------- Voting ---------------- */
-function showVoting(game) {
-  document.getElementById('votingSection').classList.remove('hidden');
-  
-  const president = game.players[game.currentPresident];
-  const nominee = game.players[game.nominatedChancellor];
-  
-  document.getElementById('votingPrompt').textContent = 
-    `${president.name} nominated ${nominee.name} for Chancellor`;
-  
-  // Check if already voted
-  if (game.votes && game.votes[myPCID] !== undefined) {
-    document.getElementById('voteYesBtn').disabled = true;
-    document.getElementById('voteNoBtn').disabled = true;
-  } else {
-    document.getElementById('voteYesBtn').disabled = false;
-    document.getElementById('voteNoBtn').disabled = false;
-  }
-}
-
-document.getElementById('voteYesBtn').onclick = () => castVote(true);
-document.getElementById('voteNoBtn').onclick = () => castVote(false);
-
-async function castVote(vote) {
-  await gameRef.child(`votes/${myPCID}`).set(vote);
-  
-  document.getElementById('voteYesBtn').disabled = true;
-  document.getElementById('voteNoBtn').disabled = true;
-  
-  // Check if all players voted
-  setTimeout(checkVotingComplete, 500);
-}
-
-async function checkVotingComplete() {
-  const snapshot = await gameRef.once('value');
-  const game = snapshot.val();
-  
-  const alivePlayers = Object.values(game.players).filter(p => p.alive);
-  const votes = game.votes || {};
-  
-  if (Object.keys(votes).length === alivePlayers.length) {
-    // Count votes
-    const yesVotes = Object.values(votes).filter(v => v).length;
-    const noVotes = Object.values(votes).filter(v => !v).length;
-    
-    if (yesVotes > noVotes) {
-      // Government elected
-      await gameRef.update({
-        currentChancellor: game.nominatedChancellor,
-        phase: 'presidentPolicy',
-        failedVotes: 0,
-        lastPresident: game.currentPresident,
-        lastChancellor: game.nominatedChancellor
-      });
-      
-      await addLog(`Vote passed! ${yesVotes} Ja, ${noVotes} Nein`);
-      
-      // Draw 3 policies
-      const newDeck = [...game.deck];
-      const drawnPolicies = newDeck.splice(0, 3);
-      
-      await gameRef.update({
-        deck: newDeck,
-        selectedPolicies: drawnPolicies
-      });
-      
-    } else {
-      // Government rejected
-      const newFailedVotes = game.failedVotes + 1;
-      
-      await addLog(`Vote failed! ${yesVotes} Ja, ${noVotes} Nein`);
-      
-      if (newFailedVotes >= 3) {
-        // Chaos - enact top policy
-        const newDeck = [...game.deck];
-        const topPolicy = newDeck.shift();
-        
-        await addLog(`CHAOS! Top policy enacted: ${topPolicy === 'loyalist' ? 'Loyalist ✓' : 'Spy ✗'}`);
-        
-        if (topPolicy === 'loyalist') {
-          await gameRef.update({
-            loyalistPolicies: game.loyalistPolicies + 1,
-            deck: newDeck,
-            failedVotes: 0
-          });
-        } else {
-          await gameRef.update({
-            spyPolicies: game.spyPolicies + 1,
-            deck: newDeck,
-            failedVotes: 0
-          });
+        function getOrCreatePCID() {
+            const storageKey = 'ChummyGames-PC-ID';
+            let pcID = localStorage.getItem(storageKey);
+            
+            if (!pcID || pcID.length !== 12) {
+                pcID = generateCode(12);
+                localStorage.setItem(storageKey, pcID);
+            }
+            return pcID;
         }
-        
-        nextRound();
-      } else {
-        await gameRef.update({
-          failedVotes: newFailedVotes
-        });
-        
-        nextRound();
-      }
-    }
-  }
-}
 
-/* ---------------- Policy Selection ---------------- */
-let selectedPolicies = [];
+        function generateCode(length) {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            return Array.from({ length }, () => 
+                chars[Math.floor(Math.random() * chars.length)]
+            ).join('');
+        }
 
-function showPresidentPolicySelect(game) {
-  document.getElementById('presidentPolicySelect').classList.remove('hidden');
-  
-  const policiesDiv = document.getElementById('presidentPolicies');
-  policiesDiv.innerHTML = '';
-  selectedPolicies = [];
-  
-  game.selectedPolicies.forEach((policy, index) => {
-    const div = document.createElement('div');
-    div.className = `policy-card ${policy}-policy`;
-    div.textContent = policy === 'loyalist' ? '✓' : '✗';
-    div.onclick = () => {
-      if (selectedPolicies.includes(index)) {
-        selectedPolicies = selectedPolicies.filter(i => i !== index);
-        div.classList.remove('selected');
-      } else if (selectedPolicies.length < 2) {
-        selectedPolicies.push(index);
-        div.classList.add('selected');
-      }
-      
-      document.getElementById('presidentPassBtn').disabled = selectedPolicies.length !== 2;
-    };
-    policiesDiv.appendChild(div);
-  });
-}
+        const pcID = getOrCreatePCID();
+        const gameRef = ref(database, `militaryRankBuilder/${pcID}`);
 
-document.getElementById('presidentPassBtn').onclick = async () => {
-  const game = currentGameState;
-  const keptPolicies = selectedPolicies.map(i => game.selectedPolicies[i]);
-  const discardedPolicy = game.selectedPolicies.find((p, i) => !selectedPolicies.includes(i));
-  
-  await gameRef.update({
-    selectedPolicies: keptPolicies,
-    discard: [...game.discard, discardedPolicy],
-    phase: 'chancellorPolicy'
-  });
-  
-  await addLog('President passed 2 policies to Chancellor');
-};
+        const RANKS = [
+            { name: 'Private', cost: 0, unlocks: ['rifleman'] },
+            { name: 'Corporal', cost: 100, unlocks: ['rifleman', 'medic'] },
+            { name: 'Sergeant', cost: 300, unlocks: ['rifleman', 'medic', 'sniper'] },
+            { name: 'Lieutenant', cost: 750, unlocks: ['rifleman', 'medic', 'sniper', 'engineer'] },
+            { name: 'Captain', cost: 1500, unlocks: ['rifleman', 'medic', 'sniper', 'engineer', 'scout'] },
+            { name: 'Major', cost: 3000, unlocks: ['rifleman', 'medic', 'sniper', 'engineer', 'scout', 'heavyGunner'] },
+            { name: 'Colonel', cost: 6000, unlocks: ['rifleman', 'medic', 'sniper', 'engineer', 'scout', 'heavyGunner', 'specialist'] },
+            { name: 'General', cost: 12000, unlocks: ['rifleman', 'medic', 'sniper', 'engineer', 'scout', 'heavyGunner', 'specialist', 'commando'] }
+        ];
 
-function showChancellorPolicySelect(game) {
-  document.getElementById('chancellorPolicySelect').classList.remove('hidden');
-  
-  const policiesDiv = document.getElementById('chancellorPolicies');
-  policiesDiv.innerHTML = '';
-  let selectedPolicy = null;
-  
-  game.selectedPolicies.forEach((policy, index) => {
-    const div = document.createElement('div');
-    div.className = `policy-card ${policy}-policy`;
-    div.textContent = policy === 'loyalist' ? '✓' : '✗';
-    div.onclick = () => {
-      policiesDiv.querySelectorAll('.policy-card').forEach(c => c.classList.remove('selected'));
-      div.classList.add('selected');
-      selectedPolicy = index;
-      document.getElementById('chancellorEnactBtn').disabled = false;
-    };
-    policiesDiv.appendChild(div);
-  });
-  
-  document.getElementById('chancellorEnactBtn').onclick = async () => {
-    const enactedPolicy = game.selectedPolicies[selectedPolicy];
-    const discardedPolicy = game.selectedPolicies[1 - selectedPolicy];
-    
-    await addLog(`Chancellor enacted a ${enactedPolicy === 'loyalist' ? 'Loyalist ✓' : 'Spy ✗'} policy`);
-    
-    const updates = {
-      discard: [...game.discard, discardedPolicy],
-      selectedPolicies: []
-    };
-    
-    if (enactedPolicy === 'loyalist') {
-      updates.loyalistPolicies = game.loyalistPolicies + 1;
-      updates.phase = 'nomination';
-      nextRound();
-    } else {
-      updates.spyPolicies = game.spyPolicies + 1;
-      
-      // Check for executive action
-      const spyCount = game.spyPolicies + 1;
-      const playerCount = Object.keys(game.players).length;
-      
-      if ((playerCount <= 6 && spyCount === 3) || 
-          (playerCount <= 8 && (spyCount === 2 || spyCount === 3)) ||
-          (playerCount >= 9 && (spyCount === 1 || spyCount === 2 || spyCount === 3))) {
-        updates.phase = 'executiveAction';
-        updates.executiveActionType = getExecutiveAction(playerCount, spyCount);
-      } else {
-        updates.phase = 'nomination';
-        nextRound();
-      }
-    }
-    
-    await gameRef.update(updates);
-  };
-}
+        const UNITS = {
+            rifleman: { name: 'Rifleman', cost: 10, power: 1, description: 'Basic infantry unit' },
+            medic: { name: 'Medic', cost: 25, power: 0.5, description: 'Increases success chance by 5%' },
+            sniper: { name: 'Sniper', cost: 50, power: 3, description: 'High damage specialist' },
+            engineer: { name: 'Engineer', cost: 75, power: 1.5, description: 'Boosts points by 10%' },
+            scout: { name: 'Scout', cost: 100, power: 2, description: 'Reduces mission cooldown by 5%' },
+            heavyGunner: { name: 'Heavy Gunner', cost: 150, power: 5, description: 'Powerful combat unit' },
+            specialist: { name: 'Specialist', cost: 250, power: 4, description: 'Versatile elite unit' },
+            commando: { name: 'Commando', cost: 500, power: 10, description: 'Elite special forces' }
+        };
 
-function getExecutiveAction(playerCount, spyPolicies) {
-  if (playerCount <= 6) {
-    if (spyPolicies === 3) return 'investigate';
-  } else if (playerCount <= 8) {
-    if (spyPolicies === 2) return 'investigate';
-    if (spyPolicies === 3) return 'execution';
-  } else {
-    if (spyPolicies === 1 || spyPolicies === 2) return 'investigate';
-    if (spyPolicies === 3) return 'execution';
-  }
-  return null;
-}
+        let gameState = {
+            points: 0,
+            rankIndex: 0,
+            totalMissions: 0,
+            units: {},
+            lastMissionTime: 0
+        };
 
-/* ---------------- Executive Actions ---------------- */
-let selectedExecutiveTarget = null;
+        // Initialize game state
+        async function initGame() {
+            const snapshot = await get(gameRef);
+            if (snapshot.exists()) {
+                gameState = snapshot.val();
+            } else {
+                await saveGame();
+            }
+            updateUI();
+            startCooldownTimer();
+        }
 
-function showExecutiveAction(game) {
-  document.getElementById('executiveAction').classList.remove('hidden');
-  
-  const actionType = game.executiveActionType;
-  let title = '';
-  
-  if (actionType === 'investigate') {
-    title = 'Investigate a player\'s loyalty';
-  } else if (actionType === 'execution') {
-    title = 'Execute a player';
-  }
-  
-  document.getElementById('executiveActionTitle').textContent = title;
-  
-  const playersDiv = document.getElementById('executivePlayers');
-  playersDiv.innerHTML = '';
-  selectedExecutiveTarget = null;
-  
-  Object.values(game.players).forEach(player => {
-    if (player.id === myPCID || !player.alive) return;
-    if (actionType === 'investigate' && player.investigated) return;
-    
-    const div = document.createElement('div');
-    div.className = 'player-card';
-    div.innerHTML = `<div class="player-name">${player.name}</div>`;
-    div.onclick = () => {
-      playersDiv.querySelectorAll('.player-card').forEach(c => c.classList.remove('selected'));
-      div.classList.add('selected');
-      selectedExecutiveTarget = player.id;
-      document.getElementById('executeActionBtn').disabled = false;
-    };
-    playersDiv.appendChild(div);
-  });
-}
+        async function saveGame() {
+            await set(gameRef, gameState);
+        }
 
-document.getElementById('executeActionBtn').onclick = async () => {
-  if (!selectedExecutiveTarget) return;
-  
-  const game = currentGameState;
-  const target = game.players[selectedExecutiveTarget];
-  
-  if (game.executiveActionType === 'investigate') {
-    const loyalty = target.role === 'loyalist' ? 'Loyalist' : 'Spy';
-    alert(`${target.name} is a ${loyalty}!`);
-    
-    await gameRef.child(`players/${selectedExecutiveTarget}`).update({ investigated: true });
-    await addLog(`President investigated ${target.name}`);
-    
-    nextRound();
-    
-  } else if (game.executiveActionType === 'execution') {
-    await gameRef.child(`players/${selectedExecutiveTarget}`).update({ alive: false });
-    await addLog(`President executed ${target.name}!`);
-    
-    // Check if Secret Spy was killed
-    if (target.role === 'secretSpy') {
-      await gameRef.update({
-        winner: 'spies',
-        phase: 'gameOver'
-      });
-      return;
-    }
-    
-    nextRound();
-  }
-};
+        function updateUI() {
+            document.getElementById('currentRank').textContent = RANKS[gameState.rankIndex].name;
+            document.getElementById('points').textContent = gameState.points;
+            document.getElementById('totalMissions').textContent = gameState.totalMissions;
+            
+            const combatPower = calculateCombatPower();
+            document.getElementById('combatPower').textContent = combatPower;
 
-/* ---------------- Helper Functions ---------------- */
-async function nextRound() {
-  const snapshot = await gameRef.once('value');
-  const game = snapshot.val();
-  
-  const alivePlayers = Object.values(game.players).filter(p => p.alive);
-  const currentPresidentIdx = alivePlayers.findIndex(p => p.id === game.currentPresident);
-  const nextPresidentIdx = (currentPresidentIdx + 1) % alivePlayers.length;
-  const nextPresident = alivePlayers[nextPresidentIdx].id;
-  
-  // Reshuffle if deck is low
-  let newDeck = [...game.deck];
-  if (newDeck.length < 3) {
-    newDeck = [...newDeck, ...game.discard];
-    newDeck = shuffleArray(newDeck);
-    await gameRef.update({ discard: [] });
-  }
-  
-  await gameRef.update({
-    round: game.round + 1,
-    currentPresident: nextPresident,
-    currentChancellor: null,
-    nominatedChancellor: null,
-    phase: 'nomination',
-    votes: {},
-    deck: newDeck
-  });
-}
+            updateRankProgress();
+            updateUnitShop();
+        }
 
-async function addLog(message) {
-  const snapshot = await gameRef.child('log').once('value');
-  const log = snapshot.val() || [];
-  
-  log.push({
-    time: Date.now(),
-    message: message
-  });
-  
-  await gameRef.child('log').set(log);
-}
+        function calculateCombatPower() {
+            let power = 1;
+            for (const [unitType, count] of Object.entries(gameState.units)) {
+                power += UNITS[unitType].power * count;
+            }
+            return Math.round(power);
+        }
 
-/* ---------------- Win Conditions ---------------- */
-function checkWinConditions(game) {
-  if (game.loyalistPolicies >= 5) {
-    endGame('loyalists', 'Loyalists win! 5 Loyalist policies passed! ✓');
-  } else if (game.spyPolicies >= 6) {
-    endGame('spies', 'Spies win! 6 Spy policies passed! ✗');
-  } else if (game.winner === 'spies') {
-    endGame('spies', 'Spies win! The Secret Spy was executed! 👑');
-  }
-}
+        function updateRankProgress() {
+            const nextRankIndex = gameState.rankIndex + 1;
+            if (nextRankIndex >= RANKS.length) {
+                document.getElementById('nextRank').textContent = 'MAX RANK';
+                document.getElementById('rankCost').textContent = '-';
+                document.getElementById('rankUpBtn').disabled = true;
+                document.getElementById('rankProgress').style.width = '100%';
+                return;
+            }
 
-async function endGame(winner, message) {
-  if (currentGameState.phase === 'gameOver') {
-    displayGameOver(winner, message);
-    return;
-  }
-  
-  await gameRef.update({
-    phase: 'gameOver',
-    winner: winner
-  });
-}
+            const nextRank = RANKS[nextRankIndex];
+            const cost = nextRank.cost;
+            const progress = Math.min((gameState.points / cost) * 100, 100);
 
-function displayGameOver(winner, message) {
-  gameScreen.classList.add('hidden');
-  gameOverScreen.classList.remove('hidden');
-  
-  const myPlayer = currentGameState.players[myPCID];
-  const didWin = (winner === 'loyalists' && myPlayer.role === 'loyalist') ||
-                 (winner === 'spies' && (myPlayer.role === 'spy' || myPlayer.role === 'secretSpy'));
-  
-  document.getElementById('gameOverTitle').textContent = didWin ? '🎉 Victory! 🎉' : '😔 Defeat';
-  
-  const messageDiv = document.getElementById('gameOverMessage');
-  messageDiv.textContent = message;
-  messageDiv.className = 'role-card ' + (winner === 'loyalists' ? 'loyalist' : 'spy');
-  
-  // Show all roles
-  const rolesDiv = document.getElementById('finalRoles');
-  let rolesHTML = '<h3>Player Roles</h3><div class="player-list">';
-  
-  Object.values(currentGameState.players).forEach(player => {
-    const roleIcon = player.role === 'loyalist' ? '✓' : (player.role === 'secretSpy' ? '👑' : '✗');
-    const roleColor = player.role === 'loyalist' ? '#4CAF50' : '#f44336';
-    rolesHTML += `
-      <div class="player-card">
-        <div class="player-name">${player.name}</div>
-        <div class="player-role" style="color:${roleColor};">${roleIcon} ${player.role.toUpperCase()}</div>
-      </div>
-    `;
-  });
-  
-  rolesHTML += '</div>';
-  rolesDiv.innerHTML = rolesHTML;
-}
+            document.getElementById('nextRank').textContent = nextRank.name;
+            document.getElementById('rankCost').textContent = cost;
+            document.getElementById('rankUpText').textContent = nextRank.name;
+            document.getElementById('rankProgress').style.width = progress + '%';
+            document.getElementById('rankUpBtn').disabled = gameState.points < cost;
+        }
 
-/* ---------------- Leave/New Game ---------------- */
-leaveRoomBtn.onclick = () => {
-  if (roomRef) roomRef.off();
-  returnToLobby();
-};
+        function updateUnitShop() {
+            const shopDiv = document.getElementById('unitShop');
+            const unlockedUnits = RANKS[gameState.rankIndex].unlocks;
+            
+            shopDiv.innerHTML = '';
+            
+            for (const unitType of Object.keys(UNITS)) {
+                const unit = UNITS[unitType];
+                const isLocked = !unlockedUnits.includes(unitType);
+                const count = gameState.units[unitType] || 0;
 
-leaveGameBtn.onclick = () => {
-  if (gameRef) gameRef.off();
-  if (roomRef) roomRef.off();
-  returnToLobby();
-};
+                const unitDiv = document.createElement('div');
+                unitDiv.className = 'unit-item' + (isLocked ? ' locked' : '');
+                unitDiv.innerHTML = `
+                    <div class="unit-header">
+                        <span class="unit-name">${unit.name}</span>
+                        <span class="unit-count">Owned: ${count}</span>
+                    </div>
+                    <div class="unit-stats">
+                        💪 Power: ${unit.power} | ${unit.description}
+                    </div>
+                    <button class="buy-btn" onclick="window.buyUnit('${unitType}')" 
+                            ${isLocked || gameState.points < unit.cost ? 'disabled' : ''}>
+                        Buy for ${unit.cost} points
+                    </button>
+                `;
+                shopDiv.appendChild(unitDiv);
+            }
+        }
 
-document.getElementById('newGameBtn').onclick = () => {
-  if (gameRef) gameRef.off();
-  if (roomRef) roomRef.off();
-  returnToLobby();
-};
+        window.buyUnit = async function(unitType) {
+            const unit = UNITS[unitType];
+            if (gameState.points >= unit.cost) {
+                gameState.points -= unit.cost;
+                gameState.units[unitType] = (gameState.units[unitType] || 0) + 1;
+                await saveGame();
+                updateUI();
+                showNotification(`Purchased ${unit.name}!`);
+            }
+        };
 
-function returnToLobby() {
-  lobbyScreen.classList.remove('hidden');
-  waitingScreen.classList.add('hidden');
-  gameScreen.classList.add('hidden');
-  gameOverScreen.classList.add('hidden');
-  
-  roomCode = null;
-  roomRef = null;
-  gameRef = null;
-  myPlayerData = null;
-  currentGameState = null;
-}
-</script>
+        window.rankUp = async function() {
+            const nextRankIndex = gameState.rankIndex + 1;
+            if (nextRankIndex >= RANKS.length) return;
 
+            const cost = RANKS[nextRankIndex].cost;
+            if (gameState.points >= cost) {
+                gameState.points -= cost;
+                gameState.rankIndex = nextRankIndex;
+                await saveGame();
+                updateUI();
+                showNotification(`Promoted to ${RANKS[nextRankIndex].name}! 🎖️`);
+            }
+        };
+
+        window.startMission = async function() {
+            const now = Date.now();
+            const cooldown = getMissionCooldown();
+            
+            if (now - gameState.lastMissionTime < cooldown) {
+                return;
+            }
+
+            const combatPower = calculateCombatPower();
+            const medicCount = gameState.units.medic || 0;
+            const engineerCount = gameState.units.engineer || 0;
+
+            // Success chance increases with medics (5% per medic, max 95%)
+            const successChance = Math.min(0.5 + (medicCount * 0.05), 0.95);
+            const success = Math.random() < successChance;
+
+            let pointsEarned = 0;
+            if (success) {
+                // Base points scale with combat power
+                pointsEarned = Math.floor(10 + (combatPower * 2) + Math.random() * combatPower * 3);
+                // Engineers boost points by 10% each
+                pointsEarned = Math.floor(pointsEarned * (1 + engineerCount * 0.1));
+            }
+
+            gameState.points += pointsEarned;
+            gameState.totalMissions += 1;
+            gameState.lastMissionTime = now;
+
+            await saveGame();
+            updateUI();
+
+            const resultDiv = document.getElementById('missionResult');
+            if (success) {
+                resultDiv.innerHTML = `
+                    <div style="background: rgba(40, 167, 69, 0.3); padding: 15px; border-radius: 8px; margin-top: 15px;">
+                        <strong style="color: #28a745;">✅ MISSION SUCCESS!</strong><br>
+                        Earned ${pointsEarned} points
+                    </div>
+                `;
+                showNotification(`Mission Success! +${pointsEarned} points`);
+            } else {
+                resultDiv.innerHTML = `
+                    <div style="background: rgba(220, 53, 69, 0.3); padding: 15px; border-radius: 8px; margin-top: 15px;">
+                        <strong style="color: #dc3545;">❌ MISSION FAILED</strong><br>
+                        No points earned
+                    </div>
+                `;
+            }
+
+            setTimeout(() => {
+                resultDiv.innerHTML = '';
+            }, 3000);
+        };
+
+        function getMissionCooldown() {
+            const scoutCount = gameState.units.scout || 0;
+            const baseCooldown = 10000; // 10 seconds
+            // Scouts reduce cooldown by 5% each, min 2 seconds
+            return Math.max(baseCooldown * Math.pow(0.95, scoutCount), 2000);
+        }
+
+        function startCooldownTimer() {
+            setInterval(() => {
+                const now = Date.now();
+                const timeSince = now - gameState.lastMissionTime;
+                const cooldown = getMissionCooldown();
+                const remaining = Math.max(cooldown - timeSince, 0);
+
+                const missionBtn = document.getElementById('missionBtn');
+                const cooldownDiv = document.getElementById('cooldown');
+
+                if (remaining > 0) {
+                    missionBtn.disabled = true;
+                    const seconds = Math.ceil(remaining / 1000);
+                    cooldownDiv.textContent = `Next mission in ${seconds}s`;
+                } else {
+                    missionBtn.disabled = false;
+                    cooldownDiv.textContent = 'Ready!';
+                }
+            }, 100);
+        }
+
+        window.openSettings = function() {
+            document.getElementById('settingsModal').style.display = 'flex';
+        };
+
+        window.closeSettings = function() {
+            document.getElementById('settingsModal').style.display = 'none';
+        };
+
+        window.resetGame = async function() {
+            gameState = {
+                points: 0,
+                rankIndex: 0,
+                totalMissions: 0,
+                units: {},
+                lastMissionTime: 0
+            };
+            await saveGame();
+            updateUI();
+            closeSettings();
+            showNotification('Game reset!');
+        };
+
+        function showNotification(message) {
+            const notif = document.getElementById('notification');
+            notif.textContent = message;
+            notif.style.display = 'block';
+            setTimeout(() => {
+                notif.style.display = 'none';
+            }, 3000);
+        }
+
+        // Start the game
+        initGame();
+    </script>
 </body>
 </html>

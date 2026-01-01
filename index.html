@@ -311,50 +311,96 @@
 
         // Tetris piece shapes (in segment units)
         // Each block position is calculated as: ring * SEGMENTS + segment_offset
+        // Each piece has 4 rotation states
         const PIECES = [
             { 
                 name: 'I2',
-                blocks: [0, 1], 
+                rotations: [
+                    [0, 1],
+                    [0, 10],
+                    [0, 1],
+                    [0, 10]
+                ],
                 color: '#FF6B6B' 
             },
             { 
                 name: 'I3',
-                blocks: [0, 1, 2], 
+                rotations: [
+                    [0, 1, 2],
+                    [0, 10, 20],
+                    [0, 1, 2],
+                    [0, 10, 20]
+                ],
                 color: '#4ECDC4' 
             },
             { 
                 name: 'I4',
-                blocks: [0, 1, 2, 3], 
+                rotations: [
+                    [0, 1, 2, 3],
+                    [0, 10, 20, 30],
+                    [0, 1, 2, 3],
+                    [0, 10, 20, 30]
+                ],
                 color: '#45B7D1' 
             },
             { 
                 name: 'L',
-                blocks: [0, 1, 10], 
+                rotations: [
+                    [0, 1, 2, 10],
+                    [0, 1, 10, 20],
+                    [2, 10, 11, 12],
+                    [0, 10, 19, 20]
+                ],
                 color: '#FFA07A' 
             },
             { 
                 name: 'J',
-                blocks: [1, 2, 10], 
+                rotations: [
+                    [0, 1, 2, 12],
+                    [0, 10, 20, 21],
+                    [0, 10, 11, 12],
+                    [0, 1, 10, 20]
+                ],
                 color: '#98D8C8' 
             },
             { 
                 name: 'Square',
-                blocks: [0, 1, 10, 11], 
+                rotations: [
+                    [0, 1, 10, 11],
+                    [0, 1, 10, 11],
+                    [0, 1, 10, 11],
+                    [0, 1, 10, 11]
+                ],
                 color: '#F7DC6F' 
             },
             { 
                 name: 'S',
-                blocks: [1, 2, 10, 11], 
+                rotations: [
+                    [1, 2, 10, 11],
+                    [0, 10, 11, 21],
+                    [1, 2, 10, 11],
+                    [0, 10, 11, 21]
+                ],
                 color: '#BB8FCE' 
             },
             { 
                 name: 'Z',
-                blocks: [0, 1, 11, 12], 
+                rotations: [
+                    [0, 1, 11, 12],
+                    [1, 10, 11, 20],
+                    [0, 1, 11, 12],
+                    [1, 10, 11, 20]
+                ],
                 color: '#85C1E2' 
             },
             { 
                 name: 'T',
-                blocks: [0, 1, 2, 11], 
+                rotations: [
+                    [0, 1, 2, 11],
+                    [0, 10, 11, 20],
+                    [1, 10, 11, 12],
+                    [0, 9, 10, 20]
+                ],
                 color: '#F8B739' 
             },
         ];
@@ -459,7 +505,9 @@
             const template = PIECES[Math.floor(Math.random() * PIECES.length)];
             return {
                 name: template.name,
-                blocks: [...template.blocks],
+                rotations: template.rotations,
+                rotationIndex: 0,
+                blocks: [...template.rotations[0]],
                 color: template.color,
                 ring: CENTER_HOLE_RINGS,
                 segment: Math.floor(Math.random() * SEGMENTS)
@@ -581,46 +629,19 @@
         }
 
         function rotate() {
-            // Square piece doesn't need to rotate
-            if (currentPiece.name === 'Square') {
-                return;
-            }
+            // Get next rotation state
+            const nextRotationIndex = (currentPiece.rotationIndex + 1) % 4;
+            const nextBlocks = [...currentPiece.rotations[nextRotationIndex]];
             
-            // Calculate bounding box of current piece
-            const rings = currentPiece.blocks.map(b => Math.floor(b / SEGMENTS));
-            const segs = currentPiece.blocks.map(b => b % SEGMENTS);
+            const testPiece = { 
+                ...currentPiece, 
+                blocks: nextBlocks,
+                rotationIndex: nextRotationIndex
+            };
             
-            const minRing = Math.min(...rings);
-            const maxRing = Math.max(...rings);
-            const minSeg = Math.min(...segs);
-            const maxSeg = Math.max(...segs);
-            
-            const centerRing = (minRing + maxRing) / 2;
-            const centerSeg = (minSeg + maxSeg) / 2;
-            
-            // Rotate each block 90 degrees clockwise around center
-            const rotated = currentPiece.blocks.map(offset => {
-                const r = Math.floor(offset / SEGMENTS);
-                const s = offset % SEGMENTS;
-                
-                // Translate to center
-                const relR = r - centerRing;
-                const relS = s - centerSeg;
-                
-                // Rotate 90 degrees clockwise: (x,y) -> (y,-x)
-                const newRelR = relS;
-                const newRelS = -relR;
-                
-                // Translate back
-                const newR = Math.round(newRelR + centerRing);
-                const newS = Math.round(newRelS + centerSeg);
-                
-                return newR * SEGMENTS + newS;
-            });
-            
-            const testPiece = { ...currentPiece, blocks: rotated };
             if (!checkCollision(testPiece)) {
-                currentPiece.blocks = rotated;
+                currentPiece.blocks = nextBlocks;
+                currentPiece.rotationIndex = nextRotationIndex;
             }
         }
 

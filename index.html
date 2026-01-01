@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Circle Tetris</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -38,6 +43,56 @@
             font-size: 24px;
             font-weight: bold;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        #highScores {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 15px 20px;
+            color: white;
+            max-width: 350px;
+            width: 100%;
+            backdrop-filter: blur(10px);
+        }
+
+        #highScores h3 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            text-align: center;
+            color: #FFD700;
+        }
+
+        #scoresList {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 14px;
+        }
+
+        #scoresList li {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        #scoresList li:last-child {
+            border-bottom: none;
+        }
+
+        #scoresList .rank {
+            color: #FFD700;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        #scoresList .name {
+            flex: 1;
+        }
+
+        #scoresList .score {
+            font-weight: bold;
+            color: #4ECDC4;
         }
 
         canvas {
@@ -118,6 +173,42 @@
             font-size: 24px;
         }
 
+        #nameInput {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 10px 20px;
+            color: white;
+            font-size: 18px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            outline: none;
+        }
+
+        #nameInput::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        #submitScore {
+            background: #4CAF50;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 20px;
+            padding: 15px 40px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #submitScore:active {
+            background: #45a049;
+        }
+
+        #submitScore:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
         #restartBtn {
             background: #4CAF50;
             border: none;
@@ -138,6 +229,12 @@
     <div id="gameContainer">
         <div id="score">Score: 0</div>
         <canvas id="gameCanvas"></canvas>
+        <div id="highScores">
+            <h3>🏆 Top 10 High Scores</h3>
+            <ul id="scoresList">
+                <li>Loading...</li>
+            </ul>
+        </div>
         <div id="controls">
             <button class="control-btn" id="leftBtn">
                 <div class="icon">◄</div>
@@ -161,6 +258,8 @@
     <div id="gameOver">
         <h2>Game Over!</h2>
         <p id="finalScore">Score: 0</p>
+        <input type="text" id="nameInput" placeholder="Enter your name" maxlength="20">
+        <button id="submitScore">Submit Score</button>
         <button id="restartBtn">Play Again</button>
     </div>
 
@@ -168,9 +267,24 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDVbt_8GuRuHJRPAN7jFXbs_lJUfUHNxHE",
+            authDomain: "chummy-games.firebaseapp.com",
+            databaseURL: "https://chummy-games-default-rtdb.firebaseio.com",
+            projectId: "chummy-games",
+            storageBucket: "chummy-games.firebasestorage.app",
+            messagingSenderId: "869241598273",
+            appId: "1:869241598273:web:d97492b7308f785c37f1c0"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const scoresRef = database.ref('circleTetris/highScores');
+        
         // Game constants
         const SEGMENTS = 10;
-        const RINGS = 18;
+        const RINGS = 20;
         const CENTER_HOLE_RINGS = 3; // Empty rings in the center
         
         // Responsive canvas sizing
@@ -245,6 +359,102 @@
             },
         ];
 
+        // High Score Functions
+        function loadHighScores() {
+            scoresRef.orderByChild('score').limitToLast(10).on('value', (snapshot) => {
+                const scores = [];
+                snapshot.forEach((childSnapshot) => {
+                    scores.push({
+                        id: childSnapshot.key,
+                        ...childSnapshot.val()
+                    });
+                });
+                
+                // Sort by score descending
+                scores.sort((a, b) => b.score - a.score);
+                
+                displayHighScores(scores);
+            });
+        }
+        
+        function displayHighScores(scores) {
+            const scoresList = document.getElementById('scoresList');
+            
+            if (scores.length === 0) {
+                scoresList.innerHTML = '<li>No scores yet!</li>';
+                return;
+            }
+            
+            scoresList.innerHTML = scores.map((entry, index) => `
+                <li>
+                    <span class="rank">#${index + 1}</span>
+                    <span class="name">${escapeHtml(entry.name)}</span>
+                    <span class="score">${entry.score}</span>
+                </li>
+            `).join('');
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        async function submitHighScore(name, score) {
+            if (!name || name.trim() === '') {
+                alert('Please enter your name!');
+                return false;
+            }
+            
+            try {
+                // Get current top 10
+                const snapshot = await scoresRef.orderByChild('score').limitToLast(10).once('value');
+                const scores = [];
+                snapshot.forEach((childSnapshot) => {
+                    scores.push({
+                        id: childSnapshot.key,
+                        score: childSnapshot.val().score
+                    });
+                });
+                
+                scores.sort((a, b) => b.score - a.score);
+                
+                // Check if this score makes top 10
+                if (scores.length < 10 || score > scores[scores.length - 1].score) {
+                    // Add new score
+                    await scoresRef.push({
+                        name: name.trim(),
+                        score: score,
+                        timestamp: Date.now()
+                    });
+                    
+                    // If we now have more than 10, remove the lowest
+                    const newSnapshot = await scoresRef.orderByChild('score').limitToLast(11).once('value');
+                    const allScores = [];
+                    newSnapshot.forEach((childSnapshot) => {
+                        allScores.push({
+                            id: childSnapshot.key,
+                            score: childSnapshot.val().score
+                        });
+                    });
+                    
+                    allScores.sort((a, b) => a.score - b.score);
+                    
+                    if (allScores.length > 10) {
+                        await scoresRef.child(allScores[0].id).remove();
+                    }
+                    
+                    return true;
+                }
+                
+                return false;
+            } catch (error) {
+                console.error('Error submitting score:', error);
+                alert('Error submitting score. Please try again.');
+                return false;
+            }
+        }
+        
         function createPiece() {
             const template = PIECES[Math.floor(Math.random() * PIECES.length)];
             return {
@@ -433,6 +643,8 @@
             cancelAnimationFrame(gameLoop);
             document.getElementById('gameOver').classList.add('show');
             document.getElementById('finalScore').textContent = `Score: ${score}`;
+            document.getElementById('nameInput').value = '';
+            document.getElementById('nameInput').focus();
         }
 
         function restart() {
@@ -440,6 +652,8 @@
             score = 0;
             document.getElementById('score').textContent = 'Score: 0';
             document.getElementById('gameOver').classList.remove('show');
+            document.getElementById('submitScore').disabled = false;
+            document.getElementById('submitScore').textContent = 'Submit Score';
             currentPiece = createPiece();
             lastDropTime = performance.now();
             gameLoop = requestAnimationFrame(update);
@@ -476,6 +690,25 @@
             drop();
         });
 
+        document.getElementById('submitScore').addEventListener('click', async () => {
+            const name = document.getElementById('nameInput').value;
+            const submitBtn = document.getElementById('submitScore');
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+            
+            const success = await submitHighScore(name, score);
+            
+            if (success) {
+                alert('Score submitted successfully!');
+                restart();
+            } else {
+                alert('Score not high enough for top 10!');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Score';
+            }
+        });
+
         document.getElementById('restartBtn').addEventListener('click', restart);
 
         // Keyboard controls
@@ -486,6 +719,9 @@
             if (e.key === 'ArrowDown') moveDown();
             if (e.key === ' ') drop();
         });
+
+        // Load high scores
+        loadHighScores();
 
         // Start game
         currentPiece = createPiece();

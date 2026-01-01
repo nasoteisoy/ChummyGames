@@ -703,7 +703,7 @@
         function togglePause() {
             isPaused = !isPaused;
             const pauseBtn = document.getElementById('pauseBtn');
-            
+            score -= 100
             if (isPaused) {
                 pauseBtn.textContent = '▶ Resume';
                 pauseBtn.classList.add('paused');

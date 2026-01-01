@@ -45,6 +45,35 @@
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         }
 
+        #pauseBtn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+            touch-action: manipulation;
+            user-select: none;
+            z-index: 100;
+        }
+
+        #pauseBtn:active {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(0.95);
+        }
+
+        #pauseBtn.paused {
+            background: rgba(76, 175, 80, 0.3);
+            border-color: rgba(76, 175, 80, 0.5);
+        }
+
         #highScores {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 15px;
@@ -226,6 +255,8 @@
     </style>
 </head>
 <body>
+    <button id="pauseBtn">Baby Pause Button</button>
+    
     <div id="gameContainer">
         <div id="score">Score: 0</div>
         <canvas id="gameCanvas"></canvas>
@@ -308,6 +339,7 @@
         let gameLoop = null;
         let dropInterval = 800;
         let lastDropTime = 0;
+        let isPaused = false;
 
         // Tetris piece shapes (in segment units)
         // Each block position is calculated as: ring * SEGMENTS + segment_offset
@@ -668,22 +700,41 @@
             document.getElementById('nameInput').focus();
         }
 
+        function togglePause() {
+            isPaused = !isPaused;
+            const pauseBtn = document.getElementById('pauseBtn');
+            
+            if (isPaused) {
+                pauseBtn.textContent = '▶ Resume';
+                pauseBtn.classList.add('paused');
+            } else {
+                pauseBtn.textContent = 'Baby Pause Button';
+                pauseBtn.classList.remove('paused');
+                lastDropTime = performance.now(); // Reset drop timer
+            }
+        }
+
         function restart() {
             grid = Array(RINGS).fill().map(() => Array(SEGMENTS).fill(0));
             score = 0;
+            isPaused = false;
             document.getElementById('score').textContent = 'Score: 0';
             document.getElementById('gameOver').classList.remove('show');
             document.getElementById('submitScore').disabled = false;
             document.getElementById('submitScore').textContent = 'Submit Score';
+            document.getElementById('pauseBtn').textContent = 'Baby Pause Button';
+            document.getElementById('pauseBtn').classList.remove('paused');
             currentPiece = createPiece();
             lastDropTime = performance.now();
             gameLoop = requestAnimationFrame(update);
         }
 
         function update(currentTime) {
-            if (currentTime - lastDropTime > dropInterval) {
-                moveDown();
-                lastDropTime = currentTime;
+            if (!isPaused) {
+                if (currentTime - lastDropTime > dropInterval) {
+                    moveDown();
+                    lastDropTime = currentTime;
+                }
             }
             
             drawCircle();
@@ -693,23 +744,25 @@
         // Controls
         document.getElementById('leftBtn').addEventListener('touchstart', (e) => {
             e.preventDefault();
-            moveLeft();
+            if (!isPaused) moveLeft();
         });
 
         document.getElementById('rotateBtn').addEventListener('touchstart', (e) => {
             e.preventDefault();
-            rotate();
+            if (!isPaused) rotate();
         });
 
         document.getElementById('rightBtn').addEventListener('touchstart', (e) => {
             e.preventDefault();
-            moveRight();
+            if (!isPaused) moveRight();
         });
 
         document.getElementById('downBtn').addEventListener('touchstart', (e) => {
             e.preventDefault();
-            moveDown();
+            if (!isPaused) moveDown();
         });
+
+        document.getElementById('pauseBtn').addEventListener('click', togglePause);
 
         document.getElementById('submitScore').addEventListener('click', async () => {
             const name = document.getElementById('nameInput').value;
@@ -734,6 +787,7 @@
 
         // Keyboard controls
         document.addEventListener('keydown', (e) => {
+            if (isPaused) return;
             if (e.key === 'ArrowLeft') moveLeft();
             if (e.key === 'ArrowRight') moveRight();
             if (e.key === 'ArrowUp') rotate();

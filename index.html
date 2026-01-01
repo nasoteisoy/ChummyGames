@@ -49,10 +49,10 @@
 
         #controls {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 10px;
             width: 100%;
-            max-width: 350px;
+            max-width: 450px;
             padding: 0 20px;
         }
 
@@ -143,13 +143,17 @@
                 <div class="icon">◄</div>
                 <div class="label">Left</div>
             </button>
-            <button class="control-btn" id="downBtn">
-                <div class="icon">▼</div>
-                <div class="label">Drop</div>
+            <button class="control-btn" id="rotateBtn">
+                <div class="icon">↻</div>
+                <div class="label">Rotate</div>
             </button>
             <button class="control-btn" id="rightBtn">
                 <div class="icon">►</div>
                 <div class="label">Right</div>
+            </button>
+            <button class="control-btn" id="downBtn">
+                <div class="icon">▼</div>
+                <div class="label">Drop</div>
             </button>
         </div>
     </div>
@@ -389,6 +393,11 @@
             moveLeft();
         });
 
+        document.getElementById('rotateBtn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            rotate();
+        });
+
         document.getElementById('rightBtn').addEventListener('touchstart', (e) => {
             e.preventDefault();
             moveRight();
@@ -405,6 +414,7 @@
         document.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowLeft') moveLeft();
             if (e.key === 'ArrowRight') moveRight();
+            if (e.key === 'ArrowUp') rotate();
             if (e.key === 'ArrowDown') moveDown();
             if (e.key === ' ') drop();
         });

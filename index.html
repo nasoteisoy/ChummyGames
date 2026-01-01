@@ -333,11 +333,36 @@
         }
 
         function rotate() {
+            // Calculate bounding box of current piece
+            const rings = currentPiece.blocks.map(b => Math.floor(b / SEGMENTS));
+            const segs = currentPiece.blocks.map(b => b % SEGMENTS);
+            
+            const minRing = Math.min(...rings);
+            const maxRing = Math.max(...rings);
+            const minSeg = Math.min(...segs);
+            const maxSeg = Math.max(...segs);
+            
+            const centerRing = (minRing + maxRing) / 2;
+            const centerSeg = (minSeg + maxSeg) / 2;
+            
+            // Rotate each block 90 degrees clockwise around center
             const rotated = currentPiece.blocks.map(offset => {
                 const r = Math.floor(offset / SEGMENTS);
                 const s = offset % SEGMENTS;
-                // Rotate clockwise
-                return r * SEGMENTS + ((s + 1) % SEGMENTS);
+                
+                // Translate to center
+                const relR = r - centerRing;
+                const relS = s - centerSeg;
+                
+                // Rotate 90 degrees clockwise: (x,y) -> (y,-x)
+                const newRelR = relS;
+                const newRelS = -relR;
+                
+                // Translate back
+                const newR = Math.round(newRelR + centerRing);
+                const newS = Math.round(newRelS + centerSeg);
+                
+                return newR * SEGMENTS + newS;
             });
             
             const testPiece = { ...currentPiece, blocks: rotated };

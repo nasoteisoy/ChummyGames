@@ -196,21 +196,59 @@
         let lastDropTime = 0;
 
         // Tetris piece shapes (in segment units)
+        // Each block position is calculated as: ring * SEGMENTS + segment_offset
         const PIECES = [
-            { blocks: [0, 1], color: '#FF6B6B' },           // I-2
-            { blocks: [0, 1, 2], color: '#4ECDC4' },        // I-3
-            { blocks: [0, 1, 2, 3], color: '#45B7D1' },     // I-4
-            { blocks: [0, 1, 10], color: '#FFA07A' },       // L
-            { blocks: [0, 1, 11], color: '#98D8C8' },       // J
-            { blocks: [0, 1, 9, 10], color: '#F7DC6F' },    // O
-            { blocks: [1, 2, 10, 11], color: '#BB8FCE' },   // S
-            { blocks: [0, 1, 11, 12], color: '#85C1E2' },   // Z
-            { blocks: [0, 10, 11], color: '#F8B739' },      // T
+            { 
+                name: 'I2',
+                blocks: [0, 1], 
+                color: '#FF6B6B' 
+            },
+            { 
+                name: 'I3',
+                blocks: [0, 1, 2], 
+                color: '#4ECDC4' 
+            },
+            { 
+                name: 'I4',
+                blocks: [0, 1, 2, 3], 
+                color: '#45B7D1' 
+            },
+            { 
+                name: 'L',
+                blocks: [0, 1, 10], 
+                color: '#FFA07A' 
+            },
+            { 
+                name: 'J',
+                blocks: [1, 2, 10], 
+                color: '#98D8C8' 
+            },
+            { 
+                name: 'Square',
+                blocks: [0, 1, 10, 11], 
+                color: '#F7DC6F' 
+            },
+            { 
+                name: 'S',
+                blocks: [1, 2, 10, 11], 
+                color: '#BB8FCE' 
+            },
+            { 
+                name: 'Z',
+                blocks: [0, 1, 11, 12], 
+                color: '#85C1E2' 
+            },
+            { 
+                name: 'T',
+                blocks: [0, 1, 2, 11], 
+                color: '#F8B739' 
+            },
         ];
 
         function createPiece() {
             const template = PIECES[Math.floor(Math.random() * PIECES.length)];
             return {
+                name: template.name,
                 blocks: [...template.blocks],
                 color: template.color,
                 ring: CENTER_HOLE_RINGS,
@@ -333,6 +371,11 @@
         }
 
         function rotate() {
+            // Square piece doesn't need to rotate
+            if (currentPiece.name === 'Square') {
+                return;
+            }
+            
             // Calculate bounding box of current piece
             const rings = currentPiece.blocks.map(b => Math.floor(b / SEGMENTS));
             const segs = currentPiece.blocks.map(b => b % SEGMENTS);

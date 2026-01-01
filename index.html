@@ -248,7 +248,7 @@
             </button>
         </div>
         <div id="highScores">
-            <h3>🏆 Top 10 High Scores</h3>
+            <h3>🏆 Top 5 High Scores</h3>
             <ul id="scoresList">
                 <li>Loading...</li>
             </ul>
@@ -346,20 +346,20 @@
             { 
                 name: 'L',
                 rotations: [
-                    [0, 10, 20, 21],
-                    [0, 1, 2, 10],
-                    [0, 1, 11, 12],
-                    [2, 10, 11, 12]
+                    [0, 1, 2, 10],      // ═══╗ (horizontal with corner down-left)
+                    [0, 1, 10, 20],     // ║═  (vertical with corner top-right)
+                    [2, 10, 11, 12],    // ╔═══ (horizontal with corner up-right)
+                    [0, 10, 20, 21]     // ═║  (vertical with corner bottom-right)
                 ],
                 color: '#FFA07A' 
             },
             { 
                 name: 'J',
                 rotations: [
-                    [0, 11, 20, 21],
-                    [0, 10, 11, 12],
-                    [0, 1, 10, 20],
-                    [0, 1, 2, 12]
+                    [0, 1, 2, 12],      // ═══╝ (horizontal with corner down-right)
+                    [1, 10, 11, 20],    // ═║  (vertical with corner top-left)
+                    [0, 10, 11, 12],    // ╚═══ (horizontal with corner up-left)
+                    [0, 1, 10, 20]      // ║═  (vertical with corner bottom-left)
                 ],
                 color: '#98D8C8' 
             },
@@ -399,7 +399,7 @@
                     [0, 1, 2, 11],
                     [0, 10, 11, 20],
                     [1, 10, 11, 12],
-                    [1, 10, 11, 21]
+                    [0, 9, 10, 20]
                 ],
                 color: '#F8B739' 
             },
@@ -407,7 +407,7 @@
 
         // High Score Functions
         function loadHighScores() {
-            scoresRef.orderByChild('score').limitToLast(10).on('value', (snapshot) => {
+            scoresRef.orderByChild('score').limitToLast(5).on('value', (snapshot) => {
                 const scores = [];
                 snapshot.forEach((childSnapshot) => {
                     scores.push({
@@ -453,8 +453,8 @@
             }
             
             try {
-                // Get current top 10
-                const snapshot = await scoresRef.orderByChild('score').limitToLast(10).once('value');
+                // Get current top 5
+                const snapshot = await scoresRef.orderByChild('score').limitToLast(5).once('value');
                 const scores = [];
                 snapshot.forEach((childSnapshot) => {
                     scores.push({
@@ -465,8 +465,8 @@
                 
                 scores.sort((a, b) => b.score - a.score);
                 
-                // Check if this score makes top 10
-                if (scores.length < 10 || score > scores[scores.length - 1].score) {
+                // Check if this score makes top 5
+                if (scores.length < 5 || score > scores[scores.length - 1].score) {
                     // Add new score
                     await scoresRef.push({
                         name: name.trim(),
@@ -474,8 +474,8 @@
                         timestamp: Date.now()
                     });
                     
-                    // If we now have more than 10, remove the lowest
-                    const newSnapshot = await scoresRef.orderByChild('score').limitToLast(11).once('value');
+                    // If we now have more than 5, remove the lowest
+                    const newSnapshot = await scoresRef.orderByChild('score').limitToLast(6).once('value');
                     const allScores = [];
                     newSnapshot.forEach((childSnapshot) => {
                         allScores.push({
@@ -486,7 +486,7 @@
                     
                     allScores.sort((a, b) => a.score - b.score);
                     
-                    if (allScores.length > 10) {
+                    if (allScores.length > 5) {
                         await scoresRef.child(allScores[0].id).remove();
                     }
                     
@@ -724,7 +724,7 @@
                 alert('Score submitted successfully!');
                 restart();
             } else {
-                alert('Score not high enough for top 10!');
+                alert('Score not high enough for top 5!');
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Submit Score';
             }

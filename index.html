@@ -229,12 +229,6 @@
     <div id="gameContainer">
         <div id="score">Score: 0</div>
         <canvas id="gameCanvas"></canvas>
-        <div id="highScores">
-            <h3>🏆 Top 10 High Scores</h3>
-            <ul id="scoresList">
-                <li>Loading...</li>
-            </ul>
-        </div>
         <div id="controls">
             <button class="control-btn" id="leftBtn">
                 <div class="icon">◄</div>
@@ -244,14 +238,20 @@
                 <div class="icon">↻</div>
                 <div class="label">Rotate</div>
             </button>
+            <button class="control-btn" id="downBtn">
+                <div class="icon">▼</div>
+                <div class="label">Down</div>
+            </button>
             <button class="control-btn" id="rightBtn">
                 <div class="icon">►</div>
                 <div class="label">Right</div>
             </button>
-            <button class="control-btn" id="downBtn">
-                <div class="icon">▼</div>
-                <div class="label">Drop</div>
-            </button>
+        </div>
+        <div id="highScores">
+            <h3>🏆 Top 10 High Scores</h3>
+            <ul id="scoresList">
+                <li>Loading...</li>
+            </ul>
         </div>
     </div>
 
@@ -708,7 +708,7 @@
 
         document.getElementById('downBtn').addEventListener('touchstart', (e) => {
             e.preventDefault();
-            drop();
+            moveDown();
         });
 
         document.getElementById('submitScore').addEventListener('click', async () => {
@@ -738,7 +738,6 @@
             if (e.key === 'ArrowRight') moveRight();
             if (e.key === 'ArrowUp') rotate();
             if (e.key === 'ArrowDown') moveDown();
-            if (e.key === ' ') drop();
         });
 
         // Load high scores

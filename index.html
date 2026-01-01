@@ -1,407 +1,418 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Circle Tetris</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        } 
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Circle Tetris</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-        body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            overflow: hidden;
-            touch-action: none;
-        } 
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+        }
 
-        #gameContainer {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            padding: 10px;
-            max-width: 100vw;
-        } 
+        #gameContainer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            padding: 10px;
+            max-width: 100vw;
+        }
 
-        #score {
-            color: white;
-            font-size: 24px;
-            font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-        } 
+        #score {
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
 
-        canvas {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 50%;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
-            touch-action: none;
-        } 
+        canvas {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 50%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            touch-action: none;
+        }
 
-        #controls {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            width: 100%;
-            max-width: 350px;
-            padding: 0 20px;
-        } 
+        #controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            width: 100%;
+            max-width: 350px;
+            padding: 0 20px;
+        }
 
-        .control-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 15px;
-            color: white;
-            font-size: 18px;
-            font-weight: bold;
-            padding: 20px;
-            cursor: pointer;
-            transition: all 0.2s;
-            backdrop-filter: blur(10px);
-            touch-action: manipulation;
-            user-select: none;
-        } 
+        .control-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 15px 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+            touch-action: manipulation;
+            user-select: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
 
-        .control-btn:active {
-            background: rgba(255, 255, 255, 0.4);
-            transform: scale(0.95);
-        } 
+        .control-btn .icon {
+            font-size: 24px;
+        }
 
-        .control-btn.rotate {
-            grid-column: 2;
-        } 
+        .control-btn .label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
 
-        #gameOver {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            gap: 20px;
-            z-index: 1000;
-        } 
+        .control-btn:active {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(0.95);
+        }
 
-        #gameOver.show {
-            display: flex;
-        } 
+        #gameOver {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 1000;
+        }
 
-        #gameOver h2 {
-            color: white;
-            font-size: 36px;
-        } 
+        #gameOver.show {
+            display: flex;
+        }
 
-        #gameOver p {
-            color: white;
-            font-size: 24px;
-        } 
+        #gameOver h2 {
+            color: white;
+            font-size: 36px;
+        }
 
-        #restartBtn {
-            background: #4CAF50;
-            border: none;
-            border-radius: 10px;
-            color: white;
-            font-size: 20px;
-            padding: 15px 40px;
-            cursor: pointer;
-            font-weight: bold;
-        } 
+        #gameOver p {
+            color: white;
+            font-size: 24px;
+        }
 
-        #restartBtn:active {
-            background: #45a049;
-        }
-    </style>
+        #restartBtn {
+            background: #4CAF50;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 20px;
+            padding: 15px 40px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #restartBtn:active {
+            background: #45a049;
+        }
+    </style>
 </head>
 <body>
-    <div id="gameContainer">
-        <div id="score">Score: 0</div>
-        <canvas id="gameCanvas"></canvas>
-        <div id="controls">
-            <button class="control-btn" id="leftBtn">◄</button>
-            <button class="control-btn rotate" id="rotateBtn">↻</button>
-            <button class="control-btn" id="rightBtn">►</button>
-            <button class="control-btn" id="downBtn" style="grid-column: 2;">▼</button>
-        </div>
-    </div> 
+    <div id="gameContainer">
+        <div id="score">Score: 0</div>
+        <canvas id="gameCanvas"></canvas>
+        <div id="controls">
+            <button class="control-btn" id="leftBtn">
+                <div class="icon">◄</div>
+                <div class="label">Left</div>
+            </button>
+            <button class="control-btn" id="downBtn">
+                <div class="icon">▼</div>
+                <div class="label">Drop</div>
+            </button>
+            <button class="control-btn" id="rightBtn">
+                <div class="icon">►</div>
+                <div class="label">Right</div>
+            </button>
+        </div>
+    </div>
 
-    <div id="gameOver">
-        <h2>Game Over!</h2>
-        <p id="finalScore">Score: 0</p>
-        <button id="restartBtn">Play Again</button>
-    </div> 
+    <div id="gameOver">
+        <h2>Game Over!</h2>
+        <p id="finalScore">Score: 0</p>
+        <button id="restartBtn">Play Again</button>
+    </div>
 
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        
-        // Game constants
-        const SEGMENTS = 10;
-        const RINGS = 18;
-        const CENTER_HOLE_RINGS = 3; // Empty rings in the center
-        
-        // Responsive canvas sizing
-        function resizeCanvas() {
-            const size = Math.min(window.innerWidth - 40, window.innerHeight * 0.5);
-            canvas.width = size;
-            canvas.height = size;
-        }
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas); 
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Game constants
+        const SEGMENTS = 10;
+        const RINGS = 18;
+        const CENTER_HOLE_RINGS = 3; // Empty rings in the center
+        
+        // Responsive canvas sizing
+        function resizeCanvas() {
+            const size = Math.min(window.innerWidth - 40, window.innerHeight * 0.5);
+            canvas.width = size;
+            canvas.height = size;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
 
-        const centerX = () => canvas.width / 2;
-        const centerY = () => canvas.height / 2;
-        const maxRadius = () => canvas.width / 2 - 10;
-        const ringWidth = () => maxRadius() / RINGS; 
+        const centerX = () => canvas.width / 2;
+        const centerY = () => canvas.height / 2;
+        const maxRadius = () => canvas.width / 2 - 10;
+        const ringWidth = () => maxRadius() / RINGS;
 
-        // Game state
-        let grid = Array(RINGS).fill().map(() => Array(SEGMENTS).fill(0));
-        let score = 0;
-        let currentPiece = null;
-        let gameLoop = null;
-        let dropInterval = 800;
-        let lastDropTime = 0; 
+        // Game state
+        let grid = Array(RINGS).fill().map(() => Array(SEGMENTS).fill(0));
+        let score = 0;
+        let currentPiece = null;
+        let gameLoop = null;
+        let dropInterval = 800;
+        let lastDropTime = 0;
 
-        // Tetris piece shapes (in segment units)
-        const PIECES = [
-            { blocks: [0, 1], color: '#FF6B6B' },           // I-2
-            { blocks: [0, 1, 2], color: '#4ECDC4' },        // I-3
-            { blocks: [0, 1, 2, 3], color: '#45B7D1' },     // I-4
-            { blocks: [0, 1, 10], color: '#FFA07A' },       // L
-            { blocks: [0, 1, 11], color: '#98D8C8' },       // J
-            { blocks: [0, 1, 9, 10], color: '#F7DC6F' },    // O
-            { blocks: [1, 2, 10, 11], color: '#BB8FCE' },   // S
-            { blocks: [0, 1, 11, 12], color: '#85C1E2' },   // Z
-            { blocks: [0, 10, 11], color: '#F8B739' },      // T
-        ]; 
+        // Tetris piece shapes (in segment units)
+        const PIECES = [
+            { blocks: [0, 1], color: '#FF6B6B' },           // I-2
+            { blocks: [0, 1, 2], color: '#4ECDC4' },        // I-3
+            { blocks: [0, 1, 2, 3], color: '#45B7D1' },     // I-4
+            { blocks: [0, 1, 10], color: '#FFA07A' },       // L
+            { blocks: [0, 1, 11], color: '#98D8C8' },       // J
+            { blocks: [0, 1, 9, 10], color: '#F7DC6F' },    // O
+            { blocks: [1, 2, 10, 11], color: '#BB8FCE' },   // S
+            { blocks: [0, 1, 11, 12], color: '#85C1E2' },   // Z
+            { blocks: [0, 10, 11], color: '#F8B739' },      // T
+        ];
 
-        function createPiece() {
-            const template = PIECES[Math.floor(Math.random() * PIECES.length)];
-            return {
-                blocks: [...template.blocks],
-                color: template.color,
-                ring: CENTER_HOLE_RINGS,
-                segment: Math.floor(Math.random() * SEGMENTS)
-            };
-        } 
+        function createPiece() {
+            const template = PIECES[Math.floor(Math.random() * PIECES.length)];
+            return {
+                blocks: [...template.blocks],
+                color: template.color,
+                ring: CENTER_HOLE_RINGS,
+                segment: Math.floor(Math.random() * SEGMENTS)
+            };
+        }
 
-        function drawCircle() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw grid
-            for (let r = CENTER_HOLE_RINGS; r < RINGS; r++) {
-                const innerRadius = r * ringWidth();
-                const outerRadius = (r + 1) * ringWidth();
-                
-                for (let s = 0; s < SEGMENTS; s++) {
-                    const startAngle = (s / SEGMENTS) * Math.PI * 2 - Math.PI / 2;
-                    const endAngle = ((s + 1) / SEGMENTS) * Math.PI * 2 - Math.PI / 2;
-                    
-                    ctx.beginPath();
-                    ctx.arc(centerX(), centerY(), outerRadius, startAngle, endAngle);
-                    ctx.arc(centerX(), centerY(), innerRadius, endAngle, startAngle, true);
-                    ctx.closePath();
-                    
-                    if (grid[r][s]) {
-                        ctx.fillStyle = grid[r][s];
-                    } else {
-                        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-                    }
-                    ctx.fill();
-                    
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-                    ctx.lineWidth = 1;
-                    ctx.stroke();
-                }
-            }
-            
-            // Draw current piece
-            if (currentPiece) {
-                currentPiece.blocks.forEach(offset => {
-                    const r = currentPiece.ring + Math.floor(offset / SEGMENTS);
-                    const s = (currentPiece.segment + (offset % SEGMENTS) + SEGMENTS) % SEGMENTS;
-                    
-                    if (r >= CENTER_HOLE_RINGS && r < RINGS) {
-                        const innerRadius = r * ringWidth();
-                        const outerRadius = (r + 1) * ringWidth();
-                        const startAngle = (s / SEGMENTS) * Math.PI * 2 - Math.PI / 2;
-                        const endAngle = ((s + 1) / SEGMENTS) * Math.PI * 2 - Math.PI / 2;
-                        
-                        ctx.beginPath();
-                        ctx.arc(centerX(), centerY(), outerRadius, startAngle, endAngle);
-                        ctx.arc(centerX(), centerY(), innerRadius, endAngle, startAngle, true);
-                        ctx.closePath();
-                        
-                        ctx.fillStyle = currentPiece.color;
-                        ctx.fill();
-                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-                        ctx.lineWidth = 2;
-                        ctx.stroke();
-                    }
-                });
-            }
-        } 
+        function drawCircle() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw grid
+            for (let r = CENTER_HOLE_RINGS; r < RINGS; r++) {
+                const innerRadius = r * ringWidth();
+                const outerRadius = (r + 1) * ringWidth();
+                
+                for (let s = 0; s < SEGMENTS; s++) {
+                    const startAngle = (s / SEGMENTS) * Math.PI * 2 - Math.PI / 2;
+                    const endAngle = ((s + 1) / SEGMENTS) * Math.PI * 2 - Math.PI / 2;
+                    
+                    ctx.beginPath();
+                    ctx.arc(centerX(), centerY(), outerRadius, startAngle, endAngle);
+                    ctx.arc(centerX(), centerY(), innerRadius, endAngle, startAngle, true);
+                    ctx.closePath();
+                    
+                    if (grid[r][s]) {
+                        ctx.fillStyle = grid[r][s];
+                    } else {
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+                    }
+                    ctx.fill();
+                    
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+            }
+            
+            // Draw current piece
+            if (currentPiece) {
+                currentPiece.blocks.forEach(offset => {
+                    const r = currentPiece.ring + Math.floor(offset / SEGMENTS);
+                    const s = (currentPiece.segment + (offset % SEGMENTS) + SEGMENTS) % SEGMENTS;
+                    
+                    if (r >= CENTER_HOLE_RINGS && r < RINGS) {
+                        const innerRadius = r * ringWidth();
+                        const outerRadius = (r + 1) * ringWidth();
+                        const startAngle = (s / SEGMENTS) * Math.PI * 2 - Math.PI / 2;
+                        const endAngle = ((s + 1) / SEGMENTS) * Math.PI * 2 - Math.PI / 2;
+                        
+                        ctx.beginPath();
+                        ctx.arc(centerX(), centerY(), outerRadius, startAngle, endAngle);
+                        ctx.arc(centerX(), centerY(), innerRadius, endAngle, startAngle, true);
+                        ctx.closePath();
+                        
+                        ctx.fillStyle = currentPiece.color;
+                        ctx.fill();
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    }
+                });
+            }
+        }
 
-        function checkCollision(piece, deltaRing = 0, deltaSegment = 0) {
-            return piece.blocks.some(offset => {
-                const r = piece.ring + Math.floor(offset / SEGMENTS) + deltaRing;
-                const s = (piece.segment + (offset % SEGMENTS) + deltaSegment + SEGMENTS * 10) % SEGMENTS;
-                
-                if (r < CENTER_HOLE_RINGS || r >= RINGS) return true;
-                if (grid[r][s]) return true;
-                return false;
-            });
-        } 
+        function checkCollision(piece, deltaRing = 0, deltaSegment = 0) {
+            return piece.blocks.some(offset => {
+                const r = piece.ring + Math.floor(offset / SEGMENTS) + deltaRing;
+                const s = (piece.segment + (offset % SEGMENTS) + deltaSegment + SEGMENTS * 10) % SEGMENTS;
+                
+                if (r < CENTER_HOLE_RINGS || r >= RINGS) return true;
+                if (grid[r][s]) return true;
+                return false;
+            });
+        }
 
-        function lockPiece() {
-            currentPiece.blocks.forEach(offset => {
-                const r = currentPiece.ring + Math.floor(offset / SEGMENTS);
-                const s = (currentPiece.segment + (offset % SEGMENTS) + SEGMENTS) % SEGMENTS;
-                if (r >= CENTER_HOLE_RINGS && r < RINGS) {
-                    grid[r][s] = currentPiece.color;
-                }
-            });
-            
-            checkLines();
-            currentPiece = createPiece();
-            
-            if (checkCollision(currentPiece)) {
-                gameOver();
-            }
-        } 
+        function lockPiece() {
+            currentPiece.blocks.forEach(offset => {
+                const r = currentPiece.ring + Math.floor(offset / SEGMENTS);
+                const s = (currentPiece.segment + (offset % SEGMENTS) + SEGMENTS) % SEGMENTS;
+                if (r >= CENTER_HOLE_RINGS && r < RINGS) {
+                    grid[r][s] = currentPiece.color;
+                }
+            });
+            
+            checkLines();
+            currentPiece = createPiece();
+            
+            if (checkCollision(currentPiece)) {
+                gameOver();
+            }
+        }
 
-        function checkLines() {
-            let linesCleared = 0;
-            for (let r = RINGS - 1; r >= CENTER_HOLE_RINGS; r--) {
-                if (grid[r].every(cell => cell !== 0)) {
-                    grid.splice(r, 1);
-                    grid.unshift(Array(SEGMENTS).fill(0));
-                    linesCleared++;
-                    r++; // Check same ring again
-                }
-            }
-            
-            if (linesCleared > 0) {
-                score += linesCleared * 100 * linesCleared;
-                document.getElementById('score').textContent = `Score: ${score}`;
-            }
-        } 
+        function checkLines() {
+            let linesCleared = 0;
+            for (let r = RINGS - 1; r >= CENTER_HOLE_RINGS; r--) {
+                if (grid[r].every(cell => cell !== 0)) {
+                    grid.splice(r, 1);
+                    grid.unshift(Array(SEGMENTS).fill(0));
+                    linesCleared++;
+                    r++; // Check same ring again
+                }
+            }
+            
+            if (linesCleared > 0) {
+                score += linesCleared * 100 * linesCleared;
+                document.getElementById('score').textContent = `Score: ${score}`;
+            }
+        }
 
-        function moveLeft() {
-            if (!checkCollision(currentPiece, 0, -1)) {
-                currentPiece.segment = (currentPiece.segment - 1 + SEGMENTS) % SEGMENTS;
-            }
-        } 
+        function moveLeft() {
+            if (!checkCollision(currentPiece, 0, -1)) {
+                currentPiece.segment = (currentPiece.segment - 1 + SEGMENTS) % SEGMENTS;
+            }
+        }
 
-        function moveRight() {
-            if (!checkCollision(currentPiece, 0, 1)) {
-                currentPiece.segment = (currentPiece.segment + 1) % SEGMENTS;
-            }
-        } 
+        function moveRight() {
+            if (!checkCollision(currentPiece, 0, 1)) {
+                currentPiece.segment = (currentPiece.segment + 1) % SEGMENTS;
+            }
+        }
 
-        function rotate() {
-            const rotated = currentPiece.blocks.map(offset => {
-                const r = Math.floor(offset / SEGMENTS);
-                const s = offset % SEGMENTS;
-                // Rotate clockwise
-                return r * SEGMENTS + ((s + 1) % SEGMENTS);
-            });
-            
-            const testPiece = { ...currentPiece, blocks: rotated };
-            if (!checkCollision(testPiece)) {
-                currentPiece.blocks = rotated;
-            }
-        } 
+        function rotate() {
+            const rotated = currentPiece.blocks.map(offset => {
+                const r = Math.floor(offset / SEGMENTS);
+                const s = offset % SEGMENTS;
+                // Rotate clockwise
+                return r * SEGMENTS + ((s + 1) % SEGMENTS);
+            });
+            
+            const testPiece = { ...currentPiece, blocks: rotated };
+            if (!checkCollision(testPiece)) {
+                currentPiece.blocks = rotated;
+            }
+        }
 
-        function moveDown() {
-            if (!checkCollision(currentPiece, 1, 0)) {
-                currentPiece.ring++;
-            } else {
-                lockPiece();
-            }
-        } 
+        function moveDown() {
+            if (!checkCollision(currentPiece, 1, 0)) {
+                currentPiece.ring++;
+            } else {
+                lockPiece();
+            }
+        }
 
-        function drop() {
-            while (!checkCollision(currentPiece, 1, 0)) {
-                currentPiece.ring++;
-            }
-            lockPiece();
-        } 
+        function drop() {
+            while (!checkCollision(currentPiece, 1, 0)) {
+                currentPiece.ring++;
+            }
+            lockPiece();
+        }
 
-        function gameOver() {
-            cancelAnimationFrame(gameLoop);
-            document.getElementById('gameOver').classList.add('show');
-            document.getElementById('finalScore').textContent = `Score: ${score}`;
-        } 
+        function gameOver() {
+            cancelAnimationFrame(gameLoop);
+            document.getElementById('gameOver').classList.add('show');
+            document.getElementById('finalScore').textContent = `Score: ${score}`;
+        }
 
-        function restart() {
-            grid = Array(RINGS).fill().map(() => Array(SEGMENTS).fill(0));
-            score = 0;
-            document.getElementById('score').textContent = 'Score: 0';
-            document.getElementById('gameOver').classList.remove('show');
-            currentPiece = createPiece();
-            lastDropTime = performance.now();
-            gameLoop = requestAnimationFrame(update);
-        } 
+        function restart() {
+            grid = Array(RINGS).fill().map(() => Array(SEGMENTS).fill(0));
+            score = 0;
+            document.getElementById('score').textContent = 'Score: 0';
+            document.getElementById('gameOver').classList.remove('show');
+            currentPiece = createPiece();
+            lastDropTime = performance.now();
+            gameLoop = requestAnimationFrame(update);
+        }
 
-        function update(currentTime) {
-            if (currentTime - lastDropTime > dropInterval) {
-                moveDown();
-                lastDropTime = currentTime;
-            }
-            
-            drawCircle();
-            gameLoop = requestAnimationFrame(update);
-        } 
+        function update(currentTime) {
+            if (currentTime - lastDropTime > dropInterval) {
+                moveDown();
+                lastDropTime = currentTime;
+            }
+            
+            drawCircle();
+            gameLoop = requestAnimationFrame(update);
+        }
 
-        // Controls
-        document.getElementById('leftBtn').addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            moveLeft();
-        }); 
+        // Controls
+        document.getElementById('leftBtn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            moveLeft();
+        });
 
-        document.getElementById('rightBtn').addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            moveRight();
-        }); 
+        document.getElementById('rightBtn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            moveRight();
+        });
 
-        document.getElementById('rotateBtn').addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            rotate();
-        }); 
+        document.getElementById('downBtn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            drop();
+        });
 
-        document.getElementById('downBtn').addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            drop();
-        }); 
+        document.getElementById('restartBtn').addEventListener('click', restart);
 
-        document.getElementById('restartBtn').addEventListener('click', restart); 
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') moveLeft();
+            if (e.key === 'ArrowRight') moveRight();
+            if (e.key === 'ArrowDown') moveDown();
+            if (e.key === ' ') drop();
+        });
 
-        // Keyboard controls
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowLeft') moveLeft();
-            if (e.key === 'ArrowRight') moveRight();
-            if (e.key === 'ArrowUp') rotate();
-            if (e.key === 'ArrowDown') moveDown();
-            if (e.key === ' ') drop();
-        }); 
-
-        // Start game
-        currentPiece = createPiece();
-        lastDropTime = performance.now();
-        gameLoop = requestAnimationFrame(update);
-    </script>
+        // Start game
+        currentPiece = createPiece();
+        lastDropTime = performance.now();
+        gameLoop = requestAnimationFrame(update);
+    </script>
 </body>
 </html>

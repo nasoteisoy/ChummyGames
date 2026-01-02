@@ -462,7 +462,7 @@
     </style>
 </head>
 <body>
-    <div id="version">v1.16</div>
+    <div id="version">v1.17</div>
     
     <div id="menuOverlay">
         <div id="menuContent">
@@ -513,7 +513,7 @@
     <div id="gameContainer">
         <div id="scoreRow">
             <div id="score">Score: 0</div>
-            <button id="pauseBtn">Baby Panic Button</button>
+            <button id="pauseBtn">Panic Button (Menu)</button>
         </div>
         <canvas id="gameCanvas"></canvas>
         <div id="controls">
@@ -964,7 +964,7 @@
             document.getElementById('gameOver').classList.remove('show');
             document.getElementById('submitScore').disabled = false;
             document.getElementById('submitScore').textContent = 'Submit Score';
-            document.getElementById('pauseBtn').textContent = 'Baby Panic Button';
+            document.getElementById('pauseBtn').textContent = 'Panic Button (Menu)';
             document.getElementById('pauseBtn').classList.remove('paused');
             currentPiece = createPiece();
             lastDropTime = performance.now();
@@ -1008,7 +1008,7 @@
             if (!isGameOver && isPaused) {
                 isPaused = false;
                 const pauseBtn = document.getElementById('pauseBtn');
-                pauseBtn.textContent = 'Baby Panic Button';
+                pauseBtn.textContent = 'Panic Button (Menu)';
                 pauseBtn.classList.remove('paused');
                 lastDropTime = performance.now(); // Reset drop timer
             }

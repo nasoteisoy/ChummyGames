@@ -90,7 +90,7 @@
             max-width: 350px;
             width: 100%;
             backdrop-filter: blur(10px);
-            max-height: 300px;
+            height: 280px;
             display: flex;
             flex-direction: column;
         }
@@ -110,6 +110,7 @@
             font-size: 14px;
             overflow-y: auto;
             flex: 1;
+            scroll-behavior: smooth;
         }
 
         #scoresList::-webkit-scrollbar {
@@ -131,10 +132,11 @@
         }
 
         #scoresList li {
-            padding: 5px 0;
+            padding: 8px 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             justify-content: space-between;
+            align-items: center;
         }
 
         #scoresList li:last-child {
@@ -145,6 +147,11 @@
             color: #FFD700;
             font-weight: bold;
             margin-right: 10px;
+            min-width: 35px;
+        }
+
+        #scoresList .rank.top3 {
+            font-size: 16px;
         }
 
         #scoresList .name {
@@ -154,6 +161,27 @@
         #scoresList .score {
             font-weight: bold;
             color: #4ECDC4;
+        }
+
+        #resetScoresBtn {
+            background: rgba(244, 67, 54, 0.3);
+            border: 2px solid rgba(244, 67, 54, 0.5);
+            border-radius: 10px;
+            color: white;
+            font-size: 12px;
+            padding: 8px 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+            touch-action: manipulation;
+            user-select: none;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        #resetScoresBtn:active {
+            background: rgba(244, 67, 54, 0.5);
+            transform: scale(0.95);
         }
 
         canvas {
@@ -295,8 +323,8 @@
         <canvas id="gameCanvas"></canvas>
         <div id="controls">
             <button class="control-btn" id="leftBtn">
-                <div class="icon">◄</div>
-                <div class="label">Left</div>
+                <div class="icon">↺</div>
+                <div class="label">Counter-CW</div>
             </button>
             <button class="control-btn" id="rotateBtn">
                 <div class="icon">↻</div>
@@ -307,8 +335,8 @@
                 <div class="label">Down</div>
             </button>
             <button class="control-btn" id="rightBtn">
-                <div class="icon">►</div>
-                <div class="label">Right</div>
+                <div class="icon">↻</div>
+                <div class="label">Clockwise</div>
             </button>
         </div>
         <div id="highScores">
@@ -316,6 +344,7 @@
             <ul id="scoresList">
                 <li>Loading...</li>
             </ul>
+            <button id="resetScoresBtn">Reset All Scores</button>
         </div>
     </div>
 
@@ -413,9 +442,9 @@
                 name: 'L',
                 rotations: [
                     [0, 1, 2, 10],      // ═══╗ (horizontal with corner down-left)
-                    [0, 1, 11, 21],     // ║═  (vertical with corner top-right)
+                    [0, 10, 20, 21],    // ═║  (vertical with corner bottom-right)
                     [2, 10, 11, 12],    // ╔═══ (horizontal with corner up-right)
-                    [0, 10, 20, 21]     // ═║  (vertical with corner bottom-right)
+                    [0, 1, 11, 21]      // ║═  (vertical with corner top-right)
                 ],
                 color: '#FFA07A' 
             },
@@ -423,9 +452,9 @@
                 name: 'J',
                 rotations: [
                     [0, 1, 2, 12],      // ═══╝ (horizontal with corner down-right)
-                    [1, 11, 20, 21],    // ═║  (vertical with corner top-left)
+                    [0, 1, 10, 20],     // ║═  (vertical with corner bottom-left)
                     [0, 10, 11, 12],    // ╚═══ (horizontal with corner up-left)
-                    [0, 1, 10, 20]      // ║═  (vertical with corner bottom-left)
+                    [1, 11, 20, 21]     // ═║  (vertical with corner top-left)
                 ],
                 color: '#98D8C8' 
             },
@@ -465,7 +494,7 @@
                     [0, 1, 2, 11],
                     [0, 10, 11, 20],
                     [1, 10, 11, 12],
-                    [0, 9, 10, 20]
+                    [1, 10, 11, 21]
                 ],
                 color: '#F8B739' 
             },
@@ -473,7 +502,7 @@
 
         // High Score Functions
         function loadHighScores() {
-            scoresRef.orderByChild('score').limitToLast(20).on('value', (snapshot) => {
+            scoresRef.orderByChild('score').limitToLast(50).on('value', (snapshot) => {
                 const scores = [];
                 snapshot.forEach((childSnapshot) => {
                     scores.push({
@@ -499,7 +528,7 @@
             
             scoresList.innerHTML = scores.map((entry, index) => `
                 <li>
-                    <span class="rank">#${index + 1}</span>
+                    <span class="rank ${index < 3 ? 'top3' : ''}">#${index + 1}</span>
                     <span class="name">${escapeHtml(entry.name)}</span>
                     <span class="score">${entry.score}</span>
                 </li>
@@ -519,51 +548,50 @@
             }
             
             try {
-                // Get current top 5
-                const snapshot = await scoresRef.orderByChild('score').limitToLast(5).once('value');
-                const scores = [];
+                // Add new score
+                await scoresRef.push({
+                    name: name.trim(),
+                    score: score,
+                    timestamp: Date.now()
+                });
+                
+                // Clean up: keep only top 50 scores
+                const snapshot = await scoresRef.orderByChild('score').once('value');
+                const allScores = [];
                 snapshot.forEach((childSnapshot) => {
-                    scores.push({
+                    allScores.push({
                         id: childSnapshot.key,
                         score: childSnapshot.val().score
                     });
                 });
                 
-                scores.sort((a, b) => b.score - a.score);
+                allScores.sort((a, b) => a.score - b.score); // Sort ascending (lowest first)
                 
-                // Check if this score makes top 5
-                if (scores.length < 5 || score > scores[scores.length - 1].score) {
-                    // Add new score
-                    await scoresRef.push({
-                        name: name.trim(),
-                        score: score,
-                        timestamp: Date.now()
-                    });
-                    
-                    // If we now have more than 5, remove the lowest
-                    const newSnapshot = await scoresRef.orderByChild('score').limitToLast(6).once('value');
-                    const allScores = [];
-                    newSnapshot.forEach((childSnapshot) => {
-                        allScores.push({
-                            id: childSnapshot.key,
-                            score: childSnapshot.val().score
-                        });
-                    });
-                    
-                    allScores.sort((a, b) => a.score - b.score);
-                    
-                    if (allScores.length > 5) {
-                        await scoresRef.child(allScores[0].id).remove();
+                // Remove excess scores beyond top 50
+                if (allScores.length > 50) {
+                    const toRemove = allScores.slice(0, allScores.length - 50);
+                    for (const entry of toRemove) {
+                        await scoresRef.child(entry.id).remove();
                     }
-                    
-                    return true;
                 }
                 
-                return false;
+                return true;
             } catch (error) {
                 console.error('Error submitting score:', error);
                 alert('Error submitting score. Please try again.');
                 return false;
+            }
+        }
+        
+        async function resetAllScores() {
+            if (confirm('Are you sure you want to delete ALL high scores? This cannot be undone!')) {
+                try {
+                    await scoresRef.remove();
+                    alert('All scores have been reset!');
+                } catch (error) {
+                    console.error('Error resetting scores:', error);
+                    alert('Error resetting scores. Please try again.');
+                }
             }
         }
         
@@ -682,13 +710,13 @@
             }
         }
 
-        function moveLeft() {
+        function moveCounterClockwise() {
             if (!checkCollision(currentPiece, 0, -1)) {
                 currentPiece.segment = (currentPiece.segment - 1 + SEGMENTS) % SEGMENTS;
             }
         }
 
-        function moveRight() {
+        function moveClockwise() {
             if (!checkCollision(currentPiece, 0, 1)) {
                 currentPiece.segment = (currentPiece.segment + 1) % SEGMENTS;
             }
@@ -749,7 +777,7 @@
                 pauseBtn.textContent = '▶ Resume';
                 pauseBtn.classList.add('paused');
             } else {
-                pauseBtn.textContent = 'Baby Pause Button';
+                pauseBtn.textContent = 'Baby Panic Button';
                 pauseBtn.classList.remove('paused');
                 lastDropTime = performance.now(); // Reset drop timer
             }
@@ -764,7 +792,7 @@
             document.getElementById('gameOver').classList.remove('show');
             document.getElementById('submitScore').disabled = false;
             document.getElementById('submitScore').textContent = 'Submit Score';
-            document.getElementById('pauseBtn').textContent = 'Baby Pause Button';
+            document.getElementById('pauseBtn').textContent = 'Baby Panic Button';
             document.getElementById('pauseBtn').classList.remove('paused');
             currentPiece = createPiece();
             lastDropTime = performance.now();
@@ -788,7 +816,7 @@
         // Controls
         document.getElementById('leftBtn').addEventListener('touchstart', (e) => {
             e.preventDefault();
-            if (!isPaused && !isGameOver) moveLeft();
+            if (!isPaused && !isGameOver) moveCounterClockwise();
         });
 
         document.getElementById('rotateBtn').addEventListener('touchstart', (e) => {
@@ -798,7 +826,7 @@
 
         document.getElementById('rightBtn').addEventListener('touchstart', (e) => {
             e.preventDefault();
-            if (!isPaused && !isGameOver) moveRight();
+            if (!isPaused && !isGameOver) moveClockwise();
         });
 
         document.getElementById('downBtn').addEventListener('touchstart', (e) => {
@@ -807,6 +835,8 @@
         });
 
         document.getElementById('pauseBtn').addEventListener('click', togglePause);
+
+        document.getElementById('resetScoresBtn').addEventListener('click', resetAllScores);
 
         document.getElementById('submitScore').addEventListener('click', async () => {
             const name = document.getElementById('nameInput').value;
@@ -821,7 +851,6 @@
                 alert('Score submitted successfully!');
                 restart();
             } else {
-                alert('Score not high enough for top 5!');
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Submit Score';
             }
@@ -832,8 +861,8 @@
         // Keyboard controls
         document.addEventListener('keydown', (e) => {
             if (isPaused || isGameOver) return;
-            if (e.key === 'ArrowLeft') moveLeft();
-            if (e.key === 'ArrowRight') moveRight();
+            if (e.key === 'ArrowLeft') moveCounterClockwise();
+            if (e.key === 'ArrowRight') moveClockwise();
             if (e.key === 'ArrowUp') rotate();
             if (e.key === 'ArrowDown') moveDown();
         });

@@ -703,25 +703,17 @@
 
         function gameOver() {
             cancelAnimationFrame(gameLoop);
-            togglePause(option="Paused")
+            
             document.getElementById('gameOver').classList.add('show');
             document.getElementById('finalScore').textContent = `Score: ${score}`;
             document.getElementById('nameInput').value = '';
             document.getElementById('nameInput').focus();
         }
 
-        function togglePause(option="None") {
-            if(option=="None"){
-                isPaused = !isPaused;
-            }
-            if(option=="Paused"){
-                isPaused = true;
-            }
-            if(option=="NotPaused"){
-                isPaused = False;
-            }
+        function togglePause() {
+            isPaused = !isPaused;
             const pauseBtn = document.getElementById('pauseBtn');
-            score -= 100;
+            
             document.getElementById('score').textContent = `Score: ${score}`;
             if (isPaused) {
                 pauseBtn.textContent = '▶ Resume';
@@ -734,7 +726,7 @@
         }
 
         function restart() {
-            togglePause(option="NotPaused")
+            
             grid = Array(RINGS).fill().map(() => Array(SEGMENTS).fill(0));
             score = 0;
             isPaused = false;

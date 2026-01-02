@@ -59,6 +59,171 @@
             flex: 1;
         }
 
+        #version {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 10px;
+            font-weight: normal;
+        }
+
+        #menuBtn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            color: white;
+            font-size: 24px;
+            padding: 8px 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+            touch-action: manipulation;
+            user-select: none;
+        }
+
+        #menuBtn:active {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(0.95);
+        }
+
+        #menuOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        #menuOverlay.show {
+            display: flex;
+        }
+
+        #menuContent {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        #menuContent h2 {
+            color: white;
+            margin: 0 0 20px 0;
+            text-align: center;
+            font-size: 28px;
+        }
+
+        .menu-section {
+            margin-bottom: 30px;
+        }
+
+        .menu-section h3 {
+            color: #FFD700;
+            margin: 0 0 15px 0;
+            font-size: 20px;
+        }
+
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .menu-button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            color: white;
+            font-size: 18px;
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+            touch-action: manipulation;
+            user-select: none;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .menu-button .icon {
+            font-size: 24px;
+            min-width: 30px;
+        }
+
+        .menu-button:active {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(0.98);
+        }
+
+        .menu-button.danger {
+            background: rgba(244, 67, 54, 0.3);
+            border-color: rgba(244, 67, 54, 0.5);
+        }
+
+        .menu-button.danger:active {
+            background: rgba(244, 67, 54, 0.5);
+        }
+
+        #closeMenuBtn {
+            background: #4CAF50;
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-size: 18px;
+            padding: 15px 40px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        #closeMenuBtn:active {
+            background: #45a049;
+        }
+
+        #piecesGrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .piece-display {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .piece-display .piece-name {
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .piece-canvas {
+            width: 100%;
+            height: 80px;
+            border-radius: 5px;
+        }
+
         #pauseBtn {
             background: rgba(255, 255, 255, 0.2);
             border: 2px solid rgba(255, 255, 255, 0.3);
@@ -319,6 +484,59 @@
     </style>
 </head>
 <body>
+    <div id="version">v1.14</div>
+    <button id="menuBtn">☰</button>
+    
+    <div id="menuOverlay">
+        <div id="menuContent">
+            <h2>Menu</h2>
+            
+            <div class="menu-section">
+                <h3>Game Controls</h3>
+                <div class="menu-buttons">
+                    <button class="menu-button" id="menuPauseBtn">
+                        <span class="icon">⏸️</span>
+                        <span>Baby Panic Button (Pause)</span>
+                    </button>
+                    <button class="menu-button danger" id="menuResetBtn">
+                        <span class="icon">🔄</span>
+                        <span>Reset Game</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="menu-section">
+                <h3>Information</h3>
+                <div class="menu-buttons">
+                    <button class="menu-button" id="showScoresBtn">
+                        <span class="icon">🏆</span>
+                        <span>View High Scores</span>
+                    </button>
+                    <button class="menu-button" id="showPiecesBtn">
+                        <span class="icon">🧩</span>
+                        <span>View All Pieces</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="menu-section" id="scoresSection" style="display: none;">
+                <h3>🏆 High Scores</h3>
+                <div id="menuScoresList" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; max-height: 300px; overflow-y: auto;">
+                    <ul id="menuScoresListUL" style="list-style: none; padding: 0; margin: 0; font-size: 14px; color: white;">
+                        <li>Loading...</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="menu-section" id="piecesSection" style="display: none;">
+                <h3>🧩 All Pieces</h3>
+                <div id="piecesGrid"></div>
+            </div>
+
+            <button id="closeMenuBtn">Close Menu</button>
+        </div>
+    </div>
+
     <div id="gameContainer">
         <div id="scoreRow">
             <div id="score">Score: 0</div>
@@ -804,6 +1022,145 @@
                 gameLoop = requestAnimationFrame(update);
             }
         }
+
+        // Menu Functions
+        function openMenu() {
+            document.getElementById('menuOverlay').classList.add('show');
+            // Auto-pause game when menu opens if game is running
+            if (!isGameOver && !isPaused) {
+                togglePause();
+            }
+        }
+
+        function closeMenu() {
+            document.getElementById('menuOverlay').classList.remove('show');
+            document.getElementById('scoresSection').style.display = 'none';
+            document.getElementById('piecesSection').style.display = 'none';
+        }
+
+        function showHighScoresInMenu() {
+            const section = document.getElementById('scoresSection');
+            const list = document.getElementById('menuScoresListUL');
+            
+            section.style.display = 'block';
+            document.getElementById('piecesSection').style.display = 'none';
+            
+            // Load scores from Firebase
+            scoresRef.orderByChild('score').limitToLast(50).once('value', (snapshot) => {
+                const scores = [];
+                snapshot.forEach((childSnapshot) => {
+                    scores.push({
+                        id: childSnapshot.key,
+                        ...childSnapshot.val()
+                    });
+                });
+                
+                scores.sort((a, b) => b.score - a.score);
+                
+                if (scores.length === 0) {
+                    list.innerHTML = '<li>No scores yet!</li>';
+                    return;
+                }
+                
+                list.innerHTML = scores.map((entry, index) => `
+                    <li style="padding: 8px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-between;">
+                        <span style="color: #FFD700; font-weight: bold; margin-right: 10px; min-width: 35px;">#${index + 1}</span>
+                        <span style="flex: 1;">${escapeHtml(entry.name)}</span>
+                        <span style="font-weight: bold; color: #4ECDC4;">${entry.score}</span>
+                    </li>
+                `).join('');
+            });
+        }
+
+        function showPiecesInMenu() {
+            const section = document.getElementById('piecesSection');
+            const grid = document.getElementById('piecesGrid');
+            
+            section.style.display = 'block';
+            document.getElementById('scoresSection').style.display = 'none';
+            
+            grid.innerHTML = PIECES.map(piece => {
+                const canvasId = `piece-canvas-${piece.name}`;
+                return `
+                    <div class="piece-display">
+                        <div class="piece-name">${piece.name}</div>
+                        <canvas id="${canvasId}" class="piece-canvas"></canvas>
+                    </div>
+                `;
+            }).join('');
+            
+            // Draw each piece flat on its canvas
+            PIECES.forEach(piece => {
+                const canvas = document.getElementById(`piece-canvas-${piece.name}`);
+                const ctx = canvas.getContext('2d');
+                const dpr = window.devicePixelRatio || 1;
+                
+                canvas.width = canvas.offsetWidth * dpr;
+                canvas.height = canvas.offsetHeight * dpr;
+                ctx.scale(dpr, dpr);
+                
+                const displayWidth = canvas.offsetWidth;
+                const displayHeight = canvas.offsetHeight;
+                
+                // Get bounding box of piece
+                const blocks = piece.rotations[0];
+                let minRow = Infinity, maxRow = -Infinity;
+                let minCol = Infinity, maxCol = -Infinity;
+                
+                blocks.forEach(offset => {
+                    const row = Math.floor(offset / SEGMENTS);
+                    const col = offset % SEGMENTS;
+                    minRow = Math.min(minRow, row);
+                    maxRow = Math.max(maxRow, row);
+                    minCol = Math.min(minCol, col);
+                    maxCol = Math.max(maxCol, col);
+                });
+                
+                const pieceWidth = maxCol - minCol + 1;
+                const pieceHeight = maxRow - minRow + 1;
+                const cellSize = Math.min(displayWidth / (pieceWidth + 1), displayHeight / (pieceHeight + 1));
+                
+                const offsetX = (displayWidth - pieceWidth * cellSize) / 2;
+                const offsetY = (displayHeight - pieceHeight * cellSize) / 2;
+                
+                // Draw blocks
+                blocks.forEach(offset => {
+                    const row = Math.floor(offset / SEGMENTS) - minRow;
+                    const col = (offset % SEGMENTS) - minCol;
+                    
+                    const x = offsetX + col * cellSize;
+                    const y = offsetY + row * cellSize;
+                    
+                    ctx.fillStyle = piece.color;
+                    ctx.fillRect(x, y, cellSize - 2, cellSize - 2);
+                    
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x, y, cellSize - 2, cellSize - 2);
+                });
+            });
+        }
+
+        // Menu event listeners
+        document.getElementById('menuBtn').addEventListener('click', openMenu);
+        document.getElementById('closeMenuBtn').addEventListener('click', closeMenu);
+        
+        document.getElementById('menuPauseBtn').addEventListener('click', () => {
+            closeMenu();
+            if (!isGameOver && isPaused) {
+                togglePause(); // Unpause if paused
+            }
+        });
+        
+        document.getElementById('menuResetBtn').addEventListener('click', () => {
+            if (confirm('Are you sure you want to reset the current game?')) {
+                closeMenu();
+                restart();
+            }
+        });
+        
+        document.getElementById('showScoresBtn').addEventListener('click', showHighScoresInMenu);
+        document.getElementById('showPiecesBtn').addEventListener('click', showPiecesInMenu);
 
         // Controls
         document.getElementById('leftBtn').addEventListener('touchstart', (e) => {

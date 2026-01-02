@@ -69,28 +69,6 @@
             font-weight: normal;
         }
 
-        #menuBtn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 10px;
-            color: white;
-            font-size: 24px;
-            padding: 8px 15px;
-            cursor: pointer;
-            transition: all 0.2s;
-            backdrop-filter: blur(10px);
-            touch-action: manipulation;
-            user-select: none;
-        }
-
-        #menuBtn:active {
-            background: rgba(255, 255, 255, 0.4);
-            transform: scale(0.95);
-        }
-
         #menuOverlay {
             display: none;
             position: fixed;
@@ -484,8 +462,7 @@
     </style>
 </head>
 <body>
-    <div id="version">v1.14</div>
-    <button id="menuBtn">☰</button>
+    <div id="version">v1.16</div>
     
     <div id="menuOverlay">
         <div id="menuContent">
@@ -494,10 +471,6 @@
             <div class="menu-section">
                 <h3>Game Controls</h3>
                 <div class="menu-buttons">
-                    <button class="menu-button" id="menuPauseBtn">
-                        <span class="icon">⏸️</span>
-                        <span>Baby Panic Button (Pause)</span>
-                    </button>
                     <button class="menu-button danger" id="menuResetBtn">
                         <span class="icon">🔄</span>
                         <span>Reset Game</span>
@@ -978,19 +951,8 @@
         function togglePause() {
             if (isGameOver) return; // Don't allow pause when game is over
             
-            isPaused = !isPaused;
-            const pauseBtn = document.getElementById('pauseBtn');
-            
-            if (isPaused) {
-                score -= 100;
-                document.getElementById('score').textContent = `Score: ${score}`;
-                pauseBtn.textContent = '▶ Resume';
-                pauseBtn.classList.add('paused');
-            } else {
-                pauseBtn.textContent = 'Baby Panic Button';
-                pauseBtn.classList.remove('paused');
-                lastDropTime = performance.now(); // Reset drop timer
-            }
+            // Open the menu (which will auto-pause the game)
+            openMenu();
         }
 
         function restart() {
@@ -1028,7 +990,12 @@
             document.getElementById('menuOverlay').classList.add('show');
             // Auto-pause game when menu opens if game is running
             if (!isGameOver && !isPaused) {
-                togglePause();
+                isPaused = true;
+                score -= 100;
+                document.getElementById('score').textContent = `Score: ${score}`;
+                const pauseBtn = document.getElementById('pauseBtn');
+                pauseBtn.textContent = '▶ Resume';
+                pauseBtn.classList.add('paused');
             }
         }
 
@@ -1036,6 +1003,15 @@
             document.getElementById('menuOverlay').classList.remove('show');
             document.getElementById('scoresSection').style.display = 'none';
             document.getElementById('piecesSection').style.display = 'none';
+            
+            // Unpause game when closing menu
+            if (!isGameOver && isPaused) {
+                isPaused = false;
+                const pauseBtn = document.getElementById('pauseBtn');
+                pauseBtn.textContent = 'Baby Panic Button';
+                pauseBtn.classList.remove('paused');
+                lastDropTime = performance.now(); // Reset drop timer
+            }
         }
 
         function showHighScoresInMenu() {
@@ -1142,15 +1118,8 @@
         }
 
         // Menu event listeners
-        document.getElementById('menuBtn').addEventListener('click', openMenu);
+        document.getElementById('pauseBtn').addEventListener('click', togglePause);
         document.getElementById('closeMenuBtn').addEventListener('click', closeMenu);
-        
-        document.getElementById('menuPauseBtn').addEventListener('click', () => {
-            closeMenu();
-            if (!isGameOver && isPaused) {
-                togglePause(); // Unpause if paused
-            }
-        });
         
         document.getElementById('menuResetBtn').addEventListener('click', () => {
             if (confirm('Are you sure you want to reset the current game?')) {
@@ -1182,8 +1151,6 @@
             e.preventDefault();
             if (!isPaused && !isGameOver) moveDown();
         });
-
-        document.getElementById('pauseBtn').addEventListener('click', togglePause);
 
         document.getElementById('resetGameBtn').addEventListener('click', () => {
             if (confirm('Are you sure you want to reset the current game?')) {

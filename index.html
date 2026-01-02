@@ -349,6 +349,7 @@
         let dropInterval = 800;
         let lastDropTime = 0;
         let isPaused = false;
+        let isGameOver = false;
 
         // Tetris piece shapes (in segment units)
         // Each block position is calculated as: ring * SEGMENTS + segment_offset
@@ -586,7 +587,7 @@
             }
             
             // Draw current piece
-            if (currentPiece) {
+            if (currentPiece && !isGameOver) {
                 currentPiece.blocks.forEach(offset => {
                     const r = currentPiece.ring + Math.floor(offset / SEGMENTS);
                     const s = (currentPiece.segment + (offset % SEGMENTS) + SEGMENTS) % SEGMENTS;
@@ -702,7 +703,9 @@
         }
 
         function gameOver() {
+            isGameOver = true;
             cancelAnimationFrame(gameLoop);
+            gameLoop = null;
             
             document.getElementById('gameOver').classList.add('show');
             document.getElementById('finalScore').textContent = `Score: ${score}`;
@@ -711,11 +714,14 @@
         }
 
         function togglePause() {
+            if (isGameOver) return; // Don't allow pause when game is over
+            
             isPaused = !isPaused;
             const pauseBtn = document.getElementById('pauseBtn');
             
-            document.getElementById('score').textContent = `Score: ${score}`;
             if (isPaused) {
+                score -= 100;
+                document.getElementById('score').textContent = `Score: ${score}`;
                 pauseBtn.textContent = '▶ Resume';
                 pauseBtn.classList.add('paused');
             } else {
@@ -726,7 +732,7 @@
         }
 
         function restart() {
-            
+            isGameOver = false;
             grid = Array(RINGS).fill().map(() => Array(SEGMENTS).fill(0));
             score = 0;
             isPaused = false;
@@ -742,36 +748,38 @@
         }
 
         function update(currentTime) {
-            if (!isPaused) {
-                if (currentTime - lastDropTime > dropInterval) {
-                    moveDown();
-                    lastDropTime = currentTime;
+            if (!isGameOver) {
+                if (!isPaused) {
+                    if (currentTime - lastDropTime > dropInterval) {
+                        moveDown();
+                        lastDropTime = currentTime;
+                    }
                 }
+                
+                drawCircle();
+                gameLoop = requestAnimationFrame(update);
             }
-            
-            drawCircle();
-            gameLoop = requestAnimationFrame(update);
         }
 
         // Controls
         document.getElementById('leftBtn').addEventListener('touchstart', (e) => {
             e.preventDefault();
-            if (!isPaused) moveLeft();
+            if (!isPaused && !isGameOver) moveLeft();
         });
 
         document.getElementById('rotateBtn').addEventListener('touchstart', (e) => {
             e.preventDefault();
-            if (!isPaused) rotate();
+            if (!isPaused && !isGameOver) rotate();
         });
 
         document.getElementById('rightBtn').addEventListener('touchstart', (e) => {
             e.preventDefault();
-            if (!isPaused) moveRight();
+            if (!isPaused && !isGameOver) moveRight();
         });
 
         document.getElementById('downBtn').addEventListener('touchstart', (e) => {
             e.preventDefault();
-            if (!isPaused) moveDown();
+            if (!isPaused && !isGameOver) moveDown();
         });
 
         document.getElementById('pauseBtn').addEventListener('click', togglePause);
@@ -799,7 +807,7 @@
 
         // Keyboard controls
         document.addEventListener('keydown', (e) => {
-            if (isPaused) return;
+            if (isPaused || isGameOver) return;
             if (e.key === 'ArrowLeft') moveLeft();
             if (e.key === 'ArrowRight') moveRight();
             if (e.key === 'ArrowUp') rotate();

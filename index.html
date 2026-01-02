@@ -90,6 +90,9 @@
             max-width: 350px;
             width: 100%;
             backdrop-filter: blur(10px);
+            max-height: 300px;
+            display: flex;
+            flex-direction: column;
         }
 
         #highScores h3 {
@@ -97,6 +100,7 @@
             font-size: 18px;
             text-align: center;
             color: #FFD700;
+            flex-shrink: 0;
         }
 
         #scoresList {
@@ -104,6 +108,26 @@
             padding: 0;
             margin: 0;
             font-size: 14px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        #scoresList::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #scoresList::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        #scoresList::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+
+        #scoresList::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
         }
 
         #scoresList li {
@@ -288,7 +312,7 @@
             </button>
         </div>
         <div id="highScores">
-            <h3>🏆 Top 5 High Scores</h3>
+            <h3>🏆 Top Scores</h3>
             <ul id="scoresList">
                 <li>Loading...</li>
             </ul>
@@ -449,7 +473,7 @@
 
         // High Score Functions
         function loadHighScores() {
-            scoresRef.orderByChild('score').limitToLast(5).on('value', (snapshot) => {
+            scoresRef.orderByChild('score').limitToLast(20).on('value', (snapshot) => {
                 const scores = [];
                 snapshot.forEach((childSnapshot) => {
                     scores.push({

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Chummy Tetris</title>
+    <title>Chummy Ripples</title>
     
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -18,7 +18,7 @@
         }
 
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             flex-direction: column;
@@ -29,6 +29,29 @@
             overflow-x: hidden;
             touch-action: pan-y;
             padding: 20px 0;
+            transition: background 2s ease;
+            position: relative;
+        }
+
+        /* Animated background particles */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-20px) scale(1.05); }
         }
 
         #gameContainer {
@@ -39,6 +62,8 @@
             padding: 10px;
             max-width: 100vw;
             margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
         }
 
         #scoreRow {
@@ -53,10 +78,55 @@
 
         #score {
             color: white;
+            font-size: 28px;
+            font-weight: bold;
+            text-shadow: 
+                0 0 10px rgba(255, 255, 255, 0.5),
+                0 0 20px rgba(255, 255, 255, 0.3),
+                2px 2px 4px rgba(0,0,0,0.5);
+            flex: 1;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .score-popup {
+            position: absolute;
+            color: #FFD700;
             font-size: 24px;
             font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-            flex: 1;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+            pointer-events: none;
+            animation: scorePopup 1s ease-out forwards;
+            z-index: 1000;
+        }
+
+        @keyframes scorePopup {
+            0% { 
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% { 
+                opacity: 0;
+                transform: translateY(-50px) scale(1.5);
+            }
+        }
+
+        #difficultyLevel {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 16px;
+            font-weight: bold;
+            text-shadow: 
+                0 0 10px rgba(255, 255, 255, 0.5),
+                1px 1px 2px rgba(0,0,0,0.5);
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 15px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         #version {
@@ -67,6 +137,7 @@
             color: rgba(255, 255, 255, 0.5);
             font-size: 10px;
             font-weight: normal;
+            z-index: 10;
         }
 
         #menuOverlay {
@@ -82,6 +153,13 @@
             z-index: 2000;
             overflow-y: auto;
             padding: 20px;
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         #menuOverlay.show {
@@ -89,20 +167,36 @@
         }
 
         #menuContent {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 25px;
             padding: 30px;
             max-width: 500px;
             width: 100%;
-            backdrop-filter: blur(20px);
-            border: 2px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(30px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { 
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         #menuContent h2 {
             color: white;
             margin: 0 0 20px 0;
             text-align: center;
-            font-size: 28px;
+            font-size: 32px;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
         }
 
         .menu-section {
@@ -113,6 +207,7 @@
             color: #FFD700;
             margin: 0 0 15px 0;
             font-size: 20px;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
         }
 
         .menu-buttons {
@@ -129,7 +224,7 @@
             font-size: 18px;
             padding: 15px 20px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             backdrop-filter: blur(10px);
             touch-action: manipulation;
             user-select: none;
@@ -137,16 +232,23 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
 
         .menu-button .icon {
             font-size: 24px;
             min-width: 30px;
+            transition: transform 0.3s ease;
+        }
+
+        .menu-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
         }
 
         .menu-button:active {
             background: rgba(255, 255, 255, 0.4);
-            transform: scale(0.98);
+            transform: scale(0.98) translateY(0);
         }
 
         .menu-button.danger {
@@ -158,8 +260,26 @@
             background: rgba(244, 67, 54, 0.5);
         }
 
+        .menu-button.difficulty-btn.active {
+            background: rgba(76, 175, 80, 0.4);
+            border-color: rgba(76, 175, 80, 0.6);
+            box-shadow: 
+                0 4px 15px rgba(76, 175, 80, 0.4),
+                inset 0 0 20px rgba(76, 175, 80, 0.2);
+        }
+
+        .menu-button.difficulty-btn.active .icon {
+            transform: scale(1.2);
+            animation: bounce 0.5s ease;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: scale(1.2); }
+            50% { transform: scale(1.4); }
+        }
+
         #closeMenuBtn {
-            background: #4CAF50;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
             border: none;
             border-radius: 15px;
             color: white;
@@ -169,10 +289,18 @@
             font-weight: bold;
             width: 100%;
             margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        #closeMenuBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.5);
         }
 
         #closeMenuBtn:active {
-            background: #45a049;
+            background: linear-gradient(135deg, #45a049 0%, #4CAF50 100%);
+            transform: translateY(0);
         }
 
         #piecesGrid {
@@ -184,9 +312,15 @@
 
         .piece-display {
             background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
+            border-radius: 15px;
             padding: 15px;
             text-align: center;
+            transition: transform 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .piece-display:hover {
+            transform: scale(1.05);
         }
 
         .piece-display .piece-name {
@@ -194,12 +328,13 @@
             font-size: 14px;
             font-weight: bold;
             margin-bottom: 10px;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
         }
 
         .piece-canvas {
             width: 100%;
             height: 80px;
-            border-radius: 5px;
+            border-radius: 10px;
         }
 
         #pauseBtn {
@@ -211,11 +346,17 @@
             font-weight: bold;
             padding: 12px 20px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
             backdrop-filter: blur(10px);
             touch-action: manipulation;
             user-select: none;
             white-space: nowrap;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        #pauseBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
         }
 
         #pauseBtn:active {
@@ -226,27 +367,36 @@
         #pauseBtn.paused {
             background: rgba(76, 175, 80, 0.3);
             border-color: rgba(76, 175, 80, 0.5);
+            animation: pulsePause 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulsePause {
+            0%, 100% { box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4); }
+            50% { box-shadow: 0 6px 25px rgba(76, 175, 80, 0.6); }
         }
 
         #highScores {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 15px;
-            padding: 15px 20px 20px 20px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 20px;
+            padding: 20px 25px 25px 25px;
             color: white;
             max-width: 350px;
             width: 100%;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(15px);
             height: 350px;
             display: flex;
             flex-direction: column;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
         }
 
         #highScores h3 {
-            margin: 0 0 10px 0;
-            font-size: 18px;
+            margin: 0 0 15px 0;
+            font-size: 22px;
             text-align: center;
             color: #FFD700;
             flex-shrink: 0;
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
         }
 
         #scoresList {
@@ -271,6 +421,7 @@
         #scoresList::-webkit-scrollbar-thumb {
             background: rgba(255, 255, 255, 0.3);
             border-radius: 10px;
+            transition: background 0.3s ease;
         }
 
         #scoresList::-webkit-scrollbar-thumb:hover {
@@ -278,11 +429,17 @@
         }
 
         #scoresList li {
-            padding: 8px 0;
+            padding: 10px 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        #scoresList li:hover {
+            background: rgba(255, 255, 255, 0.05);
+            padding-left: 5px;
         }
 
         #scoresList li:last-child {
@@ -294,10 +451,17 @@
             font-weight: bold;
             margin-right: 10px;
             min-width: 35px;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
         }
 
         #scoresList .rank.top3 {
-            font-size: 16px;
+            font-size: 18px;
+            animation: shimmer 2s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+            50% { text-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
         }
 
         #scoresList .name {
@@ -307,6 +471,37 @@
         #scoresList .score {
             font-weight: bold;
             color: #4ECDC4;
+            text-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+        }
+
+        .difficulty-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-left: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .difficulty-easy {
+            background: rgba(76, 175, 80, 0.4);
+            color: #90EE90;
+        }
+
+        .difficulty-medium {
+            background: rgba(255, 193, 7, 0.4);
+            color: #FFD700;
+        }
+
+        .difficulty-hard {
+            background: rgba(255, 87, 34, 0.4);
+            color: #FF6347;
+        }
+
+        .difficulty-insane {
+            background: rgba(156, 39, 176, 0.4);
+            color: #DA70D6;
         }
 
         #resetGameBtn {
@@ -318,12 +513,18 @@
             font-weight: bold;
             padding: 12px 20px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
             backdrop-filter: blur(10px);
             touch-action: manipulation;
             user-select: none;
             width: 100%;
             max-width: 450px;
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+        }
+
+        #resetGameBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(244, 67, 54, 0.4);
         }
 
         #resetGameBtn:active {
@@ -332,16 +533,36 @@
         }
 
         canvas {
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.4);
             border-radius: 50%;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            box-shadow: 
+                0 20px 60px rgba(0,0,0,0.5),
+                inset 0 0 50px rgba(255, 255, 255, 0.1),
+                0 0 0 10px rgba(255, 255, 255, 0.05);
             touch-action: none;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            animation: canvasGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes canvasGlow {
+            0%, 100% { 
+                box-shadow: 
+                    0 20px 60px rgba(0,0,0,0.5),
+                    inset 0 0 50px rgba(255, 255, 255, 0.1),
+                    0 0 0 10px rgba(255, 255, 255, 0.05);
+            }
+            50% { 
+                box-shadow: 
+                    0 20px 80px rgba(0,0,0,0.6),
+                    inset 0 0 70px rgba(255, 255, 255, 0.15),
+                    0 0 0 10px rgba(255, 255, 255, 0.1);
+            }
         }
 
         #controls {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
+            gap: 12px;
             width: 100%;
             max-width: 450px;
             padding: 0 20px;
@@ -350,13 +571,13 @@
         .control-btn {
             background: rgba(255, 255, 255, 0.2);
             border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 15px;
+            border-radius: 20px;
             color: white;
             font-size: 16px;
             font-weight: bold;
-            padding: 15px 10px;
+            padding: 18px 10px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             backdrop-filter: blur(10px);
             touch-action: manipulation;
             user-select: none;
@@ -364,10 +585,12 @@
             flex-direction: column;
             align-items: center;
             gap: 5px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
 
         .control-btn .icon {
-            font-size: 24px;
+            font-size: 28px;
+            transition: transform 0.2s ease;
         }
 
         .control-btn .label {
@@ -375,9 +598,19 @@
             opacity: 0.9;
         }
 
+        .control-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
         .control-btn:active {
             background: rgba(255, 255, 255, 0.4);
-            transform: scale(0.95);
+            transform: scale(0.95) translateY(0);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .control-btn:active .icon {
+            transform: scale(1.2);
         }
 
         #gameOver {
@@ -387,12 +620,14 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.95);
             justify-content: center;
             align-items: center;
             flex-direction: column;
-            gap: 20px;
+            gap: 25px;
             z-index: 1000;
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.5s ease-out;
         }
 
         #gameOver.show {
@@ -401,68 +636,79 @@
 
         #gameOver h2 {
             color: white;
-            font-size: 36px;
+            font-size: 48px;
+            text-shadow: 
+                0 0 20px rgba(255, 255, 255, 0.5),
+                0 0 40px rgba(255, 255, 255, 0.3);
+            animation: gameOverPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes gameOverPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
         }
 
         #gameOver p {
             color: white;
-            font-size: 24px;
+            font-size: 28px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
         }
 
         #nameInput {
             background: rgba(255, 255, 255, 0.2);
             border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 10px;
-            padding: 10px 20px;
+            border-radius: 15px;
+            padding: 15px 25px;
             color: white;
-            font-size: 18px;
+            font-size: 20px;
             text-align: center;
             backdrop-filter: blur(10px);
             outline: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        #nameInput:focus {
+            border-color: rgba(255, 255, 255, 0.6);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
         }
 
         #nameInput::placeholder {
             color: rgba(255, 255, 255, 0.6);
         }
 
-        #submitScore {
-            background: #4CAF50;
+        #submitScore, #restartBtn {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
             border: none;
-            border-radius: 10px;
+            border-radius: 15px;
             color: white;
-            font-size: 20px;
-            padding: 15px 40px;
+            font-size: 22px;
+            padding: 18px 45px;
             cursor: pointer;
             font-weight: bold;
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+            transition: all 0.3s ease;
         }
 
-        #submitScore:active {
-            background: #45a049;
+        #submitScore:hover, #restartBtn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.5);
+        }
+
+        #submitScore:active, #restartBtn:active {
+            background: linear-gradient(135deg, #45a049 0%, #4CAF50 100%);
+            transform: translateY(0);
         }
 
         #submitScore:disabled {
-            background: #666;
+            background: linear-gradient(135deg, #666 0%, #555 100%);
             cursor: not-allowed;
-        }
-
-        #restartBtn {
-            background: #4CAF50;
-            border: none;
-            border-radius: 10px;
-            color: white;
-            font-size: 20px;
-            padding: 15px 40px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        #restartBtn:active {
-            background: #45a049;
+            box-shadow: none;
         }
     </style>
 </head>
 <body>
-    <div id="version">v1.17</div>
+    <div id="version">v1.21</div>
     
     <div id="menuOverlay">
         <div id="menuContent">
@@ -474,6 +720,28 @@
                     <button class="menu-button danger" id="menuResetBtn">
                         <span class="icon">🔄</span>
                         <span>Reset Game</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="menu-section">
+                <h3>Difficulty Level</h3>
+                <div class="menu-buttons">
+                    <button class="menu-button difficulty-btn" data-difficulty="easy">
+                        <span class="icon">😊</span>
+                        <span>Easy (Slow)</span>
+                    </button>
+                    <button class="menu-button difficulty-btn" data-difficulty="medium">
+                        <span class="icon">😐</span>
+                        <span>Medium (Normal)</span>
+                    </button>
+                    <button class="menu-button difficulty-btn" data-difficulty="hard">
+                        <span class="icon">😰</span>
+                        <span>Hard (Fast)</span>
+                    </button>
+                    <button class="menu-button difficulty-btn" data-difficulty="insane">
+                        <span class="icon">💀</span>
+                        <span>Insane (Very Fast)</span>
                     </button>
                 </div>
             </div>
@@ -513,6 +781,7 @@
     <div id="gameContainer">
         <div id="scoreRow">
             <div id="score">Score: 0</div>
+            <div id="difficultyLevel">Level: 1</div>
             <button id="pauseBtn">Panic Button (Menu)</button>
         </div>
         <canvas id="gameCanvas"></canvas>
@@ -568,12 +837,50 @@
         
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
-        const scoresRef = database.ref('circleTetris/highScores');
+        const scoresRef = database.ref('circleRipples/highScores');
         
         // Game constants
         const SEGMENTS = 10;
         const RINGS = 20;
-        const CENTER_HOLE_RINGS = 3; // Empty rings in the center
+        const CENTER_HOLE_RINGS = 3;
+        
+        // Difficulty settings
+        const DIFFICULTY_SETTINGS = {
+            easy: {
+                name: 'Easy',
+                initialSpeed: 1000,
+                minSpeed: 400,
+                speedDecrease: 40,
+                color1: '#667eea',
+                color2: '#764ba2'
+            },
+            medium: {
+                name: 'Medium',
+                initialSpeed: 800,
+                minSpeed: 300,
+                speedDecrease: 50,
+                color1: '#4facfe',
+                color2: '#00f2fe'
+            },
+            hard: {
+                name: 'Hard',
+                initialSpeed: 600,
+                minSpeed: 200,
+                speedDecrease: 60,
+                color1: '#fa709a',
+                color2: '#fee140'
+            },
+            insane: {
+                name: 'Insane',
+                initialSpeed: 400,
+                minSpeed: 100,
+                speedDecrease: 30,
+                color1: '#ee0979',
+                color2: '#ff6a00'
+            }
+        };
+        
+        const LEVEL_THRESHOLD = 500;
         
         // Responsive canvas sizing
         function resizeCanvas() {
@@ -592,16 +899,46 @@
         // Game state
         let grid = Array(RINGS).fill().map(() => Array(SEGMENTS).fill(0));
         let score = 0;
+        let level = 1;
+        let currentDifficulty = 'easy';
         let currentPiece = null;
         let gameLoop = null;
-        let dropInterval = 800;
+        let dropInterval = DIFFICULTY_SETTINGS.easy.initialSpeed;
         let lastDropTime = 0;
         let isPaused = false;
         let isGameOver = false;
 
-        // Tetris piece shapes (in segment units)
-        // Each block position is calculated as: ring * SEGMENTS + segment_offset
-        // Each piece has 4 rotation states
+        function updateBackgroundColor() {
+            const settings = DIFFICULTY_SETTINGS[currentDifficulty];
+            document.body.style.background = `linear-gradient(135deg, ${settings.color1} 0%, ${settings.color2} 100%)`;
+        }
+
+        function showScorePopup(points) {
+            const popup = document.createElement('div');
+            popup.className = 'score-popup';
+            popup.textContent = `+${points}`;
+            popup.style.left = `${centerX() + canvas.offsetLeft}px`;
+            popup.style.top = `${centerY() + canvas.offsetTop - 50}px`;
+            document.body.appendChild(popup);
+            
+            setTimeout(() => popup.remove(), 1000);
+        }
+
+        function updateDifficulty() {
+            const newLevel = Math.floor(score / LEVEL_THRESHOLD) + 1;
+            if (newLevel !== level) {
+                level = newLevel;
+                
+                const settings = DIFFICULTY_SETTINGS[currentDifficulty];
+                dropInterval = Math.max(
+                    settings.minSpeed,
+                    settings.initialSpeed - (level - 1) * settings.speedDecrease
+                );
+                
+                document.getElementById('difficultyLevel').textContent = `Level: ${level}`;
+            }
+        }
+
         const PIECES = [
             { 
                 name: 'I2',
@@ -636,20 +973,20 @@
             { 
                 name: 'L',
                 rotations: [
-                    [0, 1, 2, 10],      // ═══╗ (horizontal with corner down-left)
-                    [0, 10, 20, 21],    // ═║  (vertical with corner bottom-right)
-                    [2, 10, 11, 12],    // ╔═══ (horizontal with corner up-right)
-                    [0, 1, 11, 21]      // ║═  (vertical with corner top-right)
+                    [0, 1, 2, 10],
+                    [0, 10, 20, 21],
+                    [2, 10, 11, 12],
+                    [0, 1, 11, 21]
                 ],
                 color: '#FFA07A' 
             },
             { 
                 name: 'J',
                 rotations: [
-                    [0, 1, 2, 12],      // ═══╝ (horizontal with corner down-right)
-                    [0, 1, 10, 20],     // ║═  (vertical with corner bottom-left)
-                    [0, 10, 11, 12],    // ╚═══ (horizontal with corner up-left)
-                    [1, 11, 20, 21]     // ═║  (vertical with corner top-left)
+                    [0, 1, 2, 12],
+                    [0, 1, 10, 20],
+                    [0, 10, 11, 12],
+                    [1, 11, 20, 21]
                 ],
                 color: '#98D8C8' 
             },
@@ -695,7 +1032,6 @@
             },
         ];
 
-        // High Score Functions
         function loadHighScores() {
             scoresRef.orderByChild('score').limitToLast(50).on('value', (snapshot) => {
                 const scores = [];
@@ -706,9 +1042,7 @@
                     });
                 });
                 
-                // Sort by score descending
                 scores.sort((a, b) => b.score - a.score);
-                
                 displayHighScores(scores);
             });
         }
@@ -721,13 +1055,18 @@
                 return;
             }
             
-            scoresList.innerHTML = scores.map((entry, index) => `
+            scoresList.innerHTML = scores.map((entry, index) => {
+                const difficulty = entry.difficulty || 'easy';
+                const difficultyBadge = `<span class="difficulty-badge difficulty-${difficulty}">${DIFFICULTY_SETTINGS[difficulty].name}</span>`;
+                
+                return `
                 <li>
                     <span class="rank ${index < 3 ? 'top3' : ''}">#${index + 1}</span>
-                    <span class="name">${escapeHtml(entry.name)}</span>
+                    <span class="name">${escapeHtml(entry.name)}${difficultyBadge}</span>
                     <span class="score">${entry.score}</span>
                 </li>
-            `).join('');
+            `;
+            }).join('');
         }
         
         function escapeHtml(text) {
@@ -743,14 +1082,13 @@
             }
             
             try {
-                // Add new score
                 await scoresRef.push({
                     name: name.trim(),
                     score: score,
+                    difficulty: currentDifficulty,
                     timestamp: Date.now()
                 });
                 
-                // Clean up: keep only top 50 scores
                 const snapshot = await scoresRef.orderByChild('score').once('value');
                 const allScores = [];
                 snapshot.forEach((childSnapshot) => {
@@ -760,9 +1098,8 @@
                     });
                 });
                 
-                allScores.sort((a, b) => a.score - b.score); // Sort ascending (lowest first)
+                allScores.sort((a, b) => a.score - b.score);
                 
-                // Remove excess scores beyond top 50
                 if (allScores.length > 50) {
                     const toRemove = allScores.slice(0, allScores.length - 50);
                     for (const entry of toRemove) {
@@ -794,7 +1131,7 @@
         function drawCircle() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Draw grid
+            // Draw grid with glow effect
             for (let r = CENTER_HOLE_RINGS; r < RINGS; r++) {
                 const innerRadius = r * ringWidth();
                 const outerRadius = (r + 1) * ringWidth();
@@ -809,19 +1146,24 @@
                     ctx.closePath();
                     
                     if (grid[r][s]) {
+                        // Add glow to filled cells
+                        ctx.shadowBlur = 15;
+                        ctx.shadowColor = grid[r][s];
                         ctx.fillStyle = grid[r][s];
                     } else {
+                        ctx.shadowBlur = 0;
                         ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
                     }
                     ctx.fill();
                     
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
-                    ctx.lineWidth = 2;
+                    ctx.shadowBlur = 0;
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.lineWidth = 1.5;
                     ctx.stroke();
                 }
             }
             
-            // Draw current piece
+            // Draw current piece with enhanced glow
             if (currentPiece && !isGameOver) {
                 currentPiece.blocks.forEach(offset => {
                     const r = currentPiece.ring + Math.floor(offset / SEGMENTS);
@@ -838,9 +1180,14 @@
                         ctx.arc(centerX(), centerY(), innerRadius, endAngle, startAngle, true);
                         ctx.closePath();
                         
+                        // Enhanced glow for current piece
+                        ctx.shadowBlur = 20;
+                        ctx.shadowColor = currentPiece.color;
                         ctx.fillStyle = currentPiece.color;
                         ctx.fill();
-                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                        
+                        ctx.shadowBlur = 0;
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
                         ctx.lineWidth = 2;
                         ctx.stroke();
                     }
@@ -883,13 +1230,16 @@
                     grid.splice(r, 1);
                     grid.unshift(Array(SEGMENTS).fill(0));
                     linesCleared++;
-                    r++; // Check same ring again
+                    r++;
                 }
             }
             
             if (linesCleared > 0) {
-                score += linesCleared * 100 * linesCleared;
+                const points = linesCleared * 100 * linesCleared;
+                score += points;
+                showScorePopup(points);
                 document.getElementById('score').textContent = `Score: ${score}`;
+                updateDifficulty();
             }
         }
 
@@ -906,7 +1256,6 @@
         }
 
         function rotate() {
-            // Get next rotation state
             const nextRotationIndex = (currentPiece.rotationIndex + 1) % 4;
             const nextBlocks = [...currentPiece.rotations[nextRotationIndex]];
             
@@ -943,15 +1292,13 @@
             gameLoop = null;
             
             document.getElementById('gameOver').classList.add('show');
-            document.getElementById('finalScore').textContent = `Score: ${score}`;
+            document.getElementById('finalScore').textContent = `Score: ${score} (Level ${level})`;
             document.getElementById('nameInput').value = '';
             document.getElementById('nameInput').focus();
         }
 
         function togglePause() {
-            if (isGameOver) return; // Don't allow pause when game is over
-            
-            // Open the menu (which will auto-pause the game)
+            if (isGameOver) return;
             openMenu();
         }
 
@@ -959,13 +1306,19 @@
             isGameOver = false;
             grid = Array(RINGS).fill().map(() => Array(SEGMENTS).fill(0));
             score = 0;
+            level = 1;
+            const settings = DIFFICULTY_SETTINGS[currentDifficulty];
+            dropInterval = settings.initialSpeed;
             isPaused = false;
             document.getElementById('score').textContent = 'Score: 0';
+            document.getElementById('difficultyLevel').textContent = 'Level: 1';
             document.getElementById('gameOver').classList.remove('show');
             document.getElementById('submitScore').disabled = false;
             document.getElementById('submitScore').textContent = 'Submit Score';
             document.getElementById('pauseBtn').textContent = 'Panic Button (Menu)';
             document.getElementById('pauseBtn').classList.remove('paused');
+            updateBackgroundColor();
+            updateDifficultyButtons();
             currentPiece = createPiece();
             lastDropTime = performance.now();
             gameLoop = requestAnimationFrame(update);
@@ -985,10 +1338,31 @@
             }
         }
 
-        // Menu Functions
+        function updateDifficultyButtons() {
+            document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                if (btn.dataset.difficulty === currentDifficulty) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        function changeDifficulty(newDifficulty) {
+            if (newDifficulty === currentDifficulty) {
+                closeMenu();
+                return;
+            }
+            
+            if (confirm(`Change difficulty to ${DIFFICULTY_SETTINGS[newDifficulty].name}? This will reset the current game.`)) {
+                currentDifficulty = newDifficulty;
+                closeMenu();
+                restart();
+            }
+        }
+
         function openMenu() {
             document.getElementById('menuOverlay').classList.add('show');
-            // Auto-pause game when menu opens if game is running
             if (!isGameOver && !isPaused) {
                 isPaused = true;
                 score -= 100;
@@ -1004,13 +1378,12 @@
             document.getElementById('scoresSection').style.display = 'none';
             document.getElementById('piecesSection').style.display = 'none';
             
-            // Unpause game when closing menu
             if (!isGameOver && isPaused) {
                 isPaused = false;
                 const pauseBtn = document.getElementById('pauseBtn');
                 pauseBtn.textContent = 'Panic Button (Menu)';
                 pauseBtn.classList.remove('paused');
-                lastDropTime = performance.now(); // Reset drop timer
+                lastDropTime = performance.now();
             }
         }
 
@@ -1021,7 +1394,6 @@
             section.style.display = 'block';
             document.getElementById('piecesSection').style.display = 'none';
             
-            // Load scores from Firebase
             scoresRef.orderByChild('score').limitToLast(50).once('value', (snapshot) => {
                 const scores = [];
                 snapshot.forEach((childSnapshot) => {
@@ -1038,13 +1410,18 @@
                     return;
                 }
                 
-                list.innerHTML = scores.map((entry, index) => `
-                    <li style="padding: 8px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-between;">
+                list.innerHTML = scores.map((entry, index) => {
+                    const difficulty = entry.difficulty || 'easy';
+                    const difficultyBadge = `<span class="difficulty-badge difficulty-${difficulty}">${DIFFICULTY_SETTINGS[difficulty].name}</span>`;
+                    
+                    return `
+                    <li style="padding: 8px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-between; align-items: center;">
                         <span style="color: #FFD700; font-weight: bold; margin-right: 10px; min-width: 35px;">#${index + 1}</span>
-                        <span style="flex: 1;">${escapeHtml(entry.name)}</span>
+                        <span style="flex: 1;">${escapeHtml(entry.name)} ${difficultyBadge}</span>
                         <span style="font-weight: bold; color: #4ECDC4;">${entry.score}</span>
                     </li>
-                `).join('');
+                `;
+                }).join('');
             });
         }
 
@@ -1065,7 +1442,6 @@
                 `;
             }).join('');
             
-            // Draw each piece flat on its canvas
             PIECES.forEach(piece => {
                 const canvas = document.getElementById(`piece-canvas-${piece.name}`);
                 const ctx = canvas.getContext('2d');
@@ -1078,7 +1454,6 @@
                 const displayWidth = canvas.offsetWidth;
                 const displayHeight = canvas.offsetHeight;
                 
-                // Get bounding box of piece
                 const blocks = piece.rotations[0];
                 let minRow = Infinity, maxRow = -Infinity;
                 let minCol = Infinity, maxCol = -Infinity;
@@ -1099,7 +1474,6 @@
                 const offsetX = (displayWidth - pieceWidth * cellSize) / 2;
                 const offsetY = (displayHeight - pieceHeight * cellSize) / 2;
                 
-                // Draw blocks
                 blocks.forEach(offset => {
                     const row = Math.floor(offset / SEGMENTS) - minRow;
                     const col = (offset % SEGMENTS) - minCol;
@@ -1107,9 +1481,12 @@
                     const x = offsetX + col * cellSize;
                     const y = offsetY + row * cellSize;
                     
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = piece.color;
                     ctx.fillStyle = piece.color;
                     ctx.fillRect(x, y, cellSize - 2, cellSize - 2);
                     
+                    ctx.shadowBlur = 0;
                     ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
                     ctx.lineWidth = 2;
                     ctx.strokeRect(x, y, cellSize - 2, cellSize - 2);
@@ -1117,7 +1494,6 @@
             });
         }
 
-        // Menu event listeners
         document.getElementById('pauseBtn').addEventListener('click', togglePause);
         document.getElementById('closeMenuBtn').addEventListener('click', closeMenu);
         
@@ -1128,10 +1504,15 @@
             }
         });
         
+        document.querySelectorAll('.difficulty-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                changeDifficulty(btn.dataset.difficulty);
+            });
+        });
+        
         document.getElementById('showScoresBtn').addEventListener('click', showHighScoresInMenu);
         document.getElementById('showPiecesBtn').addEventListener('click', showPiecesInMenu);
 
-        // Controls
         document.getElementById('leftBtn').addEventListener('touchstart', (e) => {
             e.preventDefault();
             if (!isPaused && !isGameOver) moveCounterClockwise();
@@ -1178,7 +1559,6 @@
 
         document.getElementById('restartBtn').addEventListener('click', restart);
 
-        // Keyboard controls
         document.addEventListener('keydown', (e) => {
             if (isPaused || isGameOver) return;
             if (e.key === 'ArrowLeft') moveCounterClockwise();
@@ -1187,10 +1567,9 @@
             if (e.key === 'ArrowDown') moveDown();
         });
 
-        // Load high scores
         loadHighScores();
-
-        // Start game
+        updateDifficultyButtons();
+        updateBackgroundColor();
         currentPiece = createPiece();
         lastDropTime = performance.now();
         gameLoop = requestAnimationFrame(update);

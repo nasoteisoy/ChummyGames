@@ -2,829 +2,302 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Chummy Ripples</title>
-    
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Quest - Treasure Hunt</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
+            touch-action: none;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            min-height: 100vh;
-            overflow-y: auto;
-            overflow-x: hidden;
-            touch-action: pan-y;
-            padding: 20px 0;
-            transition: background 2s ease;
-            position: relative;
-        }
-
-        /* Animated background particles */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
-            animation: float 20s ease-in-out infinite;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px) scale(1); }
-            50% { transform: translateY(-20px) scale(1.05); }
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            overflow: hidden;
+            user-select: none;
         }
 
         #gameContainer {
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            padding: 10px;
-            max-width: 100vw;
-            margin-bottom: 20px;
-            position: relative;
-            z-index: 1;
-        }
-
-        #scoreRow {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-            max-width: 450px;
-            gap: 15px;
-            padding: 0 10px;
-        }
-
-        #score {
-            color: white;
-            font-size: 28px;
-            font-weight: bold;
-            text-shadow: 
-                0 0 10px rgba(255, 255, 255, 0.5),
-                0 0 20px rgba(255, 255, 255, 0.3),
-                2px 2px 4px rgba(0,0,0,0.5);
-            flex: 1;
-            animation: pulse 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-        }
-
-        .score-popup {
-            position: absolute;
-            color: #FFD700;
-            font-size: 24px;
-            font-weight: bold;
-            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
-            pointer-events: none;
-            animation: scorePopup 1s ease-out forwards;
-            z-index: 1000;
-        }
-
-        @keyframes scorePopup {
-            0% { 
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-            100% { 
-                opacity: 0;
-                transform: translateY(-50px) scale(1.5);
-            }
-        }
-
-        #difficultyLevel {
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 16px;
-            font-weight: bold;
-            text-shadow: 
-                0 0 10px rgba(255, 255, 255, 0.5),
-                1px 1px 2px rgba(0,0,0,0.5);
-            background: rgba(255, 255, 255, 0.1);
-            padding: 8px 15px;
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        #version {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 10px;
-            font-weight: normal;
-            z-index: 10;
-        }
-
-        #menuOverlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
             justify-content: center;
             align-items: center;
-            z-index: 2000;
-            overflow-y: auto;
-            padding: 20px;
-            backdrop-filter: blur(10px);
-            animation: fadeIn 0.3s ease-out;
+            height: 100vh;
+            position: relative;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+        #gameCanvas {
+            border: 3px solid #0f3460;
+            background: #0a0a0a;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+            max-width: 90vw;
+            max-height: 90vh;
         }
 
-        #menuOverlay.show {
-            display: flex;
+        #miniMap {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 200px;
+            height: 200px;
+            border: 3px solid #0f3460;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
         }
 
-        #menuContent {
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 25px;
-            padding: 30px;
-            max-width: 500px;
-            width: 100%;
-            backdrop-filter: blur(30px);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 
-                0 20px 60px rgba(0, 0, 0, 0.5),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
-            animation: slideIn 0.3s ease-out;
-        }
-
-        @keyframes slideIn {
-            from { 
-                opacity: 0;
-                transform: translateY(-30px);
-            }
-            to { 
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        #menuContent h2 {
-            color: white;
-            margin: 0 0 20px 0;
-            text-align: center;
-            font-size: 32px;
-            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
-        }
-
-        .menu-section {
-            margin-bottom: 30px;
-        }
-
-        .menu-section h3 {
-            color: #FFD700;
-            margin: 0 0 15px 0;
-            font-size: 20px;
-            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-        }
-
-        .menu-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .menu-button {
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 15px;
-            color: white;
-            font-size: 18px;
-            padding: 15px 20px;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            backdrop-filter: blur(10px);
-            touch-action: manipulation;
-            user-select: none;
-            text-align: left;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .menu-button .icon {
-            font-size: 24px;
-            min-width: 30px;
-            transition: transform 0.3s ease;
-        }
-
-        .menu-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        .menu-button:active {
-            background: rgba(255, 255, 255, 0.4);
-            transform: scale(0.98) translateY(0);
-        }
-
-        .menu-button.danger {
-            background: rgba(244, 67, 54, 0.3);
-            border-color: rgba(244, 67, 54, 0.5);
-        }
-
-        .menu-button.danger:active {
-            background: rgba(244, 67, 54, 0.5);
-        }
-
-        .menu-button.difficulty-btn.active {
-            background: rgba(76, 175, 80, 0.4);
-            border-color: rgba(76, 175, 80, 0.6);
-            box-shadow: 
-                0 4px 15px rgba(76, 175, 80, 0.4),
-                inset 0 0 20px rgba(76, 175, 80, 0.2);
-        }
-
-        .menu-button.difficulty-btn.active .icon {
-            transform: scale(1.2);
-            animation: bounce 0.5s ease;
-        }
-
-        @keyframes bounce {
-            0%, 100% { transform: scale(1.2); }
-            50% { transform: scale(1.4); }
-        }
-
-        #closeMenuBtn {
-            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-            border: none;
-            border-radius: 15px;
-            color: white;
-            font-size: 18px;
-            padding: 15px 40px;
-            cursor: pointer;
-            font-weight: bold;
-            width: 100%;
-            margin-top: 20px;
-            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
-            transition: all 0.3s ease;
-        }
-
-        #closeMenuBtn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.5);
-        }
-
-        #closeMenuBtn:active {
-            background: linear-gradient(135deg, #45a049 0%, #4CAF50 100%);
-            transform: translateY(0);
-        }
-
-        #piecesGrid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-        }
-
-        .piece-display {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 15px;
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
             padding: 15px;
-            text-align: center;
-            transition: transform 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            border: 2px solid #0f3460;
+            min-width: 200px;
         }
 
-        .piece-display:hover {
-            transform: scale(1.05);
-        }
-
-        .piece-display .piece-name {
-            color: white;
-            font-size: 14px;
-            font-weight: bold;
+        #ui h3 {
+            color: #e94560;
             margin-bottom: 10px;
-            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
         }
 
-        .piece-canvas {
-            width: 100%;
-            height: 80px;
-            border-radius: 10px;
-        }
-
-        #pauseBtn {
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 15px;
-            color: white;
-            font-size: 16px;
-            font-weight: bold;
-            padding: 12px 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-            touch-action: manipulation;
-            user-select: none;
-            white-space: nowrap;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        #pauseBtn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        #pauseBtn:active {
-            background: rgba(255, 255, 255, 0.4);
-            transform: scale(0.95);
-        }
-
-        #pauseBtn.paused {
-            background: rgba(76, 175, 80, 0.3);
-            border-color: rgba(76, 175, 80, 0.5);
-            animation: pulsePause 1.5s ease-in-out infinite;
-        }
-
-        @keyframes pulsePause {
-            0%, 100% { box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4); }
-            50% { box-shadow: 0 6px 25px rgba(76, 175, 80, 0.6); }
-        }
-
-        #highScores {
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 20px;
-            padding: 20px 25px 25px 25px;
-            color: white;
-            max-width: 350px;
-            width: 100%;
-            backdrop-filter: blur(15px);
-            height: 350px;
-            display: flex;
-            flex-direction: column;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-        }
-
-        #highScores h3 {
-            margin: 0 0 15px 0;
-            font-size: 22px;
-            text-align: center;
-            color: #FFD700;
-            flex-shrink: 0;
-            text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
-        }
-
-        #scoresList {
-            list-style: none;
-            padding: 0;
-            margin: 0;
+        #ui div {
+            margin: 5px 0;
             font-size: 14px;
-            overflow-y: auto;
-            flex: 1;
-            scroll-behavior: smooth;
         }
 
-        #scoresList::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        #scoresList::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-        }
-
-        #scoresList::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 10px;
-            transition: background 0.3s ease;
-        }
-
-        #scoresList::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.5);
-        }
-
-        #scoresList li {
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.3s ease;
-        }
-
-        #scoresList li:hover {
-            background: rgba(255, 255, 255, 0.05);
-            padding-left: 5px;
-        }
-
-        #scoresList li:last-child {
-            border-bottom: none;
-        }
-
-        #scoresList .rank {
-            color: #FFD700;
-            font-weight: bold;
-            margin-right: 10px;
-            min-width: 35px;
-            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-        }
-
-        #scoresList .rank.top3 {
-            font-size: 18px;
-            animation: shimmer 2s ease-in-out infinite;
-        }
-
-        @keyframes shimmer {
-            0%, 100% { text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
-            50% { text-shadow: 0 0 20px rgba(255, 215, 0, 0.8); }
-        }
-
-        #scoresList .name {
-            flex: 1;
-        }
-
-        #scoresList .score {
-            font-weight: bold;
-            color: #4ECDC4;
-            text-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
-        }
-
-        .difficulty-badge {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 5px;
-            font-size: 10px;
-            font-weight: bold;
-            margin-left: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-        }
-
-        .difficulty-easy {
-            background: rgba(76, 175, 80, 0.4);
-            color: #90EE90;
-        }
-
-        .difficulty-medium {
-            background: rgba(255, 193, 7, 0.4);
-            color: #FFD700;
-        }
-
-        .difficulty-hard {
-            background: rgba(255, 87, 34, 0.4);
-            color: #FF6347;
-        }
-
-        .difficulty-insane {
-            background: rgba(156, 39, 176, 0.4);
-            color: #DA70D6;
-        }
-
-        #resetGameBtn {
-            background: rgba(244, 67, 54, 0.3);
-            border: 2px solid rgba(244, 67, 54, 0.5);
-            border-radius: 15px;
-            color: white;
-            font-size: 16px;
-            font-weight: bold;
-            padding: 12px 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-            touch-action: manipulation;
-            user-select: none;
-            width: 100%;
-            max-width: 450px;
-            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
-        }
-
-        #resetGameBtn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(244, 67, 54, 0.4);
-        }
-
-        #resetGameBtn:active {
-            background: rgba(244, 67, 54, 0.5);
-            transform: scale(0.95);
-        }
-
-        canvas {
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 50%;
-            box-shadow: 
-                0 20px 60px rgba(0,0,0,0.5),
-                inset 0 0 50px rgba(255, 255, 255, 0.1),
-                0 0 0 10px rgba(255, 255, 255, 0.05);
-            touch-action: none;
-            border: 3px solid rgba(255, 255, 255, 0.2);
-            animation: canvasGlow 3s ease-in-out infinite;
-        }
-
-        @keyframes canvasGlow {
-            0%, 100% { 
-                box-shadow: 
-                    0 20px 60px rgba(0,0,0,0.5),
-                    inset 0 0 50px rgba(255, 255, 255, 0.1),
-                    0 0 0 10px rgba(255, 255, 255, 0.05);
-            }
-            50% { 
-                box-shadow: 
-                    0 20px 80px rgba(0,0,0,0.6),
-                    inset 0 0 70px rgba(255, 255, 255, 0.15),
-                    0 0 0 10px rgba(255, 255, 255, 0.1);
-            }
-        }
-
-        #controls {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
-            width: 100%;
-            max-width: 450px;
-            padding: 0 20px;
-        }
-
-        .control-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 20px;
-            color: white;
-            font-size: 16px;
-            font-weight: bold;
-            padding: 18px 10px;
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            backdrop-filter: blur(10px);
-            touch-action: manipulation;
-            user-select: none;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .control-btn .icon {
-            font-size: 28px;
-            transition: transform 0.2s ease;
-        }
-
-        .control-btn .label {
-            font-size: 12px;
-            opacity: 0.9;
-        }
-
-        .control-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        .control-btn:active {
-            background: rgba(255, 255, 255, 0.4);
-            transform: scale(0.95) translateY(0);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        .control-btn:active .icon {
-            transform: scale(1.2);
-        }
-
-        #gameOver {
+        #joystickContainer {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
             display: none;
-            position: fixed;
+        }
+
+        #joystick {
+            width: 150px;
+            height: 150px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 3px solid #0f3460;
+            border-radius: 50%;
+            position: relative;
+        }
+
+        #joystickKnob {
+            width: 60px;
+            height: 60px;
+            background: #e94560;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: background 0.1s;
+        }
+
+        #colorPicker {
+            position: absolute;
+            bottom: 50px;
+            right: 30px;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .colorBtn {
+            width: 50px;
+            height: 50px;
+            border: 3px solid #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .colorBtn:active {
+            transform: scale(0.9);
+        }
+
+        .colorBtn.selected {
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+            transform: scale(1.1);
+        }
+
+        #startScreen, #namePrompt, #gameOverScreen, #victoryScreen {
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            flex-direction: column;
-            gap: 25px;
             z-index: 1000;
-            backdrop-filter: blur(10px);
-            animation: fadeIn 0.5s ease-out;
         }
 
-        #gameOver.show {
-            display: flex;
+        #namePrompt {
+            display: none;
         }
 
-        #gameOver h2 {
-            color: white;
+        #gameOverScreen, #victoryScreen {
+            display: none;
+        }
+
+        h1 {
             font-size: 48px;
-            text-shadow: 
-                0 0 20px rgba(255, 255, 255, 0.5),
-                0 0 40px rgba(255, 255, 255, 0.3);
-            animation: gameOverPulse 2s ease-in-out infinite;
+            color: #e94560;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
         }
 
-        @keyframes gameOverPulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
+        input {
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid #0f3460;
+            border-radius: 5px;
+            margin: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            min-width: 250px;
         }
 
-        #gameOver p {
-            color: white;
-            font-size: 28px;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-        }
-
-        #nameInput {
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 15px;
-            padding: 15px 25px;
-            color: white;
-            font-size: 20px;
-            text-align: center;
-            backdrop-filter: blur(10px);
-            outline: none;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        #nameInput:focus {
-            border-color: rgba(255, 255, 255, 0.6);
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
-        }
-
-        #nameInput::placeholder {
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        #submitScore, #restartBtn {
-            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        button {
+            padding: 15px 40px;
+            font-size: 18px;
+            background: #e94560;
+            color: #fff;
             border: none;
-            border-radius: 15px;
-            color: white;
-            font-size: 22px;
-            padding: 18px 45px;
+            border-radius: 5px;
             cursor: pointer;
-            font-weight: bold;
-            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
-            transition: all 0.3s ease;
+            margin: 10px;
+            transition: background 0.3s, transform 0.1s;
         }
 
-        #submitScore:hover, #restartBtn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.5);
+        button:hover {
+            background: #c23a4f;
         }
 
-        #submitScore:active, #restartBtn:active {
-            background: linear-gradient(135deg, #45a049 0%, #4CAF50 100%);
-            transform: translateY(0);
+        button:active {
+            transform: scale(0.95);
         }
 
-        #submitScore:disabled {
-            background: linear-gradient(135deg, #666 0%, #555 100%);
-            cursor: not-allowed;
-            box-shadow: none;
+        #roomCodeDisplay {
+            font-size: 24px;
+            margin: 20px;
+            padding: 15px 30px;
+            background: rgba(15, 52, 96, 0.5);
+            border-radius: 10px;
+            border: 2px solid #0f3460;
+        }
+
+        .info-text {
+            font-size: 16px;
+            margin: 10px;
+            color: #bbb;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        #nameChangeBtn {
+            position: absolute;
+            bottom: 220px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            #miniMap {
+                width: 150px;
+                height: 150px;
+                top: 10px;
+                right: 10px;
+            }
+
+            #ui {
+                font-size: 12px;
+                padding: 10px;
+                top: 10px;
+                left: 10px;
+            }
+
+            h1 {
+                font-size: 32px;
+            }
         }
     </style>
 </head>
 <body>
-    <div id="version">v1.21</div>
-    
-    <div id="menuOverlay">
-        <div id="menuContent">
-            <h2>Menu</h2>
-            
-            <div class="menu-section">
-                <h3>Game Controls</h3>
-                <div class="menu-buttons">
-                    <button class="menu-button danger" id="menuResetBtn">
-                        <span class="icon">🔄</span>
-                        <span>Reset Game</span>
-                    </button>
-                </div>
-            </div>
-
-            <div class="menu-section">
-                <h3>Difficulty Level</h3>
-                <div class="menu-buttons">
-                    <button class="menu-button difficulty-btn" data-difficulty="easy">
-                        <span class="icon">😊</span>
-                        <span>Easy (Slow)</span>
-                    </button>
-                    <button class="menu-button difficulty-btn" data-difficulty="medium">
-                        <span class="icon">😐</span>
-                        <span>Medium (Normal)</span>
-                    </button>
-                    <button class="menu-button difficulty-btn" data-difficulty="hard">
-                        <span class="icon">😰</span>
-                        <span>Hard (Fast)</span>
-                    </button>
-                    <button class="menu-button difficulty-btn" data-difficulty="insane">
-                        <span class="icon">💀</span>
-                        <span>Insane (Very Fast)</span>
-                    </button>
-                </div>
-            </div>
-
-            <div class="menu-section">
-                <h3>Information</h3>
-                <div class="menu-buttons">
-                    <button class="menu-button" id="showScoresBtn">
-                        <span class="icon">🏆</span>
-                        <span>View High Scores</span>
-                    </button>
-                    <button class="menu-button" id="showPiecesBtn">
-                        <span class="icon">🧩</span>
-                        <span>View All Pieces</span>
-                    </button>
-                </div>
-            </div>
-
-            <div class="menu-section" id="scoresSection" style="display: none;">
-                <h3>🏆 High Scores</h3>
-                <div id="menuScoresList" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; max-height: 300px; overflow-y: auto;">
-                    <ul id="menuScoresListUL" style="list-style: none; padding: 0; margin: 0; font-size: 14px; color: white;">
-                        <li>Loading...</li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="menu-section" id="piecesSection" style="display: none;">
-                <h3>🧩 All Pieces</h3>
-                <div id="piecesGrid"></div>
-            </div>
-
-            <button id="closeMenuBtn">Close Menu</button>
-        </div>
-    </div>
-
     <div id="gameContainer">
-        <div id="scoreRow">
-            <div id="score">Score: 0</div>
-            <div id="difficultyLevel">Level: 1</div>
-            <button id="pauseBtn">Panic Button (Menu)</button>
-        </div>
-        <canvas id="gameCanvas"></canvas>
-        <div id="controls">
-            <button class="control-btn" id="leftBtn">
-                <div class="icon">↺</div>
-                <div class="label">Counter-CW</div>
-            </button>
-            <button class="control-btn" id="rotateBtn">
-                <div class="icon">↻</div>
-                <div class="label">Rotate</div>
-            </button>
-            <button class="control-btn" id="downBtn">
-                <div class="icon">▼</div>
-                <div class="label">Down</div>
-            </button>
-            <button class="control-btn" id="rightBtn">
-                <div class="icon">↻</div>
-                <div class="label">Clockwise</div>
-            </button>
-        </div>
-        <div id="highScores">
-            <h3>🏆 Top Scores</h3>
-            <ul id="scoresList">
-                <li>Loading...</li>
-            </ul>
-        </div>
-        <button id="resetGameBtn">🔄 Reset Game</button>
-    </div>
-
-    <div id="gameOver">
-        <h2>Game Over!</h2>
-        <p id="finalScore">Score: 0</p>
-        <button id="restartBtn">Play Again</button>
-        <input type="text" id="nameInput" placeholder="Enter your name" maxlength="20">
-        <button id="submitScore">Submit Score</button>
-    </div>
-
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <canvas id="miniMap" width="200" height="200"></canvas>
         
-        // Initialize Firebase
+        <div id="ui">
+            <h3>Level <span id="levelNum">1</span></h3>
+            <div>Treasure: <span id="treasureCount">0</span>/<span id="treasureNeeded">5</span></div>
+            <div>Players Alive: <span id="playersAlive">0</span></div>
+            <div id="playersList"></div>
+        </div>
+
+        <div id="joystickContainer">
+            <div id="joystick">
+                <div id="joystickKnob"></div>
+            </div>
+        </div>
+
+        <div id="colorPicker">
+            <div class="colorBtn" style="background: #ff4444;" data-color="#ff4444"></div>
+            <div class="colorBtn" style="background: #44ff44;" data-color="#44ff44"></div>
+            <div class="colorBtn" style="background: #4444ff;" data-color="#4444ff"></div>
+            <div class="colorBtn" style="background: #ffff44;" data-color="#ffff44"></div>
+            <div class="colorBtn" style="background: #ff44ff;" data-color="#ff44ff"></div>
+            <div class="colorBtn" style="background: #44ffff;" data-color="#44ffff"></div>
+        </div>
+
+        <button id="nameChangeBtn">Change Name</button>
+
+        <div id="startScreen">
+            <h1>🎮 Color Quest 🎮</h1>
+            <p class="info-text">Cooperative treasure hunt! Switch colors, avoid enemies, collect treasure and return to start!</p>
+            <input type="text" id="roomCodeInput" placeholder="Enter Room Code" maxlength="6">
+            <button id="joinBtn">Join Game</button>
+            <button id="createBtn">Create New Room</button>
+            <div id="roomCodeDisplay" style="display: none;">
+                Room Code: <strong><span id="roomCode"></span></strong>
+            </div>
+        </div>
+
+        <div id="namePrompt">
+            <h1>Enter Your Name</h1>
+            <input type="text" id="nameInput" placeholder="Your Name" maxlength="20">
+            <button id="nameSubmitBtn">Start Playing</button>
+        </div>
+
+        <div id="gameOverScreen">
+            <h1>💀 Game Over 💀</h1>
+            <p class="info-text">All players were destroyed!</p>
+            <button id="restartBtn">Restart Level</button>
+            <button id="menuBtn">Main Menu</button>
+        </div>
+
+        <div id="victoryScreen">
+            <h1>🏆 Victory! 🏆</h1>
+            <p class="info-text" id="victoryText">Level Complete!</p>
+            <button id="nextLevelBtn">Next Level</button>
+            <button id="menuBtn2">Main Menu</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getDatabase, ref, set, onValue, update, remove, onDisconnect } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+
+        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDVbt_8GuRuHJRPAN7jFXbs_lJUfUHNxHE",
             authDomain: "chummy-games.firebaseapp.com",
@@ -834,745 +307,865 @@
             messagingSenderId: "869241598273",
             appId: "1:869241598273:web:d97492b7308f785c37f1c0"
         };
-        
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-        const scoresRef = database.ref('circleRipples/highScores');
-        
-        // Game constants
-        const SEGMENTS = 10;
-        const RINGS = 20;
-        const CENTER_HOLE_RINGS = 3;
-        
-        // Difficulty settings
-        const DIFFICULTY_SETTINGS = {
-            easy: {
-                name: 'Easy',
-                initialSpeed: 1000,
-                minSpeed: 400,
-                speedDecrease: 40,
-                color1: '#667eea',
-                color2: '#764ba2'
-            },
-            medium: {
-                name: 'Medium',
-                initialSpeed: 800,
-                minSpeed: 300,
-                speedDecrease: 50,
-                color1: '#4facfe',
-                color2: '#00f2fe'
-            },
-            hard: {
-                name: 'Hard',
-                initialSpeed: 600,
-                minSpeed: 200,
-                speedDecrease: 60,
-                color1: '#fa709a',
-                color2: '#fee140'
-            },
-            insane: {
-                name: 'Insane',
-                initialSpeed: 400,
-                minSpeed: 100,
-                speedDecrease: 30,
-                color1: '#ee0979',
-                color2: '#ff6a00'
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // Utility functions
+        function getOrCreatePCID() {
+            const storageKey = 'ChummyGames-PC-ID';
+            let pcID = localStorage.getItem(storageKey);
+            if (!pcID || pcID.length !== 12) {
+                pcID = generateCode(12);
+                localStorage.setItem(storageKey, pcID);
             }
-        };
-        
-        const LEVEL_THRESHOLD = 500;
-        
-        // Responsive canvas sizing
-        function resizeCanvas() {
-            const size = Math.min(window.innerWidth - 40, window.innerHeight * 0.5);
-            canvas.width = size;
-            canvas.height = size;
-        }
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
-
-        const centerX = () => canvas.width / 2;
-        const centerY = () => canvas.height / 2;
-        const maxRadius = () => canvas.width / 2 - 10;
-        const ringWidth = () => maxRadius() / RINGS;
-
-        // Game state
-        let grid = Array(RINGS).fill().map(() => Array(SEGMENTS).fill(0));
-        let score = 0;
-        let level = 1;
-        let currentDifficulty = 'easy';
-        let currentPiece = null;
-        let gameLoop = null;
-        let dropInterval = DIFFICULTY_SETTINGS.easy.initialSpeed;
-        let lastDropTime = 0;
-        let isPaused = false;
-        let isGameOver = false;
-
-        function updateBackgroundColor() {
-            const settings = DIFFICULTY_SETTINGS[currentDifficulty];
-            document.body.style.background = `linear-gradient(135deg, ${settings.color1} 0%, ${settings.color2} 100%)`;
+            return pcID;
         }
 
-        function showScorePopup(points) {
-            const popup = document.createElement('div');
-            popup.className = 'score-popup';
-            popup.textContent = `+${points}`;
-            popup.style.left = `${centerX() + canvas.offsetLeft}px`;
-            popup.style.top = `${centerY() + canvas.offsetTop - 50}px`;
-            document.body.appendChild(popup);
-            
-            setTimeout(() => popup.remove(), 1000);
+        function generateCode(length) {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            return Array.from({ length }, () => 
+                chars[Math.floor(Math.random() * chars.length)]
+            ).join('');
         }
 
-        function updateDifficulty() {
-            const newLevel = Math.floor(score / LEVEL_THRESHOLD) + 1;
-            if (newLevel !== level) {
-                level = newLevel;
-                
-                const settings = DIFFICULTY_SETTINGS[currentDifficulty];
-                dropInterval = Math.max(
-                    settings.minSpeed,
-                    settings.initialSpeed - (level - 1) * settings.speedDecrease
-                );
-                
-                document.getElementById('difficultyLevel').textContent = `Level: ${level}`;
+        // Game variables
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const miniMap = document.getElementById('miniMap');
+        const miniCtx = miniMap.getContext('2d');
+
+        const pcID = getOrCreatePCID();
+        let roomCode = null;
+        let playerData = {};
+        let gameState = {};
+        let myColor = '#ff4444';
+        let myName = `Player${Math.floor(Math.random() * 1000)}`;
+
+        const COLORS = ['#ff4444', '#44ff44', '#4444ff', '#ffff44', '#ff44ff', '#44ffff'];
+        const TILE_SIZE = 40;
+        const PLAYER_SIZE = 30;
+        const TREASURE_SIZE = 25;
+        const ENEMY_SIZE = 35;
+
+        // Joystick variables
+        let joystickActive = false;
+        let joystickAngle = 0;
+        let joystickPower = 0;
+
+        // Level designs
+        const levels = [
+            {
+                name: "The Beginning",
+                treasureNeeded: 3,
+                map: [
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                    [1,0,0,0,0,0,1,0,0,0,0,0,0,0,1],
+                    [1,0,1,1,1,0,1,0,1,1,1,1,1,0,1],
+                    [1,0,1,0,0,0,0,0,0,0,0,0,1,0,1],
+                    [1,0,1,0,1,1,1,1,1,1,1,0,1,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,1,1,1,0,1,1,1,0,1,1,1,0,1],
+                    [1,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
+                    [1,1,1,0,1,1,1,0,1,1,1,0,1,1,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+                ],
+                enemies: [
+                    { type: 'chaser', x: 8, y: 5 },
+                    { type: 'patrol', x: 3, y: 7, path: [[3,7],[10,7]] }
+                ],
+                treasures: [[12,2], [12,8], [2,8]]
+            },
+            {
+                name: "The Maze",
+                treasureNeeded: 4,
+                map: [
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                    [1,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1],
+                    [1,0,1,0,1,0,1,1,1,1,1,1,1,0,1,0,1,1,0,1],
+                    [1,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,1],
+                    [1,0,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,1],
+                    [1,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,1],
+                    [1,1,1,0,1,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+                    [1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,1],
+                    [1,0,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+                ],
+                enemies: [
+                    { type: 'chaser', x: 10, y: 5 },
+                    { type: 'patrol', x: 3, y: 3, path: [[3,3],[16,3]] },
+                    { type: 'random', x: 10, y: 8 }
+                ],
+                treasures: [[18,2], [18,8], [2,8], [2,2]]
+            },
+            {
+                name: "The Gauntlet",
+                treasureNeeded: 5,
+                map: [
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+                ],
+                enemies: [
+                    { type: 'chaser', x: 10, y: 5 },
+                    { type: 'patrol', x: 3, y: 3, path: [[3,3],[16,3]] },
+                    { type: 'patrol', x: 3, y: 7, path: [[3,7],[16,7]] },
+                    { type: 'random', x: 10, y: 2 },
+                    { type: 'spinner', x: 10, y: 8 }
+                ],
+                treasures: [[18,2], [18,5], [18,8], [2,5], [10,5]]
+            },
+            {
+                name: "The Crossroads",
+                treasureNeeded: 6,
+                map: [
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                    [1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,0,1],
+                    [1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
+                    [1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,0,1,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1],
+                    [1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,0,1,0,1],
+                    [1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
+                    [1,0,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+                ],
+                enemies: [
+                    { type: 'chaser', x: 11, y: 6 },
+                    { type: 'chaser', x: 5, y: 3 },
+                    { type: 'patrol', x: 3, y: 5, path: [[3,5],[19,5]] },
+                    { type: 'patrol', x: 10, y: 3, path: [[10,3],[10,9]] },
+                    { type: 'random', x: 17, y: 9 },
+                    { type: 'spinner', x: 11, y: 3 }
+                ],
+                treasures: [[21,2], [21,10], [2,2], [2,10], [11,2], [11,10]]
+            },
+            {
+                name: "The Final Challenge",
+                treasureNeeded: 7,
+                map: [
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,0,1],
+                    [1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
+                    [1,0,1,0,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,0,1,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,0,1,0,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,0,1,0,1],
+                    [1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
+                    [1,0,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,0,1],
+                    [1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1],
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+                ],
+                enemies: [
+                    { type: 'chaser', x: 12, y: 7 },
+                    { type: 'chaser', x: 6, y: 3 },
+                    { type: 'chaser', x: 18, y: 11 },
+                    { type: 'patrol', x: 3, y: 5, path: [[3,5],[21,5]] },
+                    { type: 'patrol', x: 3, y: 9, path: [[3,9],[21,9]] },
+                    { type: 'random', x: 12, y: 3 },
+                    { type: 'random', x: 12, y: 11 },
+                    { type: 'spinner', x: 6, y: 7 },
+                    { type: 'teleporter', x: 18, y: 7 }
+                ],
+                treasures: [[23,2], [23,7], [23,12], [2,2], [2,7], [2,12], [12,7]]
             }
-        }
-
-        const PIECES = [
-            { 
-                name: 'I2',
-                rotations: [
-                    [0, 1],
-                    [0, 10],
-                    [0, 1],
-                    [0, 10]
-                ],
-                color: '#FF6B6B' 
-            },
-            { 
-                name: 'I3',
-                rotations: [
-                    [0, 1, 2],
-                    [0, 10, 20],
-                    [0, 1, 2],
-                    [0, 10, 20]
-                ],
-                color: '#4ECDC4' 
-            },
-            { 
-                name: 'I4',
-                rotations: [
-                    [0, 1, 2, 3],
-                    [0, 10, 20, 30],
-                    [0, 1, 2, 3],
-                    [0, 10, 20, 30]
-                ],
-                color: '#45B7D1' 
-            },
-            { 
-                name: 'L',
-                rotations: [
-                    [0, 1, 2, 10],
-                    [0, 10, 20, 21],
-                    [2, 10, 11, 12],
-                    [0, 1, 11, 21]
-                ],
-                color: '#FFA07A' 
-            },
-            { 
-                name: 'J',
-                rotations: [
-                    [0, 1, 2, 12],
-                    [0, 1, 10, 20],
-                    [0, 10, 11, 12],
-                    [1, 11, 20, 21]
-                ],
-                color: '#98D8C8' 
-            },
-            { 
-                name: 'Square',
-                rotations: [
-                    [0, 1, 10, 11],
-                    [0, 1, 10, 11],
-                    [0, 1, 10, 11],
-                    [0, 1, 10, 11]
-                ],
-                color: '#F7DC6F' 
-            },
-            { 
-                name: 'S',
-                rotations: [
-                    [1, 2, 10, 11],
-                    [0, 10, 11, 21],
-                    [1, 2, 10, 11],
-                    [0, 10, 11, 21]
-                ],
-                color: '#BB8FCE' 
-            },
-            { 
-                name: 'Z',
-                rotations: [
-                    [0, 1, 11, 12],
-                    [1, 10, 11, 20],
-                    [0, 1, 11, 12],
-                    [1, 10, 11, 20]
-                ],
-                color: '#85C1E2' 
-            },
-            { 
-                name: 'T',
-                rotations: [
-                    [0, 1, 2, 11],
-                    [0, 10, 11, 20],
-                    [1, 10, 11, 12],
-                    [1, 10, 11, 21]
-                ],
-                color: '#F8B739' 
-            },
         ];
 
-        function loadHighScores() {
-            scoresRef.orderByChild('score').limitToLast(50).on('value', (snapshot) => {
-                const scores = [];
-                snapshot.forEach((childSnapshot) => {
-                    scores.push({
-                        id: childSnapshot.key,
-                        ...childSnapshot.val()
-                    });
-                });
-                
-                scores.sort((a, b) => b.score - a.score);
-                displayHighScores(scores);
-            });
-        }
-        
-        function displayHighScores(scores) {
-            const scoresList = document.getElementById('scoresList');
+        let currentLevel = 0;
+        let currentMap = [];
+        let enemies = [];
+        let treasures = [];
+        let collectedTreasure = 0;
+        const startPos = { x: 1, y: 1 };
+
+        // Initialize game
+        function initLevel(levelIndex) {
+            const level = levels[levelIndex];
+            currentMap = level.map;
+            collectedTreasure = 0;
             
-            if (scores.length === 0) {
-                scoresList.innerHTML = '<li>No scores yet!</li>';
-                return;
-            }
-            
-            scoresList.innerHTML = scores.map((entry, index) => {
-                const difficulty = entry.difficulty || 'easy';
-                const difficultyBadge = `<span class="difficulty-badge difficulty-${difficulty}">${DIFFICULTY_SETTINGS[difficulty].name}</span>`;
-                
-                return `
-                <li>
-                    <span class="rank ${index < 3 ? 'top3' : ''}">#${index + 1}</span>
-                    <span class="name">${escapeHtml(entry.name)}${difficultyBadge}</span>
-                    <span class="score">${entry.score}</span>
-                </li>
-            `;
-            }).join('');
-        }
-        
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-        
-        async function submitHighScore(name, score) {
-            if (!name || name.trim() === '') {
-                alert('Please enter your name!');
-                return false;
-            }
-            
-            try {
-                await scoresRef.push({
-                    name: name.trim(),
-                    score: score,
-                    difficulty: currentDifficulty,
-                    timestamp: Date.now()
-                });
-                
-                const snapshot = await scoresRef.orderByChild('score').once('value');
-                const allScores = [];
-                snapshot.forEach((childSnapshot) => {
-                    allScores.push({
-                        id: childSnapshot.key,
-                        score: childSnapshot.val().score
-                    });
-                });
-                
-                allScores.sort((a, b) => a.score - b.score);
-                
-                if (allScores.length > 50) {
-                    const toRemove = allScores.slice(0, allScores.length - 50);
-                    for (const entry of toRemove) {
-                        await scoresRef.child(entry.id).remove();
-                    }
-                }
-                
-                return true;
-            } catch (error) {
-                console.error('Error submitting score:', error);
-                alert('Error submitting score. Please try again.');
-                return false;
-            }
-        }
-        
-        function createPiece() {
-            const template = PIECES[Math.floor(Math.random() * PIECES.length)];
-            return {
-                name: template.name,
-                rotations: template.rotations,
-                rotationIndex: 0,
-                blocks: [...template.rotations[0]],
-                color: template.color,
-                ring: CENTER_HOLE_RINGS,
-                segment: Math.floor(Math.random() * SEGMENTS)
-            };
+            // Initialize enemies
+            enemies = level.enemies.map((e, i) => ({
+                id: i,
+                type: e.type,
+                x: e.x * TILE_SIZE,
+                y: e.y * TILE_SIZE,
+                path: e.path ? e.path.map(p => ({x: p[0] * TILE_SIZE, y: p[1] * TILE_SIZE})) : [],
+                pathIndex: 0,
+                angle: 0,
+                speed: e.type === 'chaser' ? 1.5 : e.type === 'patrol' ? 1 : e.type === 'spinner' ? 1 : 0.8,
+                randomTimer: 0,
+                teleportTimer: 0
+            }));
+
+            // Initialize treasures
+            treasures = level.treasures.map((t, i) => ({
+                id: i,
+                x: t[0] * TILE_SIZE + TILE_SIZE/2,
+                y: t[1] * TILE_SIZE + TILE_SIZE/2,
+                collected: false
+            }));
+
+            document.getElementById('levelNum').textContent = levelIndex + 1;
+            document.getElementById('treasureNeeded').textContent = level.treasureNeeded;
+            document.getElementById('treasureCount').textContent = 0;
         }
 
-        function drawCircle() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw grid with glow effect
-            for (let r = CENTER_HOLE_RINGS; r < RINGS; r++) {
-                const innerRadius = r * ringWidth();
-                const outerRadius = (r + 1) * ringWidth();
-                
-                for (let s = 0; s < SEGMENTS; s++) {
-                    const startAngle = (s / SEGMENTS) * Math.PI * 2 - Math.PI / 2;
-                    const endAngle = ((s + 1) / SEGMENTS) * Math.PI * 2 - Math.PI / 2;
-                    
-                    ctx.beginPath();
-                    ctx.arc(centerX(), centerY(), outerRadius, startAngle, endAngle);
-                    ctx.arc(centerX(), centerY(), innerRadius, endAngle, startAngle, true);
-                    ctx.closePath();
-                    
-                    if (grid[r][s]) {
-                        // Add glow to filled cells
-                        ctx.shadowBlur = 15;
-                        ctx.shadowColor = grid[r][s];
-                        ctx.fillStyle = grid[r][s];
-                    } else {
-                        ctx.shadowBlur = 0;
-                        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-                    }
-                    ctx.fill();
-                    
-                    ctx.shadowBlur = 0;
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-                    ctx.lineWidth = 1.5;
-                    ctx.stroke();
-                }
-            }
-            
-            // Draw current piece with enhanced glow
-            if (currentPiece && !isGameOver) {
-                currentPiece.blocks.forEach(offset => {
-                    const r = currentPiece.ring + Math.floor(offset / SEGMENTS);
-                    const s = (currentPiece.segment + (offset % SEGMENTS) + SEGMENTS) % SEGMENTS;
-                    
-                    if (r >= CENTER_HOLE_RINGS && r < RINGS) {
-                        const innerRadius = r * ringWidth();
-                        const outerRadius = (r + 1) * ringWidth();
-                        const startAngle = (s / SEGMENTS) * Math.PI * 2 - Math.PI / 2;
-                        const endAngle = ((s + 1) / SEGMENTS) * Math.PI * 2 - Math.PI / 2;
-                        
-                        ctx.beginPath();
-                        ctx.arc(centerX(), centerY(), outerRadius, startAngle, endAngle);
-                        ctx.arc(centerX(), centerY(), innerRadius, endAngle, startAngle, true);
-                        ctx.closePath();
-                        
-                        // Enhanced glow for current piece
-                        ctx.shadowBlur = 20;
-                        ctx.shadowColor = currentPiece.color;
-                        ctx.fillStyle = currentPiece.color;
-                        ctx.fill();
-                        
-                        ctx.shadowBlur = 0;
-                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-                        ctx.lineWidth = 2;
-                        ctx.stroke();
-                    }
-                });
-            }
-        }
-
-        function checkCollision(piece, deltaRing = 0, deltaSegment = 0) {
-            return piece.blocks.some(offset => {
-                const r = piece.ring + Math.floor(offset / SEGMENTS) + deltaRing;
-                const s = (piece.segment + (offset % SEGMENTS) + deltaSegment + SEGMENTS * 10) % SEGMENTS;
-                
-                if (r < CENTER_HOLE_RINGS || r >= RINGS) return true;
-                if (grid[r][s]) return true;
-                return false;
-            });
-        }
-
-        function lockPiece() {
-            currentPiece.blocks.forEach(offset => {
-                const r = currentPiece.ring + Math.floor(offset / SEGMENTS);
-                const s = (currentPiece.segment + (offset % SEGMENTS) + SEGMENTS) % SEGMENTS;
-                if (r >= CENTER_HOLE_RINGS && r < RINGS) {
-                    grid[r][s] = currentPiece.color;
-                }
+        // UI Event Listeners
+        document.getElementById('createBtn').addEventListener('click', async () => {
+            roomCode = generateCode(6);
+            await set(ref(database, `colorquest/${roomCode}`), {
+                created: Date.now(),
+                level: 0,
+                gameStarted: false,
+                collectedTreasure: 0,
+                treasures: {},
+                enemies: {}
             });
             
-            checkLines();
-            currentPiece = createPiece();
-            
-            if (checkCollision(currentPiece)) {
-                gameOver();
-            }
-        }
+            document.getElementById('roomCode').textContent = roomCode;
+            document.getElementById('roomCodeDisplay').style.display = 'block';
+            joinRoom();
+        });
 
-        function checkLines() {
-            let linesCleared = 0;
-            for (let r = RINGS - 1; r >= CENTER_HOLE_RINGS; r--) {
-                if (grid[r].every(cell => cell !== 0)) {
-                    grid.splice(r, 1);
-                    grid.unshift(Array(SEGMENTS).fill(0));
-                    linesCleared++;
-                    r++;
-                }
-            }
-            
-            if (linesCleared > 0) {
-                const points = linesCleared * 100 * linesCleared;
-                score += points;
-                showScorePopup(points);
-                document.getElementById('score').textContent = `Score: ${score}`;
-                updateDifficulty();
-            }
-        }
-
-        function moveCounterClockwise() {
-            if (!checkCollision(currentPiece, 0, -1)) {
-                currentPiece.segment = (currentPiece.segment - 1 + SEGMENTS) % SEGMENTS;
-            }
-        }
-
-        function moveClockwise() {
-            if (!checkCollision(currentPiece, 0, 1)) {
-                currentPiece.segment = (currentPiece.segment + 1) % SEGMENTS;
-            }
-        }
-
-        function rotate() {
-            const nextRotationIndex = (currentPiece.rotationIndex + 1) % 4;
-            const nextBlocks = [...currentPiece.rotations[nextRotationIndex]];
-            
-            const testPiece = { 
-                ...currentPiece, 
-                blocks: nextBlocks,
-                rotationIndex: nextRotationIndex
-            };
-            
-            if (!checkCollision(testPiece)) {
-                currentPiece.blocks = nextBlocks;
-                currentPiece.rotationIndex = nextRotationIndex;
-            }
-        }
-
-        function moveDown() {
-            if (!checkCollision(currentPiece, 1, 0)) {
-                currentPiece.ring++;
-            } else {
-                lockPiece();
-            }
-        }
-
-        function drop() {
-            while (!checkCollision(currentPiece, 1, 0)) {
-                currentPiece.ring++;
-            }
-            lockPiece();
-        }
-
-        function gameOver() {
-            isGameOver = true;
-            cancelAnimationFrame(gameLoop);
-            gameLoop = null;
-            
-            document.getElementById('gameOver').classList.add('show');
-            document.getElementById('finalScore').textContent = `Score: ${score} (Level ${level})`;
-            document.getElementById('nameInput').value = '';
-            document.getElementById('nameInput').focus();
-        }
-
-        function togglePause() {
-            if (isGameOver) return;
-            openMenu();
-        }
-
-        function restart() {
-            isGameOver = false;
-            grid = Array(RINGS).fill().map(() => Array(SEGMENTS).fill(0));
-            score = 0;
-            level = 1;
-            const settings = DIFFICULTY_SETTINGS[currentDifficulty];
-            dropInterval = settings.initialSpeed;
-            isPaused = false;
-            document.getElementById('score').textContent = 'Score: 0';
-            document.getElementById('difficultyLevel').textContent = 'Level: 1';
-            document.getElementById('gameOver').classList.remove('show');
-            document.getElementById('submitScore').disabled = false;
-            document.getElementById('submitScore').textContent = 'Submit Score';
-            document.getElementById('pauseBtn').textContent = 'Panic Button (Menu)';
-            document.getElementById('pauseBtn').classList.remove('paused');
-            updateBackgroundColor();
-            updateDifficultyButtons();
-            currentPiece = createPiece();
-            lastDropTime = performance.now();
-            gameLoop = requestAnimationFrame(update);
-        }
-
-        function update(currentTime) {
-            if (!isGameOver) {
-                if (!isPaused) {
-                    if (currentTime - lastDropTime > dropInterval) {
-                        moveDown();
-                        lastDropTime = currentTime;
-                    }
-                }
-                
-                drawCircle();
-                gameLoop = requestAnimationFrame(update);
-            }
-        }
-
-        function updateDifficultyButtons() {
-            document.querySelectorAll('.difficulty-btn').forEach(btn => {
-                if (btn.dataset.difficulty === currentDifficulty) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
-        }
-
-        function changeDifficulty(newDifficulty) {
-            if (newDifficulty === currentDifficulty) {
-                closeMenu();
-                return;
-            }
-            
-            if (confirm(`Change difficulty to ${DIFFICULTY_SETTINGS[newDifficulty].name}? This will reset the current game.`)) {
-                currentDifficulty = newDifficulty;
-                closeMenu();
-                restart();
-            }
-        }
-
-        function openMenu() {
-            document.getElementById('menuOverlay').classList.add('show');
-            if (!isGameOver && !isPaused) {
-                isPaused = true;
-                score -= 100;
-                document.getElementById('score').textContent = `Score: ${score}`;
-                const pauseBtn = document.getElementById('pauseBtn');
-                pauseBtn.textContent = '▶ Resume';
-                pauseBtn.classList.add('paused');
-            }
-        }
-
-        function closeMenu() {
-            document.getElementById('menuOverlay').classList.remove('show');
-            document.getElementById('scoresSection').style.display = 'none';
-            document.getElementById('piecesSection').style.display = 'none';
-            
-            if (!isGameOver && isPaused) {
-                isPaused = false;
-                const pauseBtn = document.getElementById('pauseBtn');
-                pauseBtn.textContent = 'Panic Button (Menu)';
-                pauseBtn.classList.remove('paused');
-                lastDropTime = performance.now();
-            }
-        }
-
-        function showHighScoresInMenu() {
-            const section = document.getElementById('scoresSection');
-            const list = document.getElementById('menuScoresListUL');
-            
-            section.style.display = 'block';
-            document.getElementById('piecesSection').style.display = 'none';
-            
-            scoresRef.orderByChild('score').limitToLast(50).once('value', (snapshot) => {
-                const scores = [];
-                snapshot.forEach((childSnapshot) => {
-                    scores.push({
-                        id: childSnapshot.key,
-                        ...childSnapshot.val()
-                    });
-                });
-                
-                scores.sort((a, b) => b.score - a.score);
-                
-                if (scores.length === 0) {
-                    list.innerHTML = '<li>No scores yet!</li>';
-                    return;
-                }
-                
-                list.innerHTML = scores.map((entry, index) => {
-                    const difficulty = entry.difficulty || 'easy';
-                    const difficultyBadge = `<span class="difficulty-badge difficulty-${difficulty}">${DIFFICULTY_SETTINGS[difficulty].name}</span>`;
-                    
-                    return `
-                    <li style="padding: 8px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: space-between; align-items: center;">
-                        <span style="color: #FFD700; font-weight: bold; margin-right: 10px; min-width: 35px;">#${index + 1}</span>
-                        <span style="flex: 1;">${escapeHtml(entry.name)} ${difficultyBadge}</span>
-                        <span style="font-weight: bold; color: #4ECDC4;">${entry.score}</span>
-                    </li>
-                `;
-                }).join('');
-            });
-        }
-
-        function showPiecesInMenu() {
-            const section = document.getElementById('piecesSection');
-            const grid = document.getElementById('piecesGrid');
-            
-            section.style.display = 'block';
-            document.getElementById('scoresSection').style.display = 'none';
-            
-            grid.innerHTML = PIECES.map(piece => {
-                const canvasId = `piece-canvas-${piece.name}`;
-                return `
-                    <div class="piece-display">
-                        <div class="piece-name">${piece.name}</div>
-                        <canvas id="${canvasId}" class="piece-canvas"></canvas>
-                    </div>
-                `;
-            }).join('');
-            
-            PIECES.forEach(piece => {
-                const canvas = document.getElementById(`piece-canvas-${piece.name}`);
-                const ctx = canvas.getContext('2d');
-                const dpr = window.devicePixelRatio || 1;
-                
-                canvas.width = canvas.offsetWidth * dpr;
-                canvas.height = canvas.offsetHeight * dpr;
-                ctx.scale(dpr, dpr);
-                
-                const displayWidth = canvas.offsetWidth;
-                const displayHeight = canvas.offsetHeight;
-                
-                const blocks = piece.rotations[0];
-                let minRow = Infinity, maxRow = -Infinity;
-                let minCol = Infinity, maxCol = -Infinity;
-                
-                blocks.forEach(offset => {
-                    const row = Math.floor(offset / SEGMENTS);
-                    const col = offset % SEGMENTS;
-                    minRow = Math.min(minRow, row);
-                    maxRow = Math.max(maxRow, row);
-                    minCol = Math.min(minCol, col);
-                    maxCol = Math.max(maxCol, col);
-                });
-                
-                const pieceWidth = maxCol - minCol + 1;
-                const pieceHeight = maxRow - minRow + 1;
-                const cellSize = Math.min(displayWidth / (pieceWidth + 1), displayHeight / (pieceHeight + 1));
-                
-                const offsetX = (displayWidth - pieceWidth * cellSize) / 2;
-                const offsetY = (displayHeight - pieceHeight * cellSize) / 2;
-                
-                blocks.forEach(offset => {
-                    const row = Math.floor(offset / SEGMENTS) - minRow;
-                    const col = (offset % SEGMENTS) - minCol;
-                    
-                    const x = offsetX + col * cellSize;
-                    const y = offsetY + row * cellSize;
-                    
-                    ctx.shadowBlur = 10;
-                    ctx.shadowColor = piece.color;
-                    ctx.fillStyle = piece.color;
-                    ctx.fillRect(x, y, cellSize - 2, cellSize - 2);
-                    
-                    ctx.shadowBlur = 0;
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-                    ctx.lineWidth = 2;
-                    ctx.strokeRect(x, y, cellSize - 2, cellSize - 2);
-                });
-            });
-        }
-
-        document.getElementById('pauseBtn').addEventListener('click', togglePause);
-        document.getElementById('closeMenuBtn').addEventListener('click', closeMenu);
-        
-        document.getElementById('menuResetBtn').addEventListener('click', () => {
-            if (confirm('Are you sure you want to reset the current game?')) {
-                closeMenu();
-                restart();
+        document.getElementById('joinBtn').addEventListener('click', () => {
+            const code = document.getElementById('roomCodeInput').value.toUpperCase();
+            if (code.length === 6) {
+                roomCode = code;
+                joinRoom();
             }
         });
-        
-        document.querySelectorAll('.difficulty-btn').forEach(btn => {
+
+        document.getElementById('nameSubmitBtn').addEventListener('click', () => {
+            const name = document.getElementById('nameInput').value.trim();
+            if (name) {
+                myName = name;
+                updatePlayerData();
+            }
+            document.getElementById('namePrompt').style.display = 'none';
+            document.getElementById('joystickContainer').style.display = 'block';
+            document.getElementById('colorPicker').style.display = 'flex';
+            document.getElementById('nameChangeBtn').style.display = 'block';
+        });
+
+        document.getElementById('nameChangeBtn').addEventListener('click', () => {
+            document.getElementById('namePrompt').style.display = 'flex';
+        });
+
+        document.getElementById('restartBtn').addEventListener('click', () => {
+            if (roomCode) {
+                update(ref(database, `colorquest/${roomCode}`), {
+                    collectedTreasure: 0,
+                    treasures: {},
+                    gameStarted: true
+                });
+                
+                // Reset all players
+                Object.keys(playerData).forEach(pid => {
+                    update(ref(database, `colorquest/${roomCode}/players/${pid}`), {
+                        x: startPos.x * TILE_SIZE,
+                        y: startPos.y * TILE_SIZE,
+                        dead: false
+                    });
+                });
+                
+                document.getElementById('gameOverScreen').style.display = 'none';
+            }
+        });
+
+        document.getElementById('nextLevelBtn').addEventListener('click', () => {
+            if (roomCode && currentLevel < levels.length - 1) {
+                update(ref(database, `colorquest/${roomCode}`), {
+                    level: currentLevel + 1,
+                    collectedTreasure: 0,
+                    treasures: {},
+                    gameStarted: true
+                });
+                
+                // Reset all players
+                Object.keys(playerData).forEach(pid => {
+                    update(ref(database, `colorquest/${roomCode}/players/${pid}`), {
+                        x: startPos.x * TILE_SIZE,
+                        y: startPos.y * TILE_SIZE,
+                        dead: false
+                    });
+                });
+                
+                document.getElementById('victoryScreen').style.display = 'none';
+            }
+        });
+
+        document.getElementById('menuBtn').addEventListener('click', () => location.reload());
+        document.getElementById('menuBtn2').addEventListener('click', () => location.reload());
+
+        // Color picker
+        document.querySelectorAll('.colorBtn').forEach(btn => {
             btn.addEventListener('click', () => {
-                changeDifficulty(btn.dataset.difficulty);
+                const newColor = btn.dataset.color;
+                
+                // Check if color is taken
+                const colorTaken = Object.values(playerData).some(p => 
+                    p.color === newColor && p.id !== pcID
+                );
+                
+                if (!colorTaken) {
+                    myColor = newColor;
+                    document.querySelectorAll('.colorBtn').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    updatePlayerData();
+                }
             });
         });
-        
-        document.getElementById('showScoresBtn').addEventListener('click', showHighScoresInMenu);
-        document.getElementById('showPiecesBtn').addEventListener('click', showPiecesInMenu);
 
-        document.getElementById('leftBtn').addEventListener('touchstart', (e) => {
+        // Joystick controls
+        const joystick = document.getElementById('joystick');
+        const joystickKnob = document.getElementById('joystickKnob');
+
+        function handleJoystickStart(e) {
             e.preventDefault();
-            if (!isPaused && !isGameOver) moveCounterClockwise();
-        });
+            joystickActive = true;
+            updateJoystick(e);
+        }
 
-        document.getElementById('rotateBtn').addEventListener('touchstart', (e) => {
+        function handleJoystickMove(e) {
+            if (!joystickActive) return;
             e.preventDefault();
-            if (!isPaused && !isGameOver) rotate();
-        });
+            updateJoystick(e);
+        }
 
-        document.getElementById('rightBtn').addEventListener('touchstart', (e) => {
+        function handleJoystickEnd(e) {
             e.preventDefault();
-            if (!isPaused && !isGameOver) moveClockwise();
-        });
+            joystickActive = false;
+            joystickKnob.style.transform = 'translate(-50%, -50%)';
+            joystickAngle = 0;
+            joystickPower = 0;
+        }
 
-        document.getElementById('downBtn').addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            if (!isPaused && !isGameOver) moveDown();
-        });
+        function updateJoystick(e) {
+            const rect = joystick.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            
+            const touch = e.touches ? e.touches[0] : e;
+            const deltaX = touch.clientX - centerX;
+            const deltaY = touch.clientY - centerY;
+            
+            const distance = Math.min(Math.sqrt(deltaX * deltaX + deltaY * deltaY), 45);
+            joystickAngle = Math.atan2(deltaY, deltaX);
+            joystickPower = distance / 45;
+            
+            const knobX = Math.cos(joystickAngle) * distance;
+            const knobY = Math.sin(joystickAngle) * distance;
+            
+            joystickKnob.style.transform = `translate(calc(-50% + ${knobX}px), calc(-50% + ${knobY}px))`;
+        }
 
-        document.getElementById('resetGameBtn').addEventListener('click', () => {
-            if (confirm('Are you sure you want to reset the current game?')) {
-                restart();
+        joystick.addEventListener('mousedown', handleJoystickStart);
+        joystick.addEventListener('touchstart', handleJoystickStart);
+        document.addEventListener('mousemove', handleJoystickMove);
+        document.addEventListener('touchmove', handleJoystickMove, { passive: false });
+        document.addEventListener('mouseup', handleJoystickEnd);
+        document.addEventListener('touchend', handleJoystickEnd);
+
+        // Join room and setup Firebase listeners
+        async function joinRoom() {
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('namePrompt').style.display = 'flex';
+            
+            // Setup player in database
+            const playerRef = ref(database, `colorquest/${roomCode}/players/${pcID}`);
+            await set(playerRef, {
+                id: pcID,
+                name: myName,
+                color: myColor,
+                x: startPos.x * TILE_SIZE,
+                y: startPos.y * TILE_SIZE,
+                dead: false,
+                lastUpdate: Date.now()
+            });
+
+            // Setup disconnect handler
+            onDisconnect(playerRef).remove();
+
+            // Listen to all players
+            onValue(ref(database, `colorquest/${roomCode}/players`), (snapshot) => {
+                playerData = snapshot.val() || {};
+                updateUI();
+            });
+
+            // Listen to game state
+            onValue(ref(database, `colorquest/${roomCode}`), (snapshot) => {
+                gameState = snapshot.val() || {};
+                
+                if (gameState.level !== currentLevel) {
+                    currentLevel = gameState.level || 0;
+                    initLevel(currentLevel);
+                }
+                
+                // Update treasures
+                if (gameState.treasures) {
+                    treasures.forEach(t => {
+                        t.collected = gameState.treasures[t.id] || false;
+                    });
+                }
+                
+                collectedTreasure = gameState.collectedTreasure || 0;
+                document.getElementById('treasureCount').textContent = collectedTreasure;
+                
+                // Check victory condition
+                if (collectedTreasure >= levels[currentLevel].treasureNeeded) {
+                    const allAtStart = Object.values(playerData).every(p => {
+                        const tileX = Math.floor(p.x / TILE_SIZE);
+                        const tileY = Math.floor(p.y / TILE_SIZE);
+                        return tileX === startPos.x && tileY === startPos.y;
+                    });
+                    
+                    if (allAtStart && !document.getElementById('victoryScreen').style.display) {
+                        if (currentLevel === levels.length - 1) {
+                            document.getElementById('victoryText').textContent = 'You completed all levels!';
+                            document.getElementById('nextLevelBtn').style.display = 'none';
+                        } else {
+                            document.getElementById('victoryText').textContent = `Level ${currentLevel + 1} Complete!`;
+                            document.getElementById('nextLevelBtn').style.display = 'block';
+                        }
+                        document.getElementById('victoryScreen').style.display = 'flex';
+                    }
+                }
+                
+                // Check game over condition
+                const allDead = Object.values(playerData).length > 0 && 
+                    Object.values(playerData).every(p => p.dead);
+                if (allDead) {
+                    document.getElementById('gameOverScreen').style.display = 'flex';
+                }
+            });
+
+            initLevel(0);
+            gameLoop();
+        }
+
+        function updatePlayerData() {
+            if (!roomCode) return;
+            
+            const player = playerData[pcID] || {};
+            let newX = player.x || startPos.x * TILE_SIZE;
+            let newY = player.y || startPos.y * TILE_SIZE;
+            
+            if (joystickActive && !player.dead) {
+                const speed = 3;
+                const dx = Math.cos(joystickAngle) * joystickPower * speed;
+                const dy = Math.sin(joystickAngle) * joystickPower * speed;
+                
+                const testX = newX + dx;
+                const testY = newY + dy;
+                
+                if (!checkCollision(testX, newY)) {
+                    newX = testX;
+                }
+                if (!checkCollision(newX, testY)) {
+                    newY = testY;
+                }
             }
-        });
+            
+            update(ref(database, `colorquest/${roomCode}/players/${pcID}`), {
+                name: myName,
+                color: myColor,
+                x: newX,
+                y: newY,
+                lastUpdate: Date.now()
+            });
+        }
 
-        document.getElementById('submitScore').addEventListener('click', async () => {
-            const name = document.getElementById('nameInput').value;
-            const submitBtn = document.getElementById('submitScore');
+        function checkCollision(x, y) {
+            const tileX = Math.floor(x / TILE_SIZE);
+            const tileY = Math.floor(y / TILE_SIZE);
             
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Submitting...';
+            const corners = [
+                [x - PLAYER_SIZE/2, y - PLAYER_SIZE/2],
+                [x + PLAYER_SIZE/2, y - PLAYER_SIZE/2],
+                [x - PLAYER_SIZE/2, y + PLAYER_SIZE/2],
+                [x + PLAYER_SIZE/2, y + PLAYER_SIZE/2]
+            ];
             
-            const success = await submitHighScore(name, score);
-            
-            if (success) {
-                alert('Score submitted successfully!');
-                restart();
-            } else {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Submit Score';
+            for (let corner of corners) {
+                const cx = Math.floor(corner[0] / TILE_SIZE);
+                const cy = Math.floor(corner[1] / TILE_SIZE);
+                
+                if (cy >= 0 && cy < currentMap.length && cx >= 0 && cx < currentMap[0].length) {
+                    if (currentMap[cy][cx] === 1) {
+                        return true;
+                    }
+                }
             }
-        });
+            
+            return false;
+        }
 
-        document.getElementById('restartBtn').addEventListener('click', restart);
+        function updateUI() {
+            const alivePlayers = Object.values(playerData).filter(p => !p.dead).length;
+            document.getElementById('playersAlive').textContent = alivePlayers;
+            
+            const playersList = document.getElementById('playersList');
+            playersList.innerHTML = '<div style="margin-top: 10px; border-top: 1px solid #0f3460; padding-top: 5px;"></div>';
+            Object.values(playerData).forEach(p => {
+                const div = document.createElement('div');
+                div.style.color = p.color;
+                div.textContent = `${p.name} ${p.dead ? '💀' : ''}`;
+                playersList.appendChild(div);
+            });
+        }
 
-        document.addEventListener('keydown', (e) => {
-            if (isPaused || isGameOver) return;
-            if (e.key === 'ArrowLeft') moveCounterClockwise();
-            if (e.key === 'ArrowRight') moveClockwise();
-            if (e.key === 'ArrowUp') rotate();
-            if (e.key === 'ArrowDown') moveDown();
-        });
+        // Game loop
+        function gameLoop() {
+            updatePlayerData();
+            updateEnemies();
+            checkTreasures();
+            checkRevives();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
 
-        loadHighScores();
-        updateDifficultyButtons();
-        updateBackgroundColor();
-        currentPiece = createPiece();
-        lastDropTime = performance.now();
-        gameLoop = requestAnimationFrame(update);
+        function updateEnemies() {
+            enemies.forEach(enemy => {
+                switch(enemy.type) {
+                    case 'chaser':
+                        // Chase nearest alive player
+                        let nearest = null;
+                        let nearestDist = Infinity;
+                        Object.values(playerData).forEach(p => {
+                            if (!p.dead) {
+                                const dist = Math.hypot(p.x - enemy.x, p.y - enemy.y);
+                                if (dist < nearestDist) {
+                                    nearestDist = dist;
+                                    nearest = p;
+                                }
+                            }
+                        });
+                        if (nearest) {
+                            const angle = Math.atan2(nearest.y - enemy.y, nearest.x - enemy.x);
+                            const newX = enemy.x + Math.cos(angle) * enemy.speed;
+                            const newY = enemy.y + Math.sin(angle) * enemy.speed;
+                            if (!checkCollision(newX, newY)) {
+                                enemy.x = newX;
+                                enemy.y = newY;
+                            }
+                        }
+                        break;
+                        
+                    case 'patrol':
+                        if (enemy.path.length > 1) {
+                            const target = enemy.path[enemy.pathIndex];
+                            const angle = Math.atan2(target.y - enemy.y, target.x - enemy.x);
+                            enemy.x += Math.cos(angle) * enemy.speed;
+                            enemy.y += Math.sin(angle) * enemy.speed;
+                            
+                            if (Math.hypot(target.x - enemy.x, target.y - enemy.y) < 5) {
+                                enemy.pathIndex = (enemy.pathIndex + 1) % enemy.path.length;
+                            }
+                        }
+                        break;
+                        
+                    case 'random':
+                        enemy.randomTimer++;
+                        if (enemy.randomTimer > 60) {
+                            enemy.randomTimer = 0;
+                            enemy.angle = Math.random() * Math.PI * 2;
+                        }
+                        const newX = enemy.x + Math.cos(enemy.angle) * enemy.speed;
+                        const newY = enemy.y + Math.sin(enemy.angle) * enemy.speed;
+                        if (!checkCollision(newX, newY)) {
+                            enemy.x = newX;
+                            enemy.y = newY;
+                        } else {
+                            enemy.angle = Math.random() * Math.PI * 2;
+                        }
+                        break;
+                        
+                    case 'spinner':
+                        enemy.angle += 0.05;
+                        const radius = 50;
+                        const centerX = enemy.path[0] ? enemy.path[0].x : enemy.x;
+                        const centerY = enemy.path[0] ? enemy.path[0].y : enemy.y;
+                        enemy.x = centerX + Math.cos(enemy.angle) * radius;
+                        enemy.y = centerY + Math.sin(enemy.angle) * radius;
+                        break;
+                        
+                    case 'teleporter':
+                        enemy.teleportTimer++;
+                        if (enemy.teleportTimer > 120) {
+                            enemy.teleportTimer = 0;
+                            // Teleport to random open spot
+                            let attempts = 0;
+                            while (attempts < 50) {
+                                const rx = Math.floor(Math.random() * currentMap[0].length);
+                                const ry = Math.floor(Math.random() * currentMap.length);
+                                if (currentMap[ry][rx] === 0) {
+                                    enemy.x = rx * TILE_SIZE + TILE_SIZE/2;
+                                    enemy.y = ry * TILE_SIZE + TILE_SIZE/2;
+                                    break;
+                                }
+                                attempts++;
+                            }
+                        }
+                        break;
+                }
+                
+                // Check collision with players
+                Object.entries(playerData).forEach(([pid, player]) => {
+                    if (!player.dead) {
+                        const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+                        if (dist < ENEMY_SIZE) {
+                            update(ref(database, `colorquest/${roomCode}/players/${pid}`), {
+                                dead: true
+                            });
+                        }
+                    }
+                });
+            });
+        }
+
+        function checkTreasures() {
+            if (!playerData[pcID] || playerData[pcID].dead) return;
+            
+            const myPlayer = playerData[pcID];
+            treasures.forEach(treasure => {
+                if (!treasure.collected) {
+                    const dist = Math.hypot(myPlayer.x - treasure.x, myPlayer.y - treasure.y);
+                    if (dist < TREASURE_SIZE + PLAYER_SIZE/2) {
+                        // Collect treasure
+                        update(ref(database, `colorquest/${roomCode}/treasures/${treasure.id}`), true);
+                        update(ref(database, `colorquest/${roomCode}`), {
+                            collectedTreasure: collectedTreasure + 1
+                        });
+                    }
+                }
+            });
+        }
+
+        function checkRevives() {
+            if (!playerData[pcID] || playerData[pcID].dead) return;
+            
+            const myPlayer = playerData[pcID];
+            Object.entries(playerData).forEach(([pid, player]) => {
+                if (pid !== pcID && player.dead) {
+                    const dist = Math.hypot(myPlayer.x - player.x, myPlayer.y - player.y);
+                    if (dist < PLAYER_SIZE * 1.5) {
+                        update(ref(database, `colorquest/${roomCode}/players/${pid}`), {
+                            dead: false
+                        });
+                    }
+                }
+            });
+        }
+
+        // Rendering
+        function render() {
+            // Clear main canvas
+            ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Calculate camera position
+            const myPlayer = playerData[pcID];
+            let cameraX = 0;
+            let cameraY = 0;
+            
+            if (myPlayer) {
+                cameraX = myPlayer.x - canvas.width / 2;
+                cameraY = myPlayer.y - canvas.height / 2;
+                
+                // Clamp camera to map bounds
+                cameraX = Math.max(0, Math.min(cameraX, currentMap[0].length * TILE_SIZE - canvas.width));
+                cameraY = Math.max(0, Math.min(cameraY, currentMap.length * TILE_SIZE - canvas.height));
+            }
+            
+            ctx.save();
+            ctx.translate(-cameraX, -cameraY);
+            
+            // Draw map
+            for (let y = 0; y < currentMap.length; y++) {
+                for (let x = 0; x < currentMap[y].length; x++) {
+                    if (currentMap[y][x] === 1) {
+                        ctx.fillStyle = '#2a2a4a';
+                        ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                        ctx.strokeStyle = '#1a1a3a';
+                        ctx.strokeRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                    }
+                }
+            }
+            
+            // Draw start zone
+            ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
+            ctx.fillRect(startPos.x * TILE_SIZE, startPos.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            ctx.strokeStyle = '#00ff00';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(startPos.x * TILE_SIZE, startPos.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            
+            // Draw treasures
+            treasures.forEach(treasure => {
+                if (!treasure.collected) {
+                    ctx.save();
+                    ctx.translate(treasure.x, treasure.y);
+                    ctx.rotate(Date.now() / 500);
+                    ctx.fillStyle = '#ffd700';
+                    ctx.fillRect(-TREASURE_SIZE/2, -TREASURE_SIZE/2, TREASURE_SIZE, TREASURE_SIZE);
+                    ctx.strokeStyle = '#ffaa00';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(-TREASURE_SIZE/2, -TREASURE_SIZE/2, TREASURE_SIZE, TREASURE_SIZE);
+                    ctx.restore();
+                }
+            });
+            
+            // Draw enemies
+            enemies.forEach(enemy => {
+                ctx.fillStyle = enemy.type === 'chaser' ? '#ff0000' :
+                               enemy.type === 'patrol' ? '#ff8800' :
+                               enemy.type === 'random' ? '#ff00ff' :
+                               enemy.type === 'spinner' ? '#00ffff' :
+                               '#8800ff';
+                ctx.beginPath();
+                ctx.arc(enemy.x, enemy.y, ENEMY_SIZE/2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Draw enemy type indicator
+                ctx.fillStyle = '#fff';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const icon = enemy.type === 'chaser' ? '👁' :
+                            enemy.type === 'patrol' ? '↔' :
+                            enemy.type === 'random' ? '?' :
+                            enemy.type === 'spinner' ? '🌀' : '⚡';
+                ctx.fillText(icon, enemy.x, enemy.y);
+            });
+            
+            // Draw players
+            Object.values(playerData).forEach(player => {
+                if (player.dead) {
+                    ctx.globalAlpha = 0.3;
+                }
+                
+                ctx.fillStyle = player.color;
+                ctx.beginPath();
+                ctx.arc(player.x, player.y, PLAYER_SIZE/2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                
+                if (player.dead) {
+                    ctx.globalAlpha = 1;
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 24px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('💀', player.x, player.y);
+                }
+                
+                ctx.globalAlpha = 1;
+                
+                // Draw name
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'center';
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 3;
+                ctx.strokeText(player.name, player.x, player.y - PLAYER_SIZE);
+                ctx.fillText(player.name, player.x, player.y - PLAYER_SIZE);
+            });
+            
+            ctx.restore();
+            
+            // Draw minimap
+            renderMinimap();
+        }
+
+        function renderMinimap() {
+            miniCtx.fillStyle = '#000';
+            miniCtx.fillRect(0, 0, miniMap.width, miniMap.height);
+            
+            const scaleX = miniMap.width / (currentMap[0].length * TILE_SIZE);
+            const scaleY = miniMap.height / (currentMap.length * TILE_SIZE);
+            
+            // Draw map
+            for (let y = 0; y < currentMap.length; y++) {
+                for (let x = 0; x < currentMap[y].length; x++) {
+                    if (currentMap[y][x] === 1) {
+                        miniCtx.fillStyle = '#444';
+                        miniCtx.fillRect(
+                            x * TILE_SIZE * scaleX,
+                            y * TILE_SIZE * scaleY,
+                            TILE_SIZE * scaleX,
+                            TILE_SIZE * scaleY
+                        );
+                    }
+                }
+            }
+            
+            // Draw start
+            miniCtx.fillStyle = '#00ff00';
+            miniCtx.fillRect(
+                startPos.x * TILE_SIZE * scaleX,
+                startPos.y * TILE_SIZE * scaleY,
+                TILE_SIZE * scaleX,
+                TILE_SIZE * scaleY
+            );
+            
+            // Draw treasures
+            treasures.forEach(treasure => {
+                if (!treasure.collected) {
+                    miniCtx.fillStyle = '#ffd700';
+                    miniCtx.fillRect(
+                        treasure.x * scaleX - 2,
+                        treasure.y * scaleY - 2,
+                        4, 4
+                    );
+                }
+            });
+            
+            // Draw enemies
+            enemies.forEach(enemy => {
+                miniCtx.fillStyle = '#ff0000';
+                miniCtx.beginPath();
+                miniCtx.arc(
+                    enemy.x * scaleX,
+                    enemy.y * scaleY,
+                    3, 0, Math.PI * 2
+                );
+                miniCtx.fill();
+            });
+            
+            // Draw players
+            Object.values(playerData).forEach(player => {
+                miniCtx.fillStyle = player.dead ? '#666' : player.color;
+                miniCtx.beginPath();
+                miniCtx.arc(
+                    player.x * scaleX,
+                    player.y * scaleY,
+                    4, 0, Math.PI * 2
+                );
+                miniCtx.fill();
+            });
+        }
     </script>
 </body>
 </html>

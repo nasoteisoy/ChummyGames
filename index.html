@@ -324,9 +324,11 @@
 
         function generateCode(length) {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            return Array.from({ length }, () => 
-                chars[Math.floor(Math.random() * chars.length)]
-            ).join('');
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
         }
 
         // Game variables
@@ -530,7 +532,9 @@
 
         // UI Event Listeners
         document.getElementById('createBtn').addEventListener('click', async () => {
+            console.log('Create button clicked');
             roomCode = generateCode(4);
+            console.log('Generated room code:', roomCode);
             try {
                 await set(ref(database, `colorquest/${roomCode}`), {
                     created: Date.now(),
@@ -540,6 +544,7 @@
                     treasures: {},
                     enemies: {}
                 });
+                console.log('Room created in Firebase');
                 
                 document.getElementById('roomCode').textContent = roomCode;
                 document.getElementById('roomCodeDisplay').style.display = 'block';
@@ -555,7 +560,9 @@
         });
 
         document.getElementById('joinBtn').addEventListener('click', () => {
-            const code = document.getElementById('roomCodeInput').value.toUpperCase();
+            console.log('Join button clicked');
+            const code = document.getElementById('roomCodeInput').value.toUpperCase().trim();
+            console.log('Room code entered:', code);
             if (code.length === 4) {
                 roomCode = code;
                 joinRoom();
@@ -564,7 +571,15 @@
             }
         });
 
+        // Allow Enter key to join room
+        document.getElementById('roomCodeInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('joinBtn').click();
+            }
+        });
+
         document.getElementById('nameSubmitBtn').addEventListener('click', () => {
+            console.log('Name submit clicked');
             const name = document.getElementById('nameInput').value.trim();
             if (name) {
                 myName = name;
@@ -574,6 +589,13 @@
             document.getElementById('joystickContainer').style.display = 'block';
             document.getElementById('colorPicker').style.display = 'flex';
             document.getElementById('nameChangeBtn').style.display = 'block';
+        });
+
+        // Allow Enter key to submit name
+        document.getElementById('nameInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('nameSubmitBtn').click();
+            }
         });
 
         document.getElementById('nameChangeBtn').addEventListener('click', () => {
@@ -705,90 +727,101 @@
 
         // Join room and setup Firebase listeners
         async function joinRoom() {
+            console.log('Attempting to join room:', roomCode);
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('namePrompt').style.display = 'flex';
             
-            // Check if room exists first
-            const roomSnapshot = await get(ref(database, `colorquest/${roomCode}`));
-            
-            if (!roomSnapshot.exists()) {
-                alert('Room not found. Please check the code and try again.');
+            try {
+                // Check if room exists first
+                const roomSnapshot = await get(ref(database, `colorquest/${roomCode}`));
+                console.log('Room exists:', roomSnapshot.exists());
+                
+                if (!roomSnapshot.exists()) {
+                    alert('Room not found. Please check the code and try again.');
+                    document.getElementById('startScreen').style.display = 'flex';
+                    document.getElementById('namePrompt').style.display = 'none';
+                    return;
+                }
+                
+                // Setup player in database - spawn at start position
+                const playerRef = ref(database, `colorquest/${roomCode}/players/${pcID}`);
+                await set(playerRef, {
+                    id: pcID,
+                    name: myName,
+                    color: myColor,
+                    x: startPos.x * TILE_SIZE,
+                    y: startPos.y * TILE_SIZE,
+                    dead: false,
+                    lastUpdate: Date.now()
+                });
+                console.log('Player added to room');
+
+                // Setup disconnect handler
+                onDisconnect(playerRef).remove();
+
+                // Listen to all players
+                onValue(ref(database, `colorquest/${roomCode}/players`), (snapshot) => {
+                    playerData = snapshot.val() || {};
+                    updateUI();
+                });
+
+                // Listen to game state
+                onValue(ref(database, `colorquest/${roomCode}`), (snapshot) => {
+                    gameState = snapshot.val() || {};
+                    
+                    if (gameState.level !== currentLevel) {
+                        currentLevel = gameState.level || 0;
+                        initLevel(currentLevel);
+                    }
+                    
+                    // Update treasures
+                    if (gameState.treasures) {
+                        treasures.forEach(t => {
+                            t.collected = gameState.treasures[t.id] || false;
+                        });
+                    }
+                    
+                    collectedTreasure = gameState.collectedTreasure || 0;
+                    document.getElementById('treasureCount').textContent = collectedTreasure;
+                
+                    // Check victory condition
+                    if (collectedTreasure >= levels[currentLevel].treasureNeeded) {
+                        const playersArray = Object.values(playerData);
+                        const allAtStart = playersArray.length > 0 && playersArray.every(p => {
+                            const tileX = Math.floor(p.x / TILE_SIZE);
+                            const tileY = Math.floor(p.y / TILE_SIZE);
+                            return tileX === startPos.x && tileY === startPos.y && !p.dead;
+                        });
+                        
+                        if (allAtStart && document.getElementById('victoryScreen').style.display !== 'flex') {
+                            if (currentLevel === levels.length - 1) {
+                                document.getElementById('victoryText').textContent = 'You completed all levels!';
+                                document.getElementById('nextLevelBtn').style.display = 'none';
+                            } else {
+                                document.getElementById('victoryText').textContent = `Level ${currentLevel + 1} Complete!`;
+                                document.getElementById('nextLevelBtn').style.display = 'block';
+                            }
+                            document.getElementById('victoryScreen').style.display = 'flex';
+                        }
+                    }
+                    
+                    // Check game over condition - only if at least one player exists
+                    const playersArray = Object.values(playerData);
+                    const allDead = playersArray.length > 0 && playersArray.every(p => p.dead);
+                    if (allDead && document.getElementById('gameOverScreen').style.display !== 'flex') {
+                        document.getElementById('gameOverScreen').style.display = 'flex';
+                    }
+                });
+
+                initLevel(0);
+                gameLoop();
+                console.log('Game started successfully');
+            } catch (error) {
+                console.error('Error joining room:', error);
+                alert('Failed to join room: ' + error.message);
                 document.getElementById('startScreen').style.display = 'flex';
                 document.getElementById('namePrompt').style.display = 'none';
-                return;
             }
-            
-            // Setup player in database - spawn at start position
-            const playerRef = ref(database, `colorquest/${roomCode}/players/${pcID}`);
-            await set(playerRef, {
-                id: pcID,
-                name: myName,
-                color: myColor,
-                x: startPos.x * TILE_SIZE,
-                y: startPos.y * TILE_SIZE,
-                dead: false,
-                lastUpdate: Date.now()
-            });
-
-            // Setup disconnect handler
-            onDisconnect(playerRef).remove();
-
-            // Listen to all players
-            onValue(ref(database, `colorquest/${roomCode}/players`), (snapshot) => {
-                playerData = snapshot.val() || {};
-                updateUI();
-            });
-
-            // Listen to game state
-            onValue(ref(database, `colorquest/${roomCode}`), (snapshot) => {
-                gameState = snapshot.val() || {};
-                
-                if (gameState.level !== currentLevel) {
-                    currentLevel = gameState.level || 0;
-                    initLevel(currentLevel);
-                }
-                
-                // Update treasures
-                if (gameState.treasures) {
-                    treasures.forEach(t => {
-                        t.collected = gameState.treasures[t.id] || false;
-                    });
-                }
-                
-                collectedTreasure = gameState.collectedTreasure || 0;
-                document.getElementById('treasureCount').textContent = collectedTreasure;
-                
-                // Check victory condition
-                if (collectedTreasure >= levels[currentLevel].treasureNeeded) {
-                    const playersArray = Object.values(playerData);
-                    const allAtStart = playersArray.length > 0 && playersArray.every(p => {
-                        const tileX = Math.floor(p.x / TILE_SIZE);
-                        const tileY = Math.floor(p.y / TILE_SIZE);
-                        return tileX === startPos.x && tileY === startPos.y && !p.dead;
-                    });
-                    
-                    if (allAtStart && document.getElementById('victoryScreen').style.display !== 'flex') {
-                        if (currentLevel === levels.length - 1) {
-                            document.getElementById('victoryText').textContent = 'You completed all levels!';
-                            document.getElementById('nextLevelBtn').style.display = 'none';
-                        } else {
-                            document.getElementById('victoryText').textContent = `Level ${currentLevel + 1} Complete!`;
-                            document.getElementById('nextLevelBtn').style.display = 'block';
-                        }
-                        document.getElementById('victoryScreen').style.display = 'flex';
-                    }
-                }
-                
-                // Check game over condition - only if at least one player exists
-                const playersArray = Object.values(playerData);
-                const allDead = playersArray.length > 0 && playersArray.every(p => p.dead);
-                if (allDead && document.getElementById('gameOverScreen').style.display !== 'flex') {
-                    document.getElementById('gameOverScreen').style.display = 'flex';
-                }
-            });
-
-            initLevel(0);
-            gameLoop();
         }
 
         function updatePlayerData() {

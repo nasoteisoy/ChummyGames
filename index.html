@@ -294,8 +294,12 @@
     </div>
 
     <script type="module">
+        console.log('Script loaded!');
+        
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getDatabase, ref, set, onValue, update, remove, onDisconnect, get } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+
+        console.log('Firebase imports successful');
 
         // Firebase configuration
         const firebaseConfig = {
@@ -310,6 +314,8 @@
 
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
+        
+        console.log('Firebase initialized');
 
         // Utility functions
         function getOrCreatePCID() {
@@ -319,6 +325,7 @@
                 pcID = generateCode(12);
                 localStorage.setItem(storageKey, pcID);
             }
+            console.log('PC ID:', pcID);
             return pcID;
         }
 
@@ -343,6 +350,10 @@
         let gameState = {};
         let myColor = '#ff4444';
         let myName = `Player${Math.floor(Math.random() * 1000)}`;
+
+        console.log('Game variables initialized');
+        console.log('Initial color:', myColor);
+        console.log('Initial name:', myName);
 
         const COLORS = ['#ff4444', '#44ff44', '#4444ff', '#ffff44', '#ff44ff', '#44ffff'];
         const TILE_SIZE = 40;
@@ -529,6 +540,14 @@
             document.getElementById('treasureNeeded').textContent = level.treasureNeeded;
             document.getElementById('treasureCount').textContent = 0;
         }
+
+        console.log('About to setup event listeners');
+
+        // Setup all event listeners
+        function setupAllEventListeners() {
+            console.log('setupAllEventListeners called');
+            console.log('Create button element:', document.getElementById('createBtn'));
+            console.log('Join button element:', document.getElementById('joinBtn'));
 
         // UI Event Listeners
         document.getElementById('createBtn').addEventListener('click', async () => {
@@ -1228,6 +1247,20 @@
                 );
                 miniCtx.fill();
             });
+        }
+
+        } // End of setupAllEventListeners
+
+        // Call setup when DOM is ready
+        if (document.readyState === 'loading') {
+            console.log('Waiting for DOM to load...');
+            document.addEventListener('DOMContentLoaded', () => {
+                console.log('DOM loaded, calling setupAllEventListeners');
+                setupAllEventListeners();
+            });
+        } else {
+            console.log('DOM already loaded, calling setupAllEventListeners immediately');
+            setupAllEventListeners();
         }
     </script>
 </body>

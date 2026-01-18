@@ -3,116 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Color Quest - Treasure Hunt</title>
+    <title>Treasure Hunt - Multiplayer Co-op</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
         body {
             font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: #fff;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             overflow: hidden;
-            user-select: none;
+            width: 100vw;
+            height: 100vh;
         }
 
         #gameContainer {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            display: none;
+            width: 100%;
+            height: 100%;
             position: relative;
         }
 
         #gameCanvas {
-            border: 3px solid #0f3460;
-            background: #0a0a0a;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
-            max-width: 90vw;
-            max-height: 90vh;
-        }
-
-        #miniMap {
             position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 200px;
-            height: 200px;
-            border: 3px solid #0f3460;
-            background: rgba(0, 0, 0, 0.7);
-            border-radius: 10px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #1a1a2e;
+            border: 3px solid #16213e;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
         }
 
         #ui {
             position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.8);
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 18px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.6);
             padding: 15px;
             border-radius: 10px;
-            border: 2px solid #0f3460;
-            min-width: 200px;
         }
 
-        #ui h3 {
-            color: #e94560;
-            margin-bottom: 10px;
-        }
-
-        #ui div {
-            margin: 5px 0;
-            font-size: 14px;
+        #minimap {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 200px;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #4CAF50;
+            border-radius: 5px;
+            z-index: 10;
         }
 
         #joystickContainer {
             position: absolute;
-            bottom: 50px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: none;
-        }
-
-        #joystick {
+            bottom: 30px;
+            left: 30px;
             width: 150px;
             height: 150px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 3px solid #0f3460;
+            z-index: 100;
+        }
+
+        #joystickOuter {
+            width: 150px;
+            height: 150px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 3px solid rgba(255, 255, 255, 0.5);
             border-radius: 50%;
             position: relative;
         }
 
-        #joystickKnob {
+        #joystickInner {
             width: 60px;
             height: 60px;
-            background: #e94560;
+            background: rgba(255, 255, 255, 0.7);
+            border: 3px solid white;
             border-radius: 50%;
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            transition: background 0.1s;
         }
 
-        #colorPicker {
+        #colorButtons {
             position: absolute;
-            bottom: 50px;
+            bottom: 30px;
             right: 30px;
-            display: none;
-            flex-direction: column;
+            display: flex;
             gap: 10px;
+            z-index: 100;
         }
 
         .colorBtn {
             width: 50px;
             height: 50px;
-            border: 3px solid #fff;
+            border: 3px solid white;
             border-radius: 50%;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.2s;
         }
 
         .colorBtn:active {
@@ -120,17 +117,37 @@
         }
 
         .colorBtn.selected {
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
-            transform: scale(1.1);
+            border: 4px solid gold;
+            box-shadow: 0 0 20px gold;
         }
 
-        #startScreen, #namePrompt, #gameOverScreen, #victoryScreen {
+        #nameButton {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            z-index: 100;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        #nameButton:active {
+            transform: translateX(-50%) scale(0.95);
+        }
+
+        #setupScreen {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.95);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -138,168 +155,141 @@
             z-index: 1000;
         }
 
-        #namePrompt {
-            display: none;
+        .setupCard {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
         }
 
-        #gameOverScreen, #victoryScreen {
-            display: none;
+        .setupCard h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 32px;
         }
 
-        h1 {
-            font-size: 48px;
-            color: #e94560;
-            margin-bottom: 20px;
-            text-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+        .setupCard p {
+            color: #666;
+            margin-bottom: 30px;
         }
 
-        input {
+        .setupCard input {
+            width: 100%;
             padding: 15px;
             font-size: 18px;
-            border: 2px solid #0f3460;
-            border-radius: 5px;
-            margin: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            min-width: 250px;
-        }
-
-        button {
-            padding: 15px 40px;
-            font-size: 18px;
-            background: #e94560;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 10px;
-            transition: background 0.3s, transform 0.1s;
-        }
-
-        button:hover {
-            background: #c23a4f;
-        }
-
-        button:active {
-            transform: scale(0.95);
-        }
-
-        #roomCodeDisplay {
-            font-size: 24px;
-            margin: 20px;
-            padding: 15px 30px;
-            background: rgba(15, 52, 96, 0.5);
+            border: 2px solid #ddd;
             border-radius: 10px;
-            border: 2px solid #0f3460;
+            margin-bottom: 20px;
+            text-align: center;
+            text-transform: uppercase;
         }
 
-        .info-text {
-            font-size: 16px;
-            margin: 10px;
-            color: #bbb;
-            max-width: 500px;
+        .setupCard button {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .setupCard button:hover {
+            background: #45a049;
+        }
+
+        .setupCard button:active {
+            transform: scale(0.98);
+        }
+
+        #statusMessage {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 30px 50px;
+            border-radius: 15px;
+            font-size: 24px;
+            z-index: 2000;
+            display: none;
             text-align: center;
         }
 
-        #nameChangeBtn {
-            position: absolute;
-            bottom: 220px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 10px 20px;
-            font-size: 14px;
-            display: none;
+        .gameOver {
+            background: rgba(255, 0, 0, 0.9) !important;
         }
 
-        @media (max-width: 768px) {
-            #miniMap {
-                width: 150px;
-                height: 150px;
-                top: 10px;
-                right: 10px;
-            }
+        .levelComplete {
+            background: rgba(76, 175, 80, 0.9) !important;
+        }
 
-            #ui {
-                font-size: 12px;
-                padding: 10px;
-                top: 10px;
-                left: 10px;
-            }
+        .revivePrompt {
+            position: absolute;
+            bottom: 200px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 100, 100, 0.95);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 150;
+            display: none;
+            animation: pulse 1s infinite;
+        }
 
-            h1 {
-                font-size: 32px;
-            }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
     </style>
 </head>
 <body>
-    <div id="gameContainer">
-        <canvas id="gameCanvas" width="800" height="600"></canvas>
-        <canvas id="miniMap" width="200" height="200"></canvas>
-        
-        <div id="ui">
-            <h3>Level <span id="levelNum">1</span></h3>
-            <div>Treasure: <span id="treasureCount">0</span>/<span id="treasureNeeded">5</span></div>
-            <div>Players Alive: <span id="playersAlive">0</span></div>
-            <div id="playersList"></div>
-        </div>
-
-        <div id="joystickContainer">
-            <div id="joystick">
-                <div id="joystickKnob"></div>
-            </div>
-        </div>
-
-        <div id="colorPicker">
-            <div class="colorBtn" style="background: #ff4444;" data-color="#ff4444"></div>
-            <div class="colorBtn" style="background: #44ff44;" data-color="#44ff44"></div>
-            <div class="colorBtn" style="background: #4444ff;" data-color="#4444ff"></div>
-            <div class="colorBtn" style="background: #ffff44;" data-color="#ffff44"></div>
-            <div class="colorBtn" style="background: #ff44ff;" data-color="#ff44ff"></div>
-            <div class="colorBtn" style="background: #44ffff;" data-color="#44ffff"></div>
-        </div>
-
-        <button id="nameChangeBtn">Change Name</button>
-
-        <div id="startScreen">
-            <h1>🎮 Color Quest 🎮</h1>
-            <p class="info-text">Cooperative treasure hunt! Switch colors, avoid enemies, collect treasure and return to start!</p>
-            <input type="text" id="roomCodeInput" placeholder="Enter Room Code (4 chars)" maxlength="4">
-            <button id="joinBtn">Join Game</button>
-            <button id="createBtn">Create New Room</button>
-            <div id="roomCodeDisplay" style="display: none;">
-                Room Code: <strong><span id="roomCode"></span></strong>
-            </div>
-        </div>
-
-        <div id="namePrompt">
-            <h1>Enter Your Name</h1>
-            <input type="text" id="nameInput" placeholder="Your Name" maxlength="20">
-            <button id="nameSubmitBtn">Start Playing</button>
-        </div>
-
-        <div id="gameOverScreen">
-            <h1>💀 Game Over 💀</h1>
-            <p class="info-text">All players were destroyed!</p>
-            <button id="restartBtn">Restart Level</button>
-            <button id="menuBtn">Main Menu</button>
-        </div>
-
-        <div id="victoryScreen">
-            <h1>🏆 Victory! 🏆</h1>
-            <p class="info-text" id="victoryText">Level Complete!</p>
-            <button id="nextLevelBtn">Next Level</button>
-            <button id="menuBtn2">Main Menu</button>
+    <div id="setupScreen">
+        <div class="setupCard">
+            <h1>🏴‍☠️ Treasure Hunt</h1>
+            <p>Enter a 4-character room code to join or create a game</p>
+            <input type="text" id="roomCodeInput" maxlength="4" placeholder="ABCD" />
+            <button id="joinButton">Join Game</button>
         </div>
     </div>
 
-    <script type="module">
-        console.log('Script loaded!');
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <canvas id="minimap"></canvas>
         
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getDatabase, ref, set, onValue, update, remove, onDisconnect, get } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+        <div id="ui">
+            <div>Level: <span id="levelNum">1</span></div>
+            <div>Treasures: <span id="treasureCount">0</span>/<span id="treasureGoal">5</span></div>
+            <div>Room: <span id="roomCode">----</span></div>
+        </div>
 
-        console.log('Firebase imports successful');
+        <button id="nameButton">Change Name</button>
+
+        <div id="joystickContainer">
+            <div id="joystickOuter">
+                <div id="joystickInner"></div>
+            </div>
+        </div>
+
+        <div id="colorButtons"></div>
+
+        <div id="revivePrompt">Touch teammate to revive!</div>
+    </div>
+
+    <div id="statusMessage"></div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getDatabase, ref, set, onValue, update, remove, onDisconnect } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
 
         // Firebase configuration
         const firebaseConfig = {
@@ -314,8 +304,6 @@
 
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
-        
-        console.log('Firebase initialized');
 
         // Utility functions
         function getOrCreatePCID() {
@@ -325,942 +313,746 @@
                 pcID = generateCode(12);
                 localStorage.setItem(storageKey, pcID);
             }
-            console.log('PC ID:', pcID);
             return pcID;
         }
 
         function generateCode(length) {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let result = '';
-            for (let i = 0; i < length; i++) {
-                result += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return result;
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            return Array.from({ length }, () => 
+                chars[Math.floor(Math.random() * chars.length)]
+            ).join('');
         }
 
-        // Game variables
+        // Game constants
+        const CANVAS_WIDTH = 800;
+        const CANVAS_HEIGHT = 600;
+        const PLAYER_SIZE = 20;
+        const TREASURE_SIZE = 15;
+        const ENEMY_SIZE = 18;
+        const ROOM_SIZE = 400;
+        const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F'];
+
+        // Game state
+        let gameState = {
+            players: {},
+            treasures: {},
+            enemies: {},
+            level: 1,
+            roomCode: '',
+            playerID: getOrCreatePCID(),
+            joystick: { x: 0, y: 0, active: false },
+            camera: { x: 0, y: 0 },
+            deadPlayers: new Set()
+        };
+
+        // Canvas setup
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const miniMap = document.getElementById('miniMap');
-        const miniCtx = miniMap.getContext('2d');
+        const minimap = document.getElementById('minimap');
+        const minimapCtx = minimap.getContext('2d');
+        
+        canvas.width = CANVAS_WIDTH;
+        canvas.height = CANVAS_HEIGHT;
 
-        const pcID = getOrCreatePCID();
-        let roomCode = null;
-        let playerData = {};
-        let gameState = {};
-        let myColor = '#ff4444';
-        let myName = `Player${Math.floor(Math.random() * 1000)}`;
-
-        console.log('Game variables initialized');
-        console.log('Initial color:', myColor);
-        console.log('Initial name:', myName);
-
-        const COLORS = ['#ff4444', '#44ff44', '#4444ff', '#ffff44', '#ff44ff', '#44ffff'];
-        const TILE_SIZE = 40;
-        const PLAYER_SIZE = 30;
-        const TREASURE_SIZE = 25;
-        const ENEMY_SIZE = 35;
-
-        // Joystick variables
-        let joystickActive = false;
-        let joystickAngle = 0;
-        let joystickPower = 0;
-
-        // Level designs
-        const levels = [
+        // Level definitions
+        const LEVELS = [
             {
-                name: "The Beginning",
-                treasureNeeded: 3,
-                map: [
-                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-                    [1,0,0,0,0,0,1,0,0,0,0,0,0,0,1],
-                    [1,0,1,1,1,0,1,0,1,1,1,1,1,0,1],
-                    [1,0,1,0,0,0,0,0,0,0,0,0,1,0,1],
-                    [1,0,1,0,1,1,1,1,1,1,1,0,1,0,1],
-                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                    [1,0,1,1,1,0,1,1,1,0,1,1,1,0,1],
-                    [1,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
-                    [1,1,1,0,1,1,1,0,1,1,1,0,1,1,1],
-                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-                ],
-                enemies: [
-                    { type: 'chaser', x: 8, y: 5 },
-                    { type: 'patrol', x: 3, y: 7, path: [[3,7],[10,7]] }
-                ],
-                treasures: [[12,2], [12,8], [2,8]]
+                rooms: generateRooms(3, 3),
+                treasureCount: 5,
+                enemyCount: 3,
+                enemyTypes: ['chaser', 'patroller']
             },
             {
-                name: "The Maze",
-                treasureNeeded: 4,
-                map: [
-                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-                    [1,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1],
-                    [1,0,1,0,1,0,1,1,1,1,1,1,1,0,1,0,1,1,0,1],
-                    [1,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,1],
-                    [1,0,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,1],
-                    [1,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,1],
-                    [1,1,1,0,1,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
-                    [1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,1],
-                    [1,0,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1],
-                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-                ],
-                enemies: [
-                    { type: 'chaser', x: 10, y: 5 },
-                    { type: 'patrol', x: 3, y: 3, path: [[3,3],[16,3]] },
-                    { type: 'random', x: 10, y: 8 }
-                ],
-                treasures: [[18,2], [18,8], [2,8], [2,2]]
+                rooms: generateRooms(4, 3),
+                treasureCount: 7,
+                enemyCount: 5,
+                enemyTypes: ['chaser', 'patroller', 'shooter']
             },
             {
-                name: "The Gauntlet",
-                treasureNeeded: 5,
-                map: [
-                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                    [1,0,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,1],
-                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                    [1,0,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,1],
-                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                    [1,0,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,1],
-                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                    [1,0,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,1,0,1],
-                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-                ],
-                enemies: [
-                    { type: 'chaser', x: 10, y: 5 },
-                    { type: 'patrol', x: 3, y: 3, path: [[3,3],[16,3]] },
-                    { type: 'patrol', x: 3, y: 7, path: [[3,7],[16,7]] },
-                    { type: 'random', x: 10, y: 2 },
-                    { type: 'spinner', x: 10, y: 8 }
-                ],
-                treasures: [[18,2], [18,5], [18,8], [2,5], [10,5]]
+                rooms: generateRooms(4, 4),
+                treasureCount: 9,
+                enemyCount: 8,
+                enemyTypes: ['chaser', 'patroller', 'shooter', 'teleporter']
             },
             {
-                name: "The Crossroads",
-                treasureNeeded: 6,
-                map: [
-                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-                    [1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1],
-                    [1,0,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,0,1],
-                    [1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
-                    [1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,0,1,0,1],
-                    [1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1],
-                    [1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1],
-                    [1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1],
-                    [1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,0,1,0,1],
-                    [1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
-                    [1,0,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,0,1],
-                    [1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1],
-                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-                ],
-                enemies: [
-                    { type: 'chaser', x: 11, y: 6 },
-                    { type: 'chaser', x: 5, y: 3 },
-                    { type: 'patrol', x: 3, y: 5, path: [[3,5],[19,5]] },
-                    { type: 'patrol', x: 10, y: 3, path: [[10,3],[10,9]] },
-                    { type: 'random', x: 17, y: 9 },
-                    { type: 'spinner', x: 11, y: 3 }
-                ],
-                treasures: [[21,2], [21,10], [2,2], [2,10], [11,2], [11,10]]
+                rooms: generateRooms(5, 4),
+                treasureCount: 12,
+                enemyCount: 12,
+                enemyTypes: ['chaser', 'patroller', 'shooter', 'teleporter', 'splitter']
             },
             {
-                name: "The Final Challenge",
-                treasureNeeded: 7,
-                map: [
-                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-                    [1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1],
-                    [1,0,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,0,1],
-                    [1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
-                    [1,0,1,0,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,0,1,0,1],
-                    [1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1],
-                    [1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1],
-                    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                    [1,0,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,0,1],
-                    [1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1],
-                    [1,0,1,0,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,0,1,0,1],
-                    [1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
-                    [1,0,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,0,1],
-                    [1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1],
-                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-                ],
-                enemies: [
-                    { type: 'chaser', x: 12, y: 7 },
-                    { type: 'chaser', x: 6, y: 3 },
-                    { type: 'chaser', x: 18, y: 11 },
-                    { type: 'patrol', x: 3, y: 5, path: [[3,5],[21,5]] },
-                    { type: 'patrol', x: 3, y: 9, path: [[3,9],[21,9]] },
-                    { type: 'random', x: 12, y: 3 },
-                    { type: 'random', x: 12, y: 11 },
-                    { type: 'spinner', x: 6, y: 7 },
-                    { type: 'teleporter', x: 18, y: 7 }
-                ],
-                treasures: [[23,2], [23,7], [23,12], [2,2], [2,7], [2,12], [12,7]]
+                rooms: generateRooms(5, 5),
+                treasureCount: 15,
+                enemyCount: 15,
+                enemyTypes: ['chaser', 'patroller', 'shooter', 'teleporter', 'splitter']
             }
         ];
 
-        let currentLevel = 0;
-        let currentMap = [];
-        let enemies = [];
-        let treasures = [];
-        let collectedTreasure = 0;
-        const startPos = { x: 1, y: 1 };
-
-        // Initialize game
-        function initLevel(levelIndex) {
-            const level = levels[levelIndex];
-            currentMap = level.map;
-            collectedTreasure = 0;
-            
-            // Initialize enemies
-            enemies = level.enemies.map((e, i) => ({
-                id: i,
-                type: e.type,
-                x: e.x * TILE_SIZE,
-                y: e.y * TILE_SIZE,
-                path: e.path ? e.path.map(p => ({x: p[0] * TILE_SIZE, y: p[1] * TILE_SIZE})) : [],
-                pathIndex: 0,
-                angle: 0,
-                speed: e.type === 'chaser' ? 1.5 : e.type === 'patrol' ? 1 : e.type === 'spinner' ? 1 : 0.8,
-                randomTimer: 0,
-                teleportTimer: 0
-            }));
-
-            // Initialize treasures
-            treasures = level.treasures.map((t, i) => ({
-                id: i,
-                x: t[0] * TILE_SIZE + TILE_SIZE/2,
-                y: t[1] * TILE_SIZE + TILE_SIZE/2,
-                collected: false
-            }));
-
-            document.getElementById('levelNum').textContent = levelIndex + 1;
-            document.getElementById('treasureNeeded').textContent = level.treasureNeeded;
-            document.getElementById('treasureCount').textContent = 0;
+        function generateRooms(cols, rows) {
+            const rooms = [];
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    rooms.push({
+                        x: x * ROOM_SIZE,
+                        y: y * ROOM_SIZE,
+                        connections: {
+                            right: x < cols - 1,
+                            down: y < rows - 1,
+                            left: x > 0,
+                            up: y > 0
+                        }
+                    });
+                }
+            }
+            return rooms;
         }
 
-        console.log('About to setup event listeners');
-
-        // Setup all event listeners
-        function setupAllEventListeners() {
-            console.log('setupAllEventListeners called');
-            console.log('Create button element:', document.getElementById('createBtn'));
-            console.log('Join button element:', document.getElementById('joinBtn'));
-
-        // UI Event Listeners
-        document.getElementById('createBtn').addEventListener('click', async () => {
-            console.log('Create button clicked');
-            roomCode = generateCode(4);
-            console.log('Generated room code:', roomCode);
-            try {
-                await set(ref(database, `colorquest/${roomCode}`), {
-                    created: Date.now(),
-                    level: 0,
-                    gameStarted: true,
-                    collectedTreasure: 0,
-                    treasures: {},
-                    enemies: {}
-                });
-                console.log('Room created in Firebase');
-                
+        // Setup screen handlers
+        document.getElementById('joinButton').addEventListener('click', () => {
+            const roomCode = document.getElementById('roomCodeInput').value.toUpperCase();
+            if (roomCode.length === 4) {
+                gameState.roomCode = roomCode;
+                document.getElementById('setupScreen').style.display = 'none';
+                document.getElementById('gameContainer').style.display = 'block';
                 document.getElementById('roomCode').textContent = roomCode;
-                document.getElementById('roomCodeDisplay').style.display = 'block';
-                
-                // Small delay to ensure Firebase write completes
-                setTimeout(() => {
-                    joinRoom();
-                }, 100);
-            } catch (error) {
-                console.error('Error creating room:', error);
-                alert('Failed to create room. Please try again.');
-            }
-        });
-
-        document.getElementById('joinBtn').addEventListener('click', () => {
-            console.log('Join button clicked');
-            const code = document.getElementById('roomCodeInput').value.toUpperCase().trim();
-            console.log('Room code entered:', code);
-            if (code.length === 4) {
-                roomCode = code;
-                joinRoom();
+                initializeGame();
             } else {
                 alert('Please enter a 4-character room code');
             }
         });
 
-        // Allow Enter key to join room
-        document.getElementById('roomCodeInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                document.getElementById('joinBtn').click();
+        // Name change handler
+        document.getElementById('nameButton').addEventListener('click', () => {
+            const newName = prompt('Enter your name:', gameState.players[gameState.playerID]?.name || 'Player');
+            if (newName && newName.trim()) {
+                updatePlayer({ name: newName.trim() });
             }
         });
 
-        document.getElementById('nameSubmitBtn').addEventListener('click', () => {
-            console.log('Name submit clicked');
-            const name = document.getElementById('nameInput').value.trim();
-            if (name) {
-                myName = name;
-                updatePlayerData();
-            }
-            document.getElementById('namePrompt').style.display = 'none';
-            document.getElementById('joystickContainer').style.display = 'block';
-            document.getElementById('colorPicker').style.display = 'flex';
-            document.getElementById('nameChangeBtn').style.display = 'block';
-        });
+        // Initialize game
+        function initializeGame() {
+            setupColorButtons();
+            setupJoystick();
+            
+            const playerRef = ref(database, `treasureHunt/${gameState.roomCode}/players/${gameState.playerID}`);
+            const levelRef = ref(database, `treasureHunt/${gameState.roomCode}/level`);
+            const treasuresRef = ref(database, `treasureHunt/${gameState.roomCode}/treasures`);
+            const enemiesRef = ref(database, `treasureHunt/${gameState.roomCode}/enemies`);
 
-        // Allow Enter key to submit name
-        document.getElementById('nameInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                document.getElementById('nameSubmitBtn').click();
-            }
-        });
+            // Set up disconnect handler
+            onDisconnect(playerRef).remove();
 
-        document.getElementById('nameChangeBtn').addEventListener('click', () => {
-            document.getElementById('namePrompt').style.display = 'flex';
-        });
+            // Initialize player
+            const playerNum = Object.keys(gameState.players).length + 1;
+            set(playerRef, {
+                x: 50,
+                y: 50,
+                color: COLORS[0],
+                name: `Player${playerNum}`,
+                treasuresCollected: 0,
+                alive: true,
+                timestamp: Date.now()
+            });
 
-        document.getElementById('restartBtn').addEventListener('click', async () => {
-            if (roomCode) {
-                await update(ref(database, `colorquest/${roomCode}`), {
-                    collectedTreasure: 0,
-                    treasures: {},
-                    gameStarted: true
-                });
-                
-                // Reset all players - including handling disconnected players
-                const playersSnapshot = await get(ref(database, `colorquest/${roomCode}/players`));
-                if (playersSnapshot.exists()) {
-                    const players = playersSnapshot.val();
-                    Object.keys(players).forEach(async (pid) => {
-                        await update(ref(database, `colorquest/${roomCode}/players/${pid}`), {
-                            x: startPos.x * TILE_SIZE,
-                            y: startPos.y * TILE_SIZE,
-                            dead: false
-                        });
-                    });
+            // Listen for player updates
+            onValue(ref(database, `treasureHunt/${gameState.roomCode}/players`), (snapshot) => {
+                gameState.players = snapshot.val() || {};
+            });
+
+            // Listen for level updates
+            onValue(levelRef, (snapshot) => {
+                const level = snapshot.val() || 1;
+                if (level !== gameState.level) {
+                    gameState.level = level;
+                    document.getElementById('levelNum').textContent = level;
+                    if (gameState.playerID === getHostPlayer()) {
+                        initializeLevel(level);
+                    }
                 }
-                
-                document.getElementById('gameOverScreen').style.display = 'none';
-            }
-        });
+            });
 
-        document.getElementById('nextLevelBtn').addEventListener('click', async () => {
-            if (roomCode && currentLevel < levels.length - 1) {
-                await update(ref(database, `colorquest/${roomCode}`), {
-                    level: currentLevel + 1,
-                    collectedTreasure: 0,
-                    treasures: {},
-                    gameStarted: true
+            // Listen for treasure updates
+            onValue(treasuresRef, (snapshot) => {
+                gameState.treasures = snapshot.val() || {};
+                updateTreasureUI();
+            });
+
+            // Listen for enemy updates
+            onValue(enemiesRef, (snapshot) => {
+                gameState.enemies = snapshot.val() || {};
+            });
+
+            // Initialize level if host
+            if (Object.keys(gameState.players).length === 0) {
+                set(levelRef, 1);
+                initializeLevel(1);
+            }
+
+            // Start game loop
+            gameLoop();
+        }
+
+        function getHostPlayer() {
+            const players = Object.keys(gameState.players);
+            return players.sort()[0];
+        }
+
+        function initializeLevel(level) {
+            const levelData = LEVELS[level - 1];
+            const treasuresRef = ref(database, `treasureHunt/${gameState.roomCode}/treasures`);
+            const enemiesRef = ref(database, `treasureHunt/${gameState.roomCode}/enemies`);
+
+            // Generate treasures
+            const treasures = {};
+            for (let i = 0; i < levelData.treasureCount; i++) {
+                const room = levelData.rooms[Math.floor(Math.random() * levelData.rooms.length)];
+                treasures[`treasure${i}`] = {
+                    x: room.x + Math.random() * (ROOM_SIZE - 50) + 25,
+                    y: room.y + Math.random() * (ROOM_SIZE - 50) + 25,
+                    collected: false
+                };
+            }
+            set(treasuresRef, treasures);
+
+            // Generate enemies
+            const enemies = {};
+            for (let i = 0; i < levelData.enemyCount; i++) {
+                const room = levelData.rooms[Math.floor(Math.random() * levelData.rooms.length)];
+                const type = levelData.enemyTypes[Math.floor(Math.random() * levelData.enemyTypes.length)];
+                enemies[`enemy${i}`] = {
+                    x: room.x + Math.random() * (ROOM_SIZE - 100) + 50,
+                    y: room.y + Math.random() * (ROOM_SIZE - 100) + 50,
+                    type: type,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2,
+                    timestamp: Date.now()
+                };
+            }
+            set(enemiesRef, enemies);
+
+            // Reset all players
+            Object.keys(gameState.players).forEach(pid => {
+                update(ref(database, `treasureHunt/${gameState.roomCode}/players/${pid}`), {
+                    x: 50,
+                    y: 50,
+                    treasuresCollected: 0,
+                    alive: true
                 });
-                
-                // Reset all players
-                const playersSnapshot = await get(ref(database, `colorquest/${roomCode}/players`));
-                if (playersSnapshot.exists()) {
-                    const players = playersSnapshot.val();
-                    Object.keys(players).forEach(async (pid) => {
-                        await update(ref(database, `colorquest/${roomCode}/players/${pid}`), {
-                            x: startPos.x * TILE_SIZE,
-                            y: startPos.y * TILE_SIZE,
-                            dead: false
-                        });
-                    });
-                }
-                
-                document.getElementById('victoryScreen').style.display = 'none';
+            });
+
+            gameState.deadPlayers.clear();
+            document.getElementById('treasureGoal').textContent = levelData.treasureCount;
+            showMessage(`Level ${level} Start!`, 'levelComplete', 2000);
+        }
+
+        function setupColorButtons() {
+            const container = document.getElementById('colorButtons');
+            COLORS.forEach((color, index) => {
+                const btn = document.createElement('div');
+                btn.className = 'colorBtn';
+                btn.style.background = color;
+                if (index === 0) btn.classList.add('selected');
+                btn.addEventListener('click', () => selectColor(color, btn));
+                container.appendChild(btn);
+            });
+        }
+
+        function selectColor(color, btn) {
+            // Check if color is already taken
+            const colorTaken = Object.entries(gameState.players).some(([pid, player]) => 
+                pid !== gameState.playerID && player.color === color
+            );
+
+            if (colorTaken) {
+                showMessage('Color already taken!', 'gameOver', 1000);
+                return;
             }
-        });
 
-        document.getElementById('menuBtn').addEventListener('click', () => location.reload());
-        document.getElementById('menuBtn2').addEventListener('click', () => location.reload());
+            document.querySelectorAll('.colorBtn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            updatePlayer({ color });
+        }
 
-        // Color picker
-        document.querySelectorAll('.colorBtn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const newColor = btn.dataset.color;
+        function setupJoystick() {
+            const outer = document.getElementById('joystickOuter');
+            const inner = document.getElementById('joystickInner');
+            let rect;
+
+            function handleStart(e) {
+                e.preventDefault();
+                rect = outer.getBoundingClientRect();
+                gameState.joystick.active = true;
+                handleMove(e);
+            }
+
+            function handleMove(e) {
+                if (!gameState.joystick.active) return;
+                e.preventDefault();
+
+                const touch = e.touches ? e.touches[0] : e;
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
                 
-                // Check if color is taken
-                const colorTaken = Object.values(playerData).some(p => 
-                    p.color === newColor && p.id !== pcID
+                let deltaX = touch.clientX - centerX;
+                let deltaY = touch.clientY - centerY;
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                const maxDistance = rect.width / 2 - 30;
+
+                if (distance > maxDistance) {
+                    deltaX = (deltaX / distance) * maxDistance;
+                    deltaY = (deltaY / distance) * maxDistance;
+                }
+
+                inner.style.transform = `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px))`;
+                
+                gameState.joystick.x = deltaX / maxDistance;
+                gameState.joystick.y = deltaY / maxDistance;
+            }
+
+            function handleEnd(e) {
+                e.preventDefault();
+                gameState.joystick.active = false;
+                gameState.joystick.x = 0;
+                gameState.joystick.y = 0;
+                inner.style.transform = 'translate(-50%, -50%)';
+            }
+
+            outer.addEventListener('touchstart', handleStart);
+            outer.addEventListener('touchmove', handleMove);
+            outer.addEventListener('touchend', handleEnd);
+            outer.addEventListener('mousedown', handleStart);
+            document.addEventListener('mousemove', handleMove);
+            document.addEventListener('mouseup', handleEnd);
+        }
+
+        function updatePlayer(data) {
+            const playerRef = ref(database, `treasureHunt/${gameState.roomCode}/players/${gameState.playerID}`);
+            update(playerRef, { ...data, timestamp: Date.now() });
+        }
+
+        function updateTreasureUI() {
+            const collected = Object.values(gameState.treasures).filter(t => t.collected).length;
+            const total = Object.keys(gameState.treasures).length;
+            document.getElementById('treasureCount').textContent = collected;
+            
+            // Check if all treasures collected
+            if (collected === total && total > 0) {
+                checkLevelComplete();
+            }
+        }
+
+        function checkLevelComplete() {
+            const myPlayer = gameState.players[gameState.playerID];
+            if (!myPlayer) return;
+
+            // Check if player is back at start
+            if (Math.abs(myPlayer.x - 50) < 30 && Math.abs(myPlayer.y - 50) < 30) {
+                // Check if all players are at start
+                const allAtStart = Object.values(gameState.players).every(p => 
+                    Math.abs(p.x - 50) < 50 && Math.abs(p.y - 50) < 50
                 );
-                
-                if (!colorTaken) {
-                    myColor = newColor;
-                    document.querySelectorAll('.colorBtn').forEach(b => b.classList.remove('selected'));
-                    btn.classList.add('selected');
-                    updatePlayerData();
-                }
-            });
-        });
 
-        // Joystick controls
-        const joystick = document.getElementById('joystick');
-        const joystickKnob = document.getElementById('joystickKnob');
-
-        function handleJoystickStart(e) {
-            e.preventDefault();
-            joystickActive = true;
-            updateJoystick(e);
-        }
-
-        function handleJoystickMove(e) {
-            if (!joystickActive) return;
-            e.preventDefault();
-            updateJoystick(e);
-        }
-
-        function handleJoystickEnd(e) {
-            e.preventDefault();
-            joystickActive = false;
-            joystickKnob.style.transform = 'translate(-50%, -50%)';
-            joystickAngle = 0;
-            joystickPower = 0;
-        }
-
-        function updateJoystick(e) {
-            const rect = joystick.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-            
-            const touch = e.touches ? e.touches[0] : e;
-            const deltaX = touch.clientX - centerX;
-            const deltaY = touch.clientY - centerY;
-            
-            const distance = Math.min(Math.sqrt(deltaX * deltaX + deltaY * deltaY), 45);
-            joystickAngle = Math.atan2(deltaY, deltaX);
-            joystickPower = distance / 45;
-            
-            const knobX = Math.cos(joystickAngle) * distance;
-            const knobY = Math.sin(joystickAngle) * distance;
-            
-            joystickKnob.style.transform = `translate(calc(-50% + ${knobX}px), calc(-50% + ${knobY}px))`;
-        }
-
-        joystick.addEventListener('mousedown', handleJoystickStart);
-        joystick.addEventListener('touchstart', handleJoystickStart);
-        document.addEventListener('mousemove', handleJoystickMove);
-        document.addEventListener('touchmove', handleJoystickMove, { passive: false });
-        document.addEventListener('mouseup', handleJoystickEnd);
-        document.addEventListener('touchend', handleJoystickEnd);
-
-        // Join room and setup Firebase listeners
-        async function joinRoom() {
-            console.log('Attempting to join room:', roomCode);
-            document.getElementById('startScreen').style.display = 'none';
-            document.getElementById('namePrompt').style.display = 'flex';
-            
-            try {
-                // Check if room exists first
-                const roomSnapshot = await get(ref(database, `colorquest/${roomCode}`));
-                console.log('Room exists:', roomSnapshot.exists());
-                
-                if (!roomSnapshot.exists()) {
-                    alert('Room not found. Please check the code and try again.');
-                    document.getElementById('startScreen').style.display = 'flex';
-                    document.getElementById('namePrompt').style.display = 'none';
-                    return;
-                }
-                
-                // Setup player in database - spawn at start position
-                const playerRef = ref(database, `colorquest/${roomCode}/players/${pcID}`);
-                await set(playerRef, {
-                    id: pcID,
-                    name: myName,
-                    color: myColor,
-                    x: startPos.x * TILE_SIZE,
-                    y: startPos.y * TILE_SIZE,
-                    dead: false,
-                    lastUpdate: Date.now()
-                });
-                console.log('Player added to room');
-
-                // Setup disconnect handler
-                onDisconnect(playerRef).remove();
-
-                // Listen to all players
-                onValue(ref(database, `colorquest/${roomCode}/players`), (snapshot) => {
-                    playerData = snapshot.val() || {};
-                    updateUI();
-                });
-
-                // Listen to game state
-                onValue(ref(database, `colorquest/${roomCode}`), (snapshot) => {
-                    gameState = snapshot.val() || {};
-                    
-                    if (gameState.level !== currentLevel) {
-                        currentLevel = gameState.level || 0;
-                        initLevel(currentLevel);
-                    }
-                    
-                    // Update treasures
-                    if (gameState.treasures) {
-                        treasures.forEach(t => {
-                            t.collected = gameState.treasures[t.id] || false;
-                        });
-                    }
-                    
-                    collectedTreasure = gameState.collectedTreasure || 0;
-                    document.getElementById('treasureCount').textContent = collectedTreasure;
-                
-                    // Check victory condition
-                    if (collectedTreasure >= levels[currentLevel].treasureNeeded) {
-                        const playersArray = Object.values(playerData);
-                        const allAtStart = playersArray.length > 0 && playersArray.every(p => {
-                            const tileX = Math.floor(p.x / TILE_SIZE);
-                            const tileY = Math.floor(p.y / TILE_SIZE);
-                            return tileX === startPos.x && tileY === startPos.y && !p.dead;
-                        });
-                        
-                        if (allAtStart && document.getElementById('victoryScreen').style.display !== 'flex') {
-                            if (currentLevel === levels.length - 1) {
-                                document.getElementById('victoryText').textContent = 'You completed all levels!';
-                                document.getElementById('nextLevelBtn').style.display = 'none';
-                            } else {
-                                document.getElementById('victoryText').textContent = `Level ${currentLevel + 1} Complete!`;
-                                document.getElementById('nextLevelBtn').style.display = 'block';
-                            }
-                            document.getElementById('victoryScreen').style.display = 'flex';
-                        }
-                    }
-                    
-                    // Check game over condition - only if at least one player exists
-                    const playersArray = Object.values(playerData);
-                    const allDead = playersArray.length > 0 && playersArray.every(p => p.dead);
-                    if (allDead && document.getElementById('gameOverScreen').style.display !== 'flex') {
-                        document.getElementById('gameOverScreen').style.display = 'flex';
-                    }
-                });
-
-                initLevel(0);
-                gameLoop();
-                console.log('Game started successfully');
-            } catch (error) {
-                console.error('Error joining room:', error);
-                alert('Failed to join room: ' + error.message);
-                document.getElementById('startScreen').style.display = 'flex';
-                document.getElementById('namePrompt').style.display = 'none';
-            }
-        }
-
-        function updatePlayerData() {
-            if (!roomCode) return;
-            
-            const player = playerData[pcID] || {};
-            let newX = player.x || startPos.x * TILE_SIZE;
-            let newY = player.y || startPos.y * TILE_SIZE;
-            
-            if (joystickActive && !player.dead) {
-                const speed = 3;
-                const dx = Math.cos(joystickAngle) * joystickPower * speed;
-                const dy = Math.sin(joystickAngle) * joystickPower * speed;
-                
-                const testX = newX + dx;
-                const testY = newY + dy;
-                
-                if (!checkCollision(testX, newY)) {
-                    newX = testX;
-                }
-                if (!checkCollision(newX, testY)) {
-                    newY = testY;
-                }
-            }
-            
-            update(ref(database, `colorquest/${roomCode}/players/${pcID}`), {
-                name: myName,
-                color: myColor,
-                x: newX,
-                y: newY,
-                lastUpdate: Date.now()
-            });
-        }
-
-        function checkCollision(x, y) {
-            const tileX = Math.floor(x / TILE_SIZE);
-            const tileY = Math.floor(y / TILE_SIZE);
-            
-            const corners = [
-                [x - PLAYER_SIZE/2, y - PLAYER_SIZE/2],
-                [x + PLAYER_SIZE/2, y - PLAYER_SIZE/2],
-                [x - PLAYER_SIZE/2, y + PLAYER_SIZE/2],
-                [x + PLAYER_SIZE/2, y + PLAYER_SIZE/2]
-            ];
-            
-            for (let corner of corners) {
-                const cx = Math.floor(corner[0] / TILE_SIZE);
-                const cy = Math.floor(corner[1] / TILE_SIZE);
-                
-                if (cy >= 0 && cy < currentMap.length && cx >= 0 && cx < currentMap[0].length) {
-                    if (currentMap[cy][cx] === 1) {
-                        return true;
+                if (allAtStart && gameState.playerID === getHostPlayer()) {
+                    if (gameState.level < 5) {
+                        set(ref(database, `treasureHunt/${gameState.roomCode}/level`), gameState.level + 1);
+                    } else {
+                        showMessage('🎉 GAME COMPLETE! 🎉', 'levelComplete', 5000);
                     }
                 }
             }
-            
-            return false;
-        }
-
-        function updateUI() {
-            const alivePlayers = Object.values(playerData).filter(p => !p.dead).length;
-            document.getElementById('playersAlive').textContent = alivePlayers;
-            
-            const playersList = document.getElementById('playersList');
-            playersList.innerHTML = '<div style="margin-top: 10px; border-top: 1px solid #0f3460; padding-top: 5px;"></div>';
-            Object.values(playerData).forEach(p => {
-                const div = document.createElement('div');
-                div.style.color = p.color;
-                div.textContent = `${p.name} ${p.dead ? '💀' : ''}`;
-                playersList.appendChild(div);
-            });
         }
 
         // Game loop
         function gameLoop() {
-            updatePlayerData();
-            updateEnemies();
-            checkTreasures();
-            checkRevives();
-            render();
+            updateGame();
+            renderGame();
+            renderMinimap();
             requestAnimationFrame(gameLoop);
         }
 
+        function updateGame() {
+            const myPlayer = gameState.players[gameState.playerID];
+            if (!myPlayer || !myPlayer.alive) {
+                document.getElementById('revivePrompt').style.display = myPlayer && !myPlayer.alive ? 'block' : 'none';
+                return;
+            }
+
+            document.getElementById('revivePrompt').style.display = 'none';
+
+            // Move player
+            const speed = 3;
+            const newX = myPlayer.x + gameState.joystick.x * speed;
+            const newY = myPlayer.y + gameState.joystick.y * speed;
+
+            const levelData = LEVELS[gameState.level - 1];
+            const maxX = Math.max(...levelData.rooms.map(r => r.x)) + ROOM_SIZE;
+            const maxY = Math.max(...levelData.rooms.map(r => r.y)) + ROOM_SIZE;
+
+            // Boundary check
+            if (newX >= 0 && newX <= maxX - PLAYER_SIZE && newY >= 0 && newY <= maxY - PLAYER_SIZE) {
+                updatePlayer({ x: newX, y: newY });
+            }
+
+            // Update camera
+            gameState.camera.x = myPlayer.x - CANVAS_WIDTH / 2;
+            gameState.camera.y = myPlayer.y - CANVAS_HEIGHT / 2;
+
+            // Collect treasures
+            Object.entries(gameState.treasures).forEach(([tid, treasure]) => {
+                if (!treasure.collected) {
+                    const dx = myPlayer.x - treasure.x;
+                    const dy = myPlayer.y - treasure.y;
+                    if (Math.sqrt(dx * dx + dy * dy) < PLAYER_SIZE + TREASURE_SIZE) {
+                        update(ref(database, `treasureHunt/${gameState.roomCode}/treasures/${tid}`), { 
+                            collected: true 
+                        });
+                        updatePlayer({ treasuresCollected: (myPlayer.treasuresCollected || 0) + 1 });
+                    }
+                }
+            });
+
+            // Check revive collision
+            Object.entries(gameState.players).forEach(([pid, player]) => {
+                if (pid !== gameState.playerID && !player.alive) {
+                    const dx = myPlayer.x - player.x;
+                    const dy = myPlayer.y - player.y;
+                    if (Math.sqrt(dx * dx + dy * dy) < PLAYER_SIZE * 2) {
+                        update(ref(database, `treasureHunt/${gameState.roomCode}/players/${pid}`), { 
+                            alive: true 
+                        });
+                        gameState.deadPlayers.delete(pid);
+                        showMessage('Teammate revived!', 'levelComplete', 1000);
+                    }
+                }
+            });
+
+            // Update enemies (host only)
+            if (gameState.playerID === getHostPlayer()) {
+                updateEnemies();
+            }
+
+            // Check enemy collisions
+            Object.entries(gameState.enemies).forEach(([eid, enemy]) => {
+                const dx = myPlayer.x - enemy.x;
+                const dy = myPlayer.y - enemy.y;
+                if (Math.sqrt(dx * dx + dy * dy) < PLAYER_SIZE + ENEMY_SIZE) {
+                    updatePlayer({ alive: false });
+                    gameState.deadPlayers.add(gameState.playerID);
+                    checkGameOver();
+                }
+            });
+        }
+
         function updateEnemies() {
-            enemies.forEach(enemy => {
+            const levelData = LEVELS[gameState.level - 1];
+            const maxX = Math.max(...levelData.rooms.map(r => r.x)) + ROOM_SIZE;
+            const maxY = Math.max(...levelData.rooms.map(r => r.y)) + ROOM_SIZE;
+
+            Object.entries(gameState.enemies).forEach(([eid, enemy]) => {
+                let newX = enemy.x;
+                let newY = enemy.y;
+                let newVx = enemy.vx;
+                let newVy = enemy.vy;
+
                 switch(enemy.type) {
                     case 'chaser':
                         // Chase nearest alive player
-                        let nearest = null;
-                        let nearestDist = Infinity;
-                        Object.values(playerData).forEach(p => {
-                            if (!p.dead) {
-                                const dist = Math.hypot(p.x - enemy.x, p.y - enemy.y);
-                                if (dist < nearestDist) {
-                                    nearestDist = dist;
-                                    nearest = p;
-                                }
-                            }
-                        });
-                        if (nearest) {
-                            const angle = Math.atan2(nearest.y - enemy.y, nearest.x - enemy.x);
-                            const newX = enemy.x + Math.cos(angle) * enemy.speed;
-                            const newY = enemy.y + Math.sin(angle) * enemy.speed;
-                            if (!checkCollision(newX, newY)) {
-                                enemy.x = newX;
-                                enemy.y = newY;
-                            }
+                        const nearestPlayer = findNearestAlivePlayer(enemy);
+                        if (nearestPlayer) {
+                            const dx = nearestPlayer.x - enemy.x;
+                            const dy = nearestPlayer.y - enemy.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            newVx = (dx / dist) * 1.5;
+                            newVy = (dy / dist) * 1.5;
                         }
                         break;
-                        
-                    case 'patrol':
-                        if (enemy.path.length > 1) {
-                            const target = enemy.path[enemy.pathIndex];
-                            const angle = Math.atan2(target.y - enemy.y, target.x - enemy.x);
-                            enemy.x += Math.cos(angle) * enemy.speed;
-                            enemy.y += Math.sin(angle) * enemy.speed;
-                            
-                            if (Math.hypot(target.x - enemy.x, target.y - enemy.y) < 5) {
-                                enemy.pathIndex = (enemy.pathIndex + 1) % enemy.path.length;
-                            }
-                        }
+
+                    case 'patroller':
+                        // Bounce off walls
+                        if (enemy.x <= 0 || enemy.x >= maxX - ENEMY_SIZE) newVx *= -1;
+                        if (enemy.y <= 0 || enemy.y >= maxY - ENEMY_SIZE) newVy *= -1;
                         break;
-                        
-                    case 'random':
-                        enemy.randomTimer++;
-                        if (enemy.randomTimer > 60) {
-                            enemy.randomTimer = 0;
-                            enemy.angle = Math.random() * Math.PI * 2;
-                        }
-                        const newX = enemy.x + Math.cos(enemy.angle) * enemy.speed;
-                        const newY = enemy.y + Math.sin(enemy.angle) * enemy.speed;
-                        if (!checkCollision(newX, newY)) {
-                            enemy.x = newX;
-                            enemy.y = newY;
-                        } else {
-                            enemy.angle = Math.random() * Math.PI * 2;
-                        }
+
+                    case 'shooter':
+                        // Stay still and shoot (simplified)
+                        newVx = 0;
+                        newVy = 0;
                         break;
-                        
-                    case 'spinner':
-                        enemy.angle += 0.05;
-                        const radius = 50;
-                        const centerX = enemy.path[0] ? enemy.path[0].x : enemy.x;
-                        const centerY = enemy.path[0] ? enemy.path[0].y : enemy.y;
-                        enemy.x = centerX + Math.cos(enemy.angle) * radius;
-                        enemy.y = centerY + Math.sin(enemy.angle) * radius;
-                        break;
-                        
+
                     case 'teleporter':
-                        enemy.teleportTimer++;
-                        if (enemy.teleportTimer > 120) {
-                            enemy.teleportTimer = 0;
-                            // Teleport to random open spot
-                            let attempts = 0;
-                            while (attempts < 50) {
-                                const rx = Math.floor(Math.random() * currentMap[0].length);
-                                const ry = Math.floor(Math.random() * currentMap.length);
-                                if (currentMap[ry][rx] === 0) {
-                                    enemy.x = rx * TILE_SIZE + TILE_SIZE/2;
-                                    enemy.y = ry * TILE_SIZE + TILE_SIZE/2;
-                                    break;
-                                }
-                                attempts++;
-                            }
+                        // Teleport randomly every 3 seconds
+                        if (Date.now() - enemy.timestamp > 3000) {
+                            const room = levelData.rooms[Math.floor(Math.random() * levelData.rooms.length)];
+                            newX = room.x + Math.random() * (ROOM_SIZE - 100) + 50;
+                            newY = room.y + Math.random() * (ROOM_SIZE - 100) + 50;
+                            update(ref(database, `treasureHunt/${gameState.roomCode}/enemies/${eid}`), { 
+                                timestamp: Date.now() 
+                            });
+                        }
+                        break;
+
+                    case 'splitter':
+                        // Move in zigzag
+                        if (Math.random() < 0.02) {
+                            newVx = (Math.random() - 0.5) * 3;
+                            newVy = (Math.random() - 0.5) * 3;
                         }
                         break;
                 }
-                
-                // Check collision with players
-                Object.entries(playerData).forEach(([pid, player]) => {
-                    if (!player.dead) {
-                        const dist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
-                        if (dist < ENEMY_SIZE) {
-                            update(ref(database, `colorquest/${roomCode}/players/${pid}`), {
-                                dead: true
-                            });
-                        }
-                    }
+
+                newX = enemy.x + newVx;
+                newY = enemy.y + newVy;
+
+                // Boundary check
+                newX = Math.max(0, Math.min(maxX - ENEMY_SIZE, newX));
+                newY = Math.max(0, Math.min(maxY - ENEMY_SIZE, newY));
+
+                update(ref(database, `treasureHunt/${gameState.roomCode}/enemies/${eid}`), {
+                    x: newX,
+                    y: newY,
+                    vx: newVx,
+                    vy: newVy
                 });
             });
         }
 
-        function checkTreasures() {
-            if (!playerData[pcID] || playerData[pcID].dead) return;
-            
-            const myPlayer = playerData[pcID];
-            treasures.forEach(treasure => {
-                if (!treasure.collected) {
-                    const dist = Math.hypot(myPlayer.x - treasure.x, myPlayer.y - treasure.y);
-                    if (dist < TREASURE_SIZE + PLAYER_SIZE/2) {
-                        // Collect treasure
-                        update(ref(database, `colorquest/${roomCode}/treasures/${treasure.id}`), true);
-                        update(ref(database, `colorquest/${roomCode}`), {
-                            collectedTreasure: collectedTreasure + 1
-                        });
+        function findNearestAlivePlayer(enemy) {
+            let nearest = null;
+            let minDist = Infinity;
+
+            Object.values(gameState.players).forEach(player => {
+                if (player.alive) {
+                    const dx = player.x - enemy.x;
+                    const dy = player.y - enemy.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        nearest = player;
                     }
                 }
             });
+
+            return nearest;
         }
 
-        function checkRevives() {
-            if (!playerData[pcID] || playerData[pcID].dead) return;
-            
-            const myPlayer = playerData[pcID];
-            Object.entries(playerData).forEach(([pid, player]) => {
-                if (pid !== pcID && player.dead) {
-                    const dist = Math.hypot(myPlayer.x - player.x, myPlayer.y - player.y);
-                    if (dist < PLAYER_SIZE * 1.5) {
-                        update(ref(database, `colorquest/${roomCode}/players/${pid}`), {
-                            dead: false
-                        });
-                    }
-                }
-            });
+        function checkGameOver() {
+            const allDead = Object.values(gameState.players).every(p => !p.alive);
+            if (allDead && gameState.playerID === getHostPlayer()) {
+                showMessage('💀 ALL PLAYERS DEAD! Restarting level...', 'gameOver', 3000);
+                setTimeout(() => {
+                    initializeLevel(gameState.level);
+                }, 3000);
+            }
         }
 
-        // Rendering
-        function render() {
-            // Clear main canvas
+        function renderGame() {
             ctx.fillStyle = '#0a0a0a';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Calculate camera position
-            const myPlayer = playerData[pcID];
-            let cameraX = 0;
-            let cameraY = 0;
-            
-            if (myPlayer) {
-                cameraX = myPlayer.x - canvas.width / 2;
-                cameraY = myPlayer.y - canvas.height / 2;
-                
-                // Clamp camera to map bounds
-                cameraX = Math.max(0, Math.min(cameraX, currentMap[0].length * TILE_SIZE - canvas.width));
-                cameraY = Math.max(0, Math.min(cameraY, currentMap.length * TILE_SIZE - canvas.height));
-            }
-            
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+            const levelData = LEVELS[gameState.level - 1];
+
+            // Draw rooms
             ctx.save();
-            ctx.translate(-cameraX, -cameraY);
-            
-            // Draw map
-            for (let y = 0; y < currentMap.length; y++) {
-                for (let x = 0; x < currentMap[y].length; x++) {
-                    if (currentMap[y][x] === 1) {
-                        ctx.fillStyle = '#2a2a4a';
-                        ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                        ctx.strokeStyle = '#1a1a3a';
-                        ctx.strokeRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                    }
+            ctx.translate(-gameState.camera.x, -gameState.camera.y);
+
+            levelData.rooms.forEach(room => {
+                // Room background
+                ctx.fillStyle = '#1a1a2e';
+                ctx.fillRect(room.x, room.y, ROOM_SIZE, ROOM_SIZE);
+
+                // Room border
+                ctx.strokeStyle = '#16213e';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(room.x, room.y, ROOM_SIZE, ROOM_SIZE);
+
+                // Doorways
+                ctx.fillStyle = '#2a2a4e';
+                if (room.connections.right) {
+                    ctx.fillRect(room.x + ROOM_SIZE - 5, room.y + ROOM_SIZE / 2 - 30, 10, 60);
                 }
-            }
-            
-            // Draw start zone
-            ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
-            ctx.fillRect(startPos.x * TILE_SIZE, startPos.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-            ctx.strokeStyle = '#00ff00';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(startPos.x * TILE_SIZE, startPos.y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-            
-            // Draw treasures
-            treasures.forEach(treasure => {
-                if (!treasure.collected) {
-                    ctx.save();
-                    ctx.translate(treasure.x, treasure.y);
-                    ctx.rotate(Date.now() / 500);
-                    ctx.fillStyle = '#ffd700';
-                    ctx.fillRect(-TREASURE_SIZE/2, -TREASURE_SIZE/2, TREASURE_SIZE, TREASURE_SIZE);
-                    ctx.strokeStyle = '#ffaa00';
-                    ctx.lineWidth = 2;
-                    ctx.strokeRect(-TREASURE_SIZE/2, -TREASURE_SIZE/2, TREASURE_SIZE, TREASURE_SIZE);
-                    ctx.restore();
+                if (room.connections.down) {
+                    ctx.fillRect(room.x + ROOM_SIZE / 2 - 30, room.y + ROOM_SIZE - 5, 60, 10);
                 }
             });
-            
+
+            // Draw start zone
+            ctx.fillStyle = 'rgba(76, 175, 80, 0.3)';
+            ctx.beginPath();
+            ctx.arc(50, 50, 40, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#4CAF50';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // Draw treasures
+            Object.values(gameState.treasures).forEach(treasure => {
+                if (!treasure.collected) {
+                    ctx.fillStyle = '#FFD700';
+                    ctx.beginPath();
+                    ctx.arc(treasure.x, treasure.y, TREASURE_SIZE, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#FFA500';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    // Sparkle
+                    ctx.fillStyle = '#FFED4E';
+                    ctx.beginPath();
+                    ctx.arc(treasure.x - 5, treasure.y - 5, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+
             // Draw enemies
-            enemies.forEach(enemy => {
-                ctx.fillStyle = enemy.type === 'chaser' ? '#ff0000' :
-                               enemy.type === 'patrol' ? '#ff8800' :
-                               enemy.type === 'random' ? '#ff00ff' :
-                               enemy.type === 'spinner' ? '#00ffff' :
-                               '#8800ff';
-                ctx.beginPath();
-                ctx.arc(enemy.x, enemy.y, ENEMY_SIZE/2, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.strokeStyle = '#fff';
+            Object.values(gameState.enemies).forEach(enemy => {
+                const colors = {
+                    chaser: '#FF3333',
+                    patroller: '#FF9933',
+                    shooter: '#9933FF',
+                    teleporter: '#33FFFF',
+                    splitter: '#FF33FF'
+                };
+
+                ctx.fillStyle = colors[enemy.type];
+                
+                // Different shapes for different types
+                switch(enemy.type) {
+                    case 'chaser':
+                        // Triangle
+                        ctx.beginPath();
+                        ctx.moveTo(enemy.x, enemy.y - ENEMY_SIZE);
+                        ctx.lineTo(enemy.x - ENEMY_SIZE, enemy.y + ENEMY_SIZE);
+                        ctx.lineTo(enemy.x + ENEMY_SIZE, enemy.y + ENEMY_SIZE);
+                        ctx.closePath();
+                        ctx.fill();
+                        break;
+                    case 'shooter':
+                        // Square
+                        ctx.fillRect(enemy.x - ENEMY_SIZE, enemy.y - ENEMY_SIZE, ENEMY_SIZE * 2, ENEMY_SIZE * 2);
+                        break;
+                    case 'teleporter':
+                        // Diamond
+                        ctx.beginPath();
+                        ctx.moveTo(enemy.x, enemy.y - ENEMY_SIZE);
+                        ctx.lineTo(enemy.x + ENEMY_SIZE, enemy.y);
+                        ctx.lineTo(enemy.x, enemy.y + ENEMY_SIZE);
+                        ctx.lineTo(enemy.x - ENEMY_SIZE, enemy.y);
+                        ctx.closePath();
+                        ctx.fill();
+                        break;
+                    case 'splitter':
+                        // Star
+                        drawStar(ctx, enemy.x, enemy.y, 5, ENEMY_SIZE, ENEMY_SIZE / 2);
+                        break;
+                    default:
+                        // Circle
+                        ctx.beginPath();
+                        ctx.arc(enemy.x, enemy.y, ENEMY_SIZE, 0, Math.PI * 2);
+                        ctx.fill();
+                }
+
+                ctx.strokeStyle = '#000';
                 ctx.lineWidth = 2;
                 ctx.stroke();
-                
-                // Draw enemy type indicator
-                ctx.fillStyle = '#fff';
-                ctx.font = '16px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                const icon = enemy.type === 'chaser' ? '👁' :
-                            enemy.type === 'patrol' ? '↔' :
-                            enemy.type === 'random' ? '?' :
-                            enemy.type === 'spinner' ? '🌀' : '⚡';
-                ctx.fillText(icon, enemy.x, enemy.y);
             });
-            
+
             // Draw players
-            Object.values(playerData).forEach(player => {
-                if (player.dead) {
-                    ctx.globalAlpha = 0.3;
-                }
-                
-                ctx.fillStyle = player.color;
-                ctx.beginPath();
-                ctx.arc(player.x, player.y, PLAYER_SIZE/2, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.strokeStyle = '#fff';
-                ctx.lineWidth = 3;
-                ctx.stroke();
-                
-                if (player.dead) {
-                    ctx.globalAlpha = 1;
+            Object.entries(gameState.players).forEach(([pid, player]) => {
+                if (player.alive) {
+                    // Player circle
+                    ctx.fillStyle = player.color;
+                    ctx.beginPath();
+                    ctx.arc(player.x, player.y, PLAYER_SIZE, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+
+                    // Name
                     ctx.fillStyle = '#fff';
-                    ctx.font = 'bold 24px Arial';
+                    ctx.font = 'bold 14px Arial';
                     ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText('💀', player.x, player.y);
+                    ctx.fillText(player.name, player.x, player.y - PLAYER_SIZE - 5);
+                } else {
+                    // Dead player (ghost)
+                    ctx.fillStyle = 'rgba(150, 150, 150, 0.5)';
+                    ctx.beginPath();
+                    ctx.arc(player.x, player.y, PLAYER_SIZE, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 20px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('💀', player.x, player.y + 7);
                 }
-                
-                ctx.globalAlpha = 1;
-                
-                // Draw name
-                ctx.fillStyle = '#fff';
-                ctx.font = 'bold 14px Arial';
-                ctx.textAlign = 'center';
-                ctx.strokeStyle = '#000';
-                ctx.lineWidth = 3;
-                ctx.strokeText(player.name, player.x, player.y - PLAYER_SIZE);
-                ctx.fillText(player.name, player.x, player.y - PLAYER_SIZE);
             });
-            
+
             ctx.restore();
-            
-            // Draw minimap
-            renderMinimap();
+        }
+
+        function drawStar(ctx, x, y, points, outerRadius, innerRadius) {
+            ctx.beginPath();
+            for (let i = 0; i < points * 2; i++) {
+                const radius = i % 2 === 0 ? outerRadius : innerRadius;
+                const angle = (i * Math.PI) / points - Math.PI / 2;
+                const px = x + radius * Math.cos(angle);
+                const py = y + radius * Math.sin(angle);
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            ctx.fill();
         }
 
         function renderMinimap() {
-            miniCtx.fillStyle = '#000';
-            miniCtx.fillRect(0, 0, miniMap.width, miniMap.height);
-            
-            const scaleX = miniMap.width / (currentMap[0].length * TILE_SIZE);
-            const scaleY = miniMap.height / (currentMap.length * TILE_SIZE);
-            
-            // Draw map
-            for (let y = 0; y < currentMap.length; y++) {
-                for (let x = 0; x < currentMap[y].length; x++) {
-                    if (currentMap[y][x] === 1) {
-                        miniCtx.fillStyle = '#444';
-                        miniCtx.fillRect(
-                            x * TILE_SIZE * scaleX,
-                            y * TILE_SIZE * scaleY,
-                            TILE_SIZE * scaleX,
-                            TILE_SIZE * scaleY
-                        );
-                    }
-                }
-            }
-            
+            const mmCtx = minimapCtx;
+            mmCtx.fillStyle = '#000';
+            mmCtx.fillRect(0, 0, 200, 200);
+
+            const levelData = LEVELS[gameState.level - 1];
+            const maxX = Math.max(...levelData.rooms.map(r => r.x)) + ROOM_SIZE;
+            const maxY = Math.max(...levelData.rooms.map(r => r.y)) + ROOM_SIZE;
+            const scale = Math.min(180 / maxX, 180 / maxY);
+
+            // Draw rooms
+            levelData.rooms.forEach(room => {
+                mmCtx.fillStyle = '#2a2a4e';
+                mmCtx.fillRect(10 + room.x * scale, 10 + room.y * scale, ROOM_SIZE * scale, ROOM_SIZE * scale);
+            });
+
             // Draw start
-            miniCtx.fillStyle = '#00ff00';
-            miniCtx.fillRect(
-                startPos.x * TILE_SIZE * scaleX,
-                startPos.y * TILE_SIZE * scaleY,
-                TILE_SIZE * scaleX,
-                TILE_SIZE * scaleY
-            );
-            
+            mmCtx.fillStyle = '#4CAF50';
+            mmCtx.fillRect(10, 10, 10, 10);
+
             // Draw treasures
-            treasures.forEach(treasure => {
+            Object.values(gameState.treasures).forEach(treasure => {
                 if (!treasure.collected) {
-                    miniCtx.fillStyle = '#ffd700';
-                    miniCtx.fillRect(
-                        treasure.x * scaleX - 2,
-                        treasure.y * scaleY - 2,
-                        4, 4
-                    );
+                    mmCtx.fillStyle = '#FFD700';
+                    mmCtx.fillRect(8 + treasure.x * scale, 8 + treasure.y * scale, 4, 4);
                 }
             });
-            
+
             // Draw enemies
-            enemies.forEach(enemy => {
-                miniCtx.fillStyle = '#ff0000';
-                miniCtx.beginPath();
-                miniCtx.arc(
-                    enemy.x * scaleX,
-                    enemy.y * scaleY,
-                    3, 0, Math.PI * 2
-                );
-                miniCtx.fill();
+            Object.values(gameState.enemies).forEach(enemy => {
+                mmCtx.fillStyle = '#FF0000';
+                mmCtx.fillRect(8 + enemy.x * scale, 8 + enemy.y * scale, 4, 4);
             });
-            
+
             // Draw players
-            Object.values(playerData).forEach(player => {
-                miniCtx.fillStyle = player.dead ? '#666' : player.color;
-                miniCtx.beginPath();
-                miniCtx.arc(
-                    player.x * scaleX,
-                    player.y * scaleY,
-                    4, 0, Math.PI * 2
-                );
-                miniCtx.fill();
+            Object.entries(gameState.players).forEach(([pid, player]) => {
+                mmCtx.fillStyle = player.alive ? player.color : '#888';
+                mmCtx.fillRect(8 + player.x * scale, 8 + player.y * scale, 4, 4);
             });
         }
 
-        } // End of setupAllEventListeners
-
-        // Call setup when DOM is ready
-        if (document.readyState === 'loading') {
-            console.log('Waiting for DOM to load...');
-            document.addEventListener('DOMContentLoaded', () => {
-                console.log('DOM loaded, calling setupAllEventListeners');
-                setupAllEventListeners();
-            });
-        } else {
-            console.log('DOM already loaded, calling setupAllEventListeners immediately');
-            setupAllEventListeners();
+        function showMessage(text, className, duration) {
+            const msg = document.getElementById('statusMessage');
+            msg.textContent = text;
+            msg.className = className;
+            msg.style.display = 'block';
+            setTimeout(() => {
+                msg.style.display = 'none';
+            }, duration);
         }
     </script>
 </body>

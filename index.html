@@ -12,19 +12,15 @@
     :root {
       --felt: #1B4332;
       --felt-mid: #245C40;
-      --felt-light: #2D6A4F;
       --cream: #FFFEF0;
       --green-card: #40916C;
       --red-card: #C1121F;
       --gold: #FFD60A;
-      --gold-dark: #B89A00;
       --text-dark: #111;
       --shadow: 0 4px 18px rgba(0,0,0,0.45);
       --shadow-lg: 0 10px 40px rgba(0,0,0,0.55);
     }
-
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     html, body {
       height: 100%;
       font-family: 'Nunito', sans-serif;
@@ -36,132 +32,69 @@
       color: #fff;
       overflow-x: hidden;
     }
-
     .screen { display: none; min-height: 100vh; flex-direction: column; align-items: center; padding: 20px; }
     .screen.active { display: flex; }
-
-    /* ─── TYPOGRAPHY ─── */
     .title-font { font-family: 'Fredoka One', cursive; }
-    h1 { font-family: 'Fredoka One', cursive; font-size: clamp(2.4rem, 9vw, 4rem); color: var(--gold); text-shadow: 3px 4px 0 rgba(0,0,0,0.4); letter-spacing: 1px; }
+    h1 { font-family: 'Fredoka One', cursive; font-size: clamp(2.4rem, 9vw, 4rem); color: var(--gold); text-shadow: 3px 4px 0 rgba(0,0,0,0.4); }
     h2 { font-family: 'Fredoka One', cursive; font-size: clamp(1.4rem, 5vw, 1.9rem); color: var(--cream); }
 
-    /* ─── CARD BASE ─── */
-    .card {
-      background: var(--cream);
-      border-radius: 14px;
-      overflow: hidden;
-      box-shadow: var(--shadow);
-      color: var(--text-dark);
-      user-select: none;
-      transition: transform 0.18s cubic-bezier(.34,1.56,.64,1), box-shadow 0.18s;
-      position: relative;
-      cursor: pointer;
-    }
+    /* CARDS */
+    .card { background: var(--cream); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); color: var(--text-dark); user-select: none; transition: transform 0.18s cubic-bezier(.34,1.56,.64,1), box-shadow 0.18s; position: relative; cursor: pointer; }
     .card:hover  { transform: translateY(-7px) rotate(-1.5deg); box-shadow: var(--shadow-lg); }
     .card:active { transform: translateY(-3px) scale(0.96); }
-    .card.selected {
-      outline: 3px solid var(--gold);
-      transform: translateY(-12px) rotate(1.5deg);
-      box-shadow: 0 14px 36px rgba(0,0,0,0.55), 0 0 0 4px rgba(255,214,10,0.3);
-    }
+    .card.selected { outline: 3px solid var(--gold); transform: translateY(-12px) rotate(1.5deg); box-shadow: 0 14px 36px rgba(0,0,0,0.55), 0 0 0 4px rgba(255,214,10,0.3); }
     .card.no-hover { cursor: default; }
     .card.no-hover:hover { transform: none; box-shadow: var(--shadow); }
-
     .card-stripe { padding: 6px 12px; font-family: 'Fredoka One', cursive; font-size: 0.68rem; letter-spacing: 2px; text-transform: uppercase; color: #fff; }
     .card.green .card-stripe { background: var(--green-card); }
     .card.red   .card-stripe { background: var(--red-card); }
+    .card-body  { padding: 14px 12px 20px; font-family: 'Fredoka One', cursive; text-align: center; line-height: 1.25; color: var(--text-dark); }
+    .card-lg .card-body { font-size: clamp(1.6rem, 5vw, 2.2rem); padding: 22px 16px 28px; }
+    .card-md .card-body { font-size: clamp(1rem, 3vw, 1.35rem); padding: 14px 12px 18px; }
+    .card-sm .card-body { font-size: 0.92rem; padding: 10px 8px 14px; }
 
-    .card-body { padding: 14px 12px 20px; font-family: 'Fredoka One', cursive; text-align: center; line-height: 1.25; color: var(--text-dark); }
-
-    /* card size variants */
-    .card-lg  .card-body { font-size: clamp(1.6rem, 5vw, 2.2rem); padding: 22px 16px 28px; }
-    .card-md  .card-body { font-size: clamp(1rem, 3vw, 1.35rem); padding: 14px 12px 18px; }
-    .card-sm  .card-body { font-size: 0.92rem; padding: 10px 8px 14px; }
-
-    /* ─── BUTTONS ─── */
-    .btn {
-      font-family: 'Fredoka One', cursive;
-      font-size: 1.05rem;
-      padding: 11px 26px;
-      border: none;
-      border-radius: 50px;
-      cursor: pointer;
-      letter-spacing: 0.5px;
-      box-shadow: 0 4px 0 rgba(0,0,0,0.35);
-      transition: transform 0.12s, box-shadow 0.12s;
-      white-space: nowrap;
-    }
+    /* BUTTONS */
+    .btn { font-family: 'Fredoka One', cursive; font-size: 1.05rem; padding: 11px 26px; border: none; border-radius: 50px; cursor: pointer; letter-spacing: 0.5px; box-shadow: 0 4px 0 rgba(0,0,0,0.35); transition: transform 0.12s, box-shadow 0.12s; white-space: nowrap; }
     .btn:hover   { transform: translateY(-2px); box-shadow: 0 6px 0 rgba(0,0,0,0.35); }
-    .btn:active  { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.35); }
+    .btn:active  { transform: translateY(2px);  box-shadow: 0 2px 0 rgba(0,0,0,0.35); }
     .btn:disabled{ opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
     .btn-primary { background: var(--gold); color: #111; }
     .btn-ghost   { background: rgba(255,255,255,0.12); color: #fff; border: 1.5px solid rgba(255,255,255,0.2); }
-    .btn-danger  { background: var(--red-card); color: #fff; }
-    .btn-green   { background: var(--green-card); color: #fff; }
     .btn-sm      { font-size: 0.82rem; padding: 7px 16px; }
 
-    /* ─── INPUT ─── */
-    .inp {
-      font-family: 'Nunito', sans-serif;
-      font-size: 1rem;
-      font-weight: 700;
-      padding: 12px 18px;
-      border: 2.5px solid rgba(255,255,255,0.18);
-      border-radius: 12px;
-      background: rgba(255,255,255,0.09);
-      color: #fff;
-      outline: none;
-      width: 100%;
-      transition: border-color 0.2s;
-    }
+    /* INPUT */
+    .inp { font-family: 'Nunito', sans-serif; font-size: 1rem; font-weight: 700; padding: 12px 18px; border: 2.5px solid rgba(255,255,255,0.18); border-radius: 12px; background: rgba(255,255,255,0.09); color: #fff; outline: none; width: 100%; transition: border-color 0.2s; }
     .inp::placeholder { color: rgba(255,255,255,0.35); }
     .inp:focus { border-color: var(--gold); }
 
-    /* ─── PANEL ─── */
-    .panel {
-      background: rgba(0,0,0,0.22);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 18px;
-      padding: 18px;
-      backdrop-filter: blur(6px);
-    }
-
-    /* ─── SECTION TITLE ─── */
+    /* PANEL */
+    .panel { background: rgba(0,0,0,0.22); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; padding: 18px; backdrop-filter: blur(6px); }
     .section-title { font-family: 'Fredoka One', cursive; font-size: 1.1rem; color: var(--gold); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
 
-    /* ─── LOGIN SCREEN ─── */
+    /* LOGIN */
     #screen-login { justify-content: center; gap: 28px; }
     .login-box { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 14px; }
     .login-sub { text-align: center; color: rgba(255,255,255,0.55); font-size: 0.95rem; font-weight: 600; }
 
-    /* ─── LOBBY SCREEN ─── */
+    /* LOBBY */
     #screen-lobby { gap: 18px; width: 100%; max-width: 620px; margin: 0 auto; align-items: stretch; }
     .lobby-topbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
     .name-pill { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.13); border-radius: 50px; padding: 7px 16px; font-weight: 800; font-size: 0.9rem; }
     .name-pill .n { color: var(--gold); }
-    .room-list { display: flex; flex-direction: column; gap: 9px; }
-    .room-row {
-      display: flex; align-items: center; justify-content: space-between;
-      background: rgba(0,0,0,0.2);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 12px;
-      padding: 13px 16px;
-      cursor: pointer;
-      transition: background 0.15s, transform 0.15s;
-      gap: 10px;
-    }
+    .room-row { display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 13px 16px; cursor: pointer; transition: background 0.15s, transform 0.15s; gap: 10px; }
     .room-row:hover { background: rgba(255,255,255,0.09); transform: translateX(4px); }
     .room-row.rejoining { border-color: rgba(255,214,10,0.35); background: rgba(255,214,10,0.07); }
     .room-row-name { font-weight: 800; font-size: 0.95rem; }
     .room-row-meta { font-size: 0.76rem; color: rgba(255,255,255,0.45); margin-top: 2px; }
     .badge { font-size: 0.72rem; font-weight: 800; padding: 4px 10px; border-radius: 50px; flex-shrink: 0; }
     .badge-wait { background: rgba(255,214,10,0.18); color: var(--gold); }
+    .badge-vote { background: rgba(120,80,220,0.3); color: #c4b5fd; }
     .badge-play { background: rgba(64,145,108,0.3); color: #74C69D; }
     .empty-rooms { text-align: center; padding: 28px; color: rgba(255,255,255,0.35); font-size: 0.9rem; }
     .create-row { display: flex; gap: 10px; }
     .divider { border: none; border-top: 1px solid rgba(255,255,255,0.08); }
 
-    /* ─── WAITING ROOM ─── */
+    /* WAITING ROOM */
     #screen-room { gap: 18px; width: 100%; max-width: 620px; margin: 0 auto; align-items: stretch; }
     .room-header { display: flex; flex-direction: column; gap: 4px; }
     .room-id-tag { font-size: 0.78rem; color: rgba(255,255,255,0.35); letter-spacing: 3px; font-weight: 700; }
@@ -171,65 +104,82 @@
     .player-tile .pname { font-weight: 800; font-size: 0.92rem; word-break: break-word; }
     .player-tile .ptag  { font-size: 0.72rem; color: rgba(255,255,255,0.38); margin-top: 3px; }
 
-    /* ─── GAME SCREEN ─── */
-    #screen-game { padding: 0; gap: 0; max-width: 720px; margin: 0 auto; width: 100%; }
+    /* ══════════ VOTING SCREEN ══════════ */
+    #screen-voting { gap: 16px; width: 100%; max-width: 680px; margin: 0 auto; align-items: stretch; padding-bottom: 90px; }
+    .voting-header { text-align: center; }
+    .voting-title { font-family: 'Fredoka One', cursive; font-size: clamp(1.6rem, 5vw, 2.2rem); color: var(--gold); }
+    .voting-sub { font-size: 0.88rem; color: rgba(255,255,255,0.45); font-weight: 600; margin-top: 5px; }
 
-    .game-topbar {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 14px;
-      background: rgba(0,0,0,0.32);
-      border-bottom: 1px solid rgba(255,255,255,0.07);
-      width: 100%; gap: 8px; flex-wrap: wrap;
+    .vote-who-row { display: flex; gap: 7px; flex-wrap: wrap; }
+    .vote-who-chip { font-size: 0.77rem; font-weight: 800; padding: 5px 13px; border-radius: 50px; }
+    .vote-who-chip.voted   { background: rgba(64,145,108,0.35); color: #74C69D; }
+    .vote-who-chip.pending { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.4); }
+
+    .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 12px; }
+
+    .cat-tile {
+      background: rgba(0,0,0,0.28); border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 16px; padding: 18px 12px 14px; cursor: pointer; text-align: center;
+      transition: border-color 0.18s, background 0.18s, transform 0.18s cubic-bezier(.34,1.56,.64,1);
+      display: flex; flex-direction: column; align-items: center; gap: 7px; position: relative; user-select: none;
     }
+    .cat-tile:hover:not(.locked) { background: rgba(255,255,255,0.09); transform: translateY(-5px); }
+    .cat-tile.sel {
+      border-color: var(--gold); background: rgba(255,214,10,0.13);
+      transform: translateY(-6px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 0 0 3px rgba(255,214,10,0.2);
+    }
+    .cat-tile .cat-check { position: absolute; top: 8px; right: 8px; width: 20px; height: 20px; border-radius: 50%; background: var(--gold); color: #111; font-size: 0.72rem; font-weight: 900; display: none; align-items: center; justify-content: center; }
+    .cat-tile.sel .cat-check { display: flex; }
+    .cat-emoji { font-size: 2.2rem; line-height: 1; }
+    .cat-name  { font-family: 'Fredoka One', cursive; font-size: 0.95rem; color: #fff; }
+    .cat-count { font-size: 0.7rem; color: rgba(255,255,255,0.38); font-weight: 700; }
+    .cat-voters { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; min-height: 18px; margin-top: 2px; }
+    .cat-voter { font-size: 0.65rem; font-weight: 800; padding: 2px 7px; border-radius: 50px; background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.6); max-width: 72px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cat-voter.me { background: rgba(255,214,10,0.25); color: var(--gold); }
+    .cat-tile.locked { cursor: default; }
+    .cat-tile.has-votes:not(.sel) { border-color: rgba(64,145,108,0.45); background: rgba(64,145,108,0.08); }
+
+    /* sticky submit bar */
+    .vote-bar { position: fixed; bottom: 0; left: 0; right: 0; padding: 14px 20px; background: rgba(12,28,20,0.96); border-top: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: space-between; gap: 12px; z-index: 100; }
+    .vote-bar-lbl { font-weight: 800; font-size: 0.88rem; color: rgba(255,255,255,0.45); }
+    .vote-bar-lbl span { color: var(--gold); font-family: 'Fredoka One', cursive; font-size: 1.1rem; }
+    .vote-bar-right { display: flex; gap: 9px; align-items: center; }
+
+    /* GAME */
+    #screen-game { padding: 0; gap: 0; max-width: 720px; margin: 0 auto; width: 100%; }
+    .game-topbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(0,0,0,0.32); border-bottom: 1px solid rgba(255,255,255,0.07); width: 100%; gap: 8px; flex-wrap: wrap; }
     .round-tag { font-family: 'Fredoka One', cursive; font-size: 0.88rem; color: rgba(255,255,255,0.55); background: rgba(255,255,255,0.08); padding: 4px 12px; border-radius: 50px; }
     .scores-row { display: flex; gap: 7px; flex-wrap: wrap; }
     .score-chip { display: flex; align-items: center; gap: 5px; background: rgba(0,0,0,0.28); border: 1px solid rgba(255,255,255,0.1); border-radius: 50px; padding: 4px 11px; font-size: 0.78rem; font-weight: 800; }
     .score-chip.is-judge { border-color: rgba(255,214,10,0.55); color: var(--gold); }
     .score-chip.is-me    { border-color: rgba(255,255,255,0.3); }
     .score-chip .pts     { font-family: 'Fredoka One', cursive; font-size: 1rem; color: var(--gold); margin-left: 2px; }
-
     .game-body { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 16px; width: 100%; }
-
     .phase-heading { font-family: 'Fredoka One', cursive; font-size: clamp(1.2rem, 4vw, 1.7rem); text-align: center; }
     .phase-sub { font-size: 0.87rem; color: rgba(255,255,255,0.5); text-align: center; margin-top: -10px; }
-
-    /* green card center display */
     .green-card-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
     .judge-label { font-size: 0.82rem; font-weight: 800; color: var(--gold); }
     .green-display { width: 170px; }
-
-    /* hand */
     .hand-section { width: 100%; }
     .hand-lbl { font-size: 0.8rem; font-weight: 700; color: rgba(255,255,255,0.45); margin-bottom: 6px; }
-    .hand-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 8px 2px 18px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent; }
-    .hand-scroll::-webkit-scrollbar { height: 3px; }
-    .hand-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+    .hand-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 8px 2px 18px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
     .hand-card { min-width: 128px; width: 128px; flex-shrink: 0; }
-
-    /* submissions grid */
     .sub-grid { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; width: 100%; }
     .sub-card { width: 148px; flex-shrink: 0; }
-
-    /* waiting state */
     .waiting-state { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 20px; width: 100%; }
     .dot-loader { display: flex; gap: 8px; }
     .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--gold); animation: dotBounce 1.3s infinite ease-in-out; }
     .dot:nth-child(2) { animation-delay: 0.18s; }
     .dot:nth-child(3) { animation-delay: 0.36s; }
     @keyframes dotBounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-15px)} }
-
-    .submit-chips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+    .sub-chips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
     .sub-chip { font-size: 0.77rem; font-weight: 800; padding: 4px 11px; border-radius: 50px; }
     .sub-chip.done    { background: rgba(64,145,108,0.35); color: #74C69D; }
     .sub-chip.pending { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.4); }
-
-    /* results */
     .results-area { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 16px; width: 100%; text-align: center; }
     .winner-name-big { font-family: 'Fredoka One', cursive; font-size: clamp(1.8rem, 6vw, 2.6rem); color: var(--gold); text-shadow: 2px 3px 0 rgba(0,0,0,0.4); }
-    .result-card-wrap { width: 155px; }
     .matched-label { font-size: 0.82rem; color: rgba(255,255,255,0.45); }
-
-    /* game over */
     .gameover-area { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 14px; }
     .final-list { width: 100%; display: flex; flex-direction: column; gap: 8px; }
     .final-row { display: flex; align-items: center; justify-content: space-between; padding: 11px 16px; background: rgba(0,0,0,0.22); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; }
@@ -238,120 +188,134 @@
     .final-row .fr-name { font-weight: 800; font-size: 0.95rem; flex: 1; padding: 0 12px; }
     .final-row .fr-pts  { font-family: 'Fredoka One', cursive; font-size: 1.4rem; color: var(--gold); }
 
-    /* ─── MODAL ─── */
+    /* MODAL */
     .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 999; align-items: center; justify-content: center; }
     .modal-bg.open { display: flex; }
     .modal-box { background: var(--felt-mid); border: 1px solid rgba(255,255,255,0.13); border-radius: 20px; padding: 26px; width: 90%; max-width: 340px; display: flex; flex-direction: column; gap: 14px; }
     .modal-title { font-family: 'Fredoka One', cursive; font-size: 1.35rem; color: var(--gold); }
     .modal-btns { display: flex; gap: 10px; }
 
-    /* ─── TOAST ─── */
+    /* TOAST */
     .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(70px); background: rgba(5,20,12,0.92); color: #fff; padding: 11px 22px; border-radius: 50px; font-weight: 700; font-size: 0.92rem; z-index: 9999; transition: transform 0.3s cubic-bezier(.34,1.56,.64,1); white-space: nowrap; border: 1px solid rgba(255,255,255,0.12); pointer-events: none; }
     .toast.show { transform: translateX(-50%) translateY(0); }
 
-    /* ─── CONFETTI ─── */
+    /* CONFETTI */
     .confetti { position: fixed; z-index: 9998; pointer-events: none; border-radius: 2px; animation: cffall 3s ease-in forwards; }
-    @keyframes cffall { 0%{transform:translateY(-20px) rotate(0)} 100%{transform:translateY(105vh) rotate(720deg); opacity:0} }
+    @keyframes cffall { 0%{transform:translateY(-20px) rotate(0)} 100%{transform:translateY(105vh) rotate(720deg);opacity:0} }
 
-    /* ─── BACK BTN ─── */
     .back-link { background: none; border: none; color: rgba(255,255,255,0.45); font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 0.88rem; cursor: pointer; padding: 2px 0; display: flex; align-items: center; gap: 4px; transition: color 0.2s; }
     .back-link:hover { color: #fff; }
-
-    /* ─── MISC ─── */
     .win-note { font-size: 0.79rem; color: rgba(255,255,255,0.35); text-align: center; }
     .btn-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 
     @keyframes popIn  { 0%{transform:scale(0.4);opacity:0} 70%{transform:scale(1.08)} 100%{transform:scale(1);opacity:1} }
     @keyframes slideU { 0%{transform:translateY(28px);opacity:0} 100%{transform:translateY(0);opacity:1} }
-    .anim-pop  { animation: popIn  0.5s cubic-bezier(.34,1.56,.64,1) forwards; }
-    .anim-up   { animation: slideU 0.38s ease forwards; }
+    .anim-pop { animation: popIn  0.5s cubic-bezier(.34,1.56,.64,1) forwards; }
+    .anim-up  { animation: slideU 0.38s ease forwards; }
 
     @media (max-width: 480px) {
       .screen { padding: 12px; }
       .game-body { padding: 10px; }
       .green-display { width: 148px; }
+      .cat-grid { grid-template-columns: repeat(2, 1fr); gap: 9px; }
     }
   </style>
 </head>
 <body>
 
-<!-- ══════════ LOGIN ══════════ -->
+<!-- LOGIN -->
 <div id="screen-login" class="screen">
   <div class="anim-pop" style="text-align:center">
     <h1>🍎 Apples &amp; Apples</h1>
-    <p style="color:rgba(255,255,255,0.45); font-size:0.95rem; margin-top:6px; font-weight:600">The hilarious card matching game</p>
+    <p style="color:rgba(255,255,255,0.45);font-size:.95rem;margin-top:6px;font-weight:600">The hilarious card matching game</p>
   </div>
   <div class="login-box anim-up">
     <p class="login-sub">What should we call you?</p>
-    <input id="login-input" class="inp" type="text" placeholder="Your name..." maxlength="20" autocomplete="off" />
+    <input id="login-input" class="inp" type="text" placeholder="Your name..." maxlength="20" autocomplete="off"/>
     <button class="btn btn-primary" onclick="submitLogin()">Let's Play 🎉</button>
   </div>
 </div>
 
-<!-- ══════════ LOBBY ══════════ -->
+<!-- LOBBY -->
 <div id="screen-lobby" class="screen">
   <div class="lobby-topbar">
     <h2>🍎 Apples &amp; Apples</h2>
-    <div class="name-pill">
-      👤 <span class="n" id="lobby-name"></span>
+    <div class="name-pill">👤 <span class="n" id="lobby-name"></span>
       <button class="btn btn-sm btn-ghost" onclick="openRename()" style="padding:5px 11px">✏️</button>
     </div>
   </div>
-
   <div class="panel">
     <div class="section-title">🎮 Open Rooms</div>
     <div id="rooms-list"><div class="empty-rooms">Loading rooms…</div></div>
   </div>
-
-  <hr class="divider" />
-
+  <hr class="divider"/>
   <div>
     <div class="section-title">➕ Create Room</div>
     <div class="create-row">
-      <input id="room-name-input" class="inp" type="text" placeholder="Room name (optional)" maxlength="30" autocomplete="off" />
+      <input id="room-name-input" class="inp" type="text" placeholder="Room name (optional)" maxlength="30" autocomplete="off"/>
       <button class="btn btn-primary" onclick="createRoom()">Create</button>
     </div>
   </div>
 </div>
 
-<!-- ══════════ WAITING ROOM ══════════ -->
+<!-- WAITING ROOM -->
 <div id="screen-room" class="screen">
   <div class="room-header">
     <button class="back-link" onclick="leaveRoom()">← Back to Lobby</button>
     <h2 id="room-title">Room</h2>
     <div class="room-id-tag" id="room-id-tag"></div>
   </div>
-
   <div class="panel">
     <div class="section-title">👥 Players</div>
     <div id="wait-players" class="players-grid"></div>
   </div>
-
   <div id="host-ctrl" style="text-align:center">
     <p class="win-note" style="margin-bottom:10px">First to 7 points wins · Minimum 3 players</p>
-    <button id="start-btn" class="btn btn-primary" onclick="startGame()" disabled>Start Game 🚀</button>
+    <button id="start-btn" class="btn btn-primary" onclick="triggerVoting()" disabled>Vote on Categories 🗳️</button>
   </div>
-
-  <div id="nonhost-wait" style="text-align:center; color:rgba(255,255,255,0.4); font-weight:700; display:none">
-    ⏳ Waiting for host to start the game…
+  <div id="nonhost-wait" style="text-align:center;color:rgba(255,255,255,0.4);font-weight:700;display:none">
+    ⏳ Waiting for host to start the voting…
   </div>
 </div>
 
-<!-- ══════════ GAME ══════════ -->
-<div id="screen-game" class="screen" style="padding:0; align-items:stretch;">
+<!-- VOTING SCREEN -->
+<div id="screen-voting" class="screen">
+  <div class="voting-header">
+    <div class="voting-title">🗳️ Pick Your Categories</div>
+    <p class="voting-sub">Choose types of cards you want. Any category that gets at least one vote makes it in!</p>
+  </div>
+
+  <div class="panel" style="padding:12px 14px">
+    <div class="section-title" style="margin-bottom:6px">📊 Who's voted</div>
+    <div id="vote-who-row" class="vote-who-row"></div>
+  </div>
+
+  <div id="cat-grid" class="cat-grid"></div>
+
+  <div class="vote-bar">
+    <div class="vote-bar-lbl"><span id="vote-sel-count">0</span> selected</div>
+    <div class="vote-bar-right">
+      <button id="host-skip-btn" class="btn btn-ghost btn-sm" onclick="hostLockAndStart()" style="display:none">⚡ Skip &amp; Start</button>
+      <button id="submit-vote-btn" class="btn btn-primary" onclick="submitVote()" disabled>Lock In Vote ✅</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="screen-game" class="screen" style="padding:0;align-items:stretch;">
   <div class="game-topbar">
     <div class="round-tag" id="round-tag">Round 1</div>
     <div id="scores-row" class="scores-row"></div>
-    <button class="btn btn-sm btn-ghost" onclick="openRename()" style="margin-left:auto; padding:5px 10px">✏️ Name</button>
+    <button class="btn btn-sm btn-ghost" onclick="openRename()" style="margin-left:auto;padding:5px 10px">✏️ Name</button>
   </div>
   <div id="game-body" class="game-body"></div>
 </div>
 
-<!-- ══════════ RENAME MODAL ══════════ -->
+<!-- RENAME MODAL -->
 <div id="rename-modal" class="modal-bg">
   <div class="modal-box">
     <div class="modal-title">Change Name ✏️</div>
-    <input id="rename-input" class="inp" type="text" placeholder="New name…" maxlength="20" autocomplete="off" />
+    <input id="rename-input" class="inp" type="text" placeholder="New name…" maxlength="20" autocomplete="off"/>
     <div class="modal-btns">
       <button class="btn btn-ghost" style="flex:1" onclick="closeRename()">Cancel</button>
       <button class="btn btn-primary" style="flex:1" onclick="submitRename()">Save</button>
@@ -362,9 +326,6 @@
 <div id="toast" class="toast"></div>
 
 <script>
-// ═══════════════════════════════════════════
-// FIREBASE + PCID
-// ═══════════════════════════════════════════
 firebase.initializeApp({
   apiKey: "AIzaSyDVbt_8GuRuHJRPAN7jFXbs_lJUfUHNxHE",
   authDomain: "chummy-games.firebaseapp.com",
@@ -380,54 +341,92 @@ function getOrCreatePCID() {
   const k = 'ChummyGames-PC-ID';
   let id = localStorage.getItem(k);
   if (!id || id.length !== 12) {
-    id = Array.from({ length: 12 }, () =>
-      'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 26)]
-    ).join('');
+    id = Array.from({length:12}, () => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random()*26)]).join('');
     localStorage.setItem(k, id);
   }
   return id;
 }
 const myPCID = getOrCreatePCID();
 
-// ═══════════════════════════════════════════
+// ══════════════════════════════════════════════════
 // CARD DATA
-// ═══════════════════════════════════════════
+// ══════════════════════════════════════════════════
+const CATEGORIES = {
+  food: { id:'food', emoji:'🍕', name:'Food & Drinks', cards:[
+    'Pizza','Sushi','Gas station hot dogs','Pineapple on pizza','Decaf coffee',
+    'A second breakfast','The last donut','A mystery flavor','Birthday cake',
+    'A gas station energy drink','Bottomless brunch','Instant noodles at midnight',
+    'A $40 avocado toast','A grocery store free sample','The last slice of cake'
+  ]},
+  animals: { id:'animals', emoji:'🐾', name:'Animals & Pets', cards:[
+    'A dog wearing sunglasses','A cat video','A penguin in a tuxedo',
+    'A very suspicious parrot','A golden retriever','A dramatic llama',
+    'A sleepy koala','A very confident squirrel','A hamster on a wheel',
+    'A duck that follows you','My neighbor\'s dog','A confused goldfish',
+    'A dramatic cat','A chaotic raccoon','A crab rave'
+  ]},
+  work: { id:'work', emoji:'💼', name:'Work & School', cards:[
+    'My boss','Homework','A participation trophy','A group project',
+    'A passive-aggressive sticky note','A reply-all email disaster',
+    'The wrong Zoom meeting','A mandatory fun company event',
+    'An overdue deadline','A surprise pop quiz','The office printer',
+    'Free pizza in the break room','My performance review',
+    'An unsolicited LinkedIn message','A 6am standup meeting'
+  ]},
+  everyday: { id:'everyday', emoji:'🏠', name:'Everyday Life', cards:[
+    'A traffic jam','My alarm clock','The snooze button',
+    'A flat tire','A power outage','A forgotten password',
+    'Glitter','That one junk drawer','My morning commute',
+    'The remote control','A wobbly shopping cart','Bubble wrap',
+    'My phone battery at 1%','A speed bump',
+    'The button that says "Do Not Press"'
+  ]},
+  entertainment: { id:'entertainment', emoji:'🎬', name:'Movies & TV', cards:[
+    'A plot twist','A jump scare','A cliffhanger ending',
+    'A slow-motion replay','A cheesy rom-com','The final boss',
+    'A dramatic pause','An unexpected crossover','The post-credits scene',
+    'A laugh track','A plot hole','A character doing something obviously dumb',
+    'A reboot nobody asked for','Subtitles that are slightly off','The sad montage scene'
+  ]},
+  tech: { id:'tech', emoji:'💻', name:'Tech & Internet', cards:[
+    'The internet','Social media','Auto-correct','My search history',
+    'A viral meme','A loading screen that never ends','A CAPTCHA',
+    'Cookie consent popups','An overconfident GPS','A robot uprising',
+    'A spam email','NFTs','A reply thread that got out of hand',
+    'Accidentally going live','An app that always needs an update'
+  ]},
+  cringe: { id:'cringe', emoji:'😬', name:'Cringe & Chaos', cards:[
+    'An awkward handshake','Accidentally texting the wrong person',
+    'Showing up on the wrong day',
+    'Saying "you too" after the waiter says "enjoy your meal"',
+    'Tripping in public','A dentist who asks questions mid-procedure',
+    'Starting a sentence and completely forgetting it',
+    'A typo in an important email','Waving back at someone not waving at you',
+    'Walking into a glass door','My 3am thoughts',
+    'A passive-aggressive emoji','Calling a teacher "mom"',
+    'An unsolicited hug','Wearing mismatched socks on purpose'
+  ]},
+  travel: { id:'travel', emoji:'🌍', name:'Places & Travel', cards:[
+    'A haunted house','A roller coaster','A red-eye flight',
+    'A suspiciously clean hotel room','A rest stop bathroom',
+    'The middle seat on a plane','Customs at the airport',
+    'A very crowded elevator','Times Square at midnight',
+    'An empty parking lot at night','A mystery Airbnb',
+    'A tourist trap restaurant','Getting lost without GPS',
+    'A beach that\'s always windy','A souvenir shop'
+  ]}
+};
+
+const ALL_CAT_IDS = Object.keys(CATEGORIES);
+
 const GREEN_CARDS = [
   "Scary","Delicious","Funny","Beautiful","Dangerous","Awesome","Mysterious","Exciting",
   "Smelly","Loud","Fast","Slow","Tiny","Gigantic","Ancient","Modern","Silly","Serious",
   "Sweet","Sour","Hot","Cold","Colorful","Dark","Bright","Peaceful","Chaotic","Lucky",
   "Famous","Strange","Powerful","Weak","Clever","Boring","Surprising","Annoying",
-  "Helpful","Useless","Magical","Realistic","Disgusting","Adorable","Epic","Awkward",
-  "Sneaky","Expensive","Overrated","Underrated","Spicy","Fluffy","Crunchy","Slippery",
-  "Sharp","Cheesy","Dramatic","Mysterious","Wholesome","Cursed","Iconic","Chaotic"
-];
-
-const RED_CARDS = [
-  "A traffic jam","Pizza","The internet","My grandma","A dinosaur","The moon","A sneeze",
-  "My boss","A rubber duck","The dentist","WiFi","A roller coaster","Monday mornings",
-  "A cat video","The stock market","A broken printer","My neighbor's dog","Homework",
-  "The last slice of cake","A haunted house","Social media","A shopping cart with a wobbly wheel",
-  "My alarm clock","A crying baby on a plane","Taxes","A gym membership","A fortune cookie",
-  "The remote control","My ex","A participation trophy","Gas station sushi","A group text",
-  "My search history","Auto-correct","A motivational poster","A parking ticket",
-  "A spider in the bathtub","A first date","Decaf coffee","A surprise birthday party",
-  "The neighbor's loud music","A flat tire","Quicksand","A back massage","Winning the lottery",
-  "A bear hug","My sleep schedule","A hot shower","Pineapple on pizza","A power outage",
-  "A dog wearing sunglasses","My morning commute","A forgotten password","The last donut",
-  "A typo in an important email","A cold swimming pool","A fire drill at lunch",
-  "The button that says 'Do Not Press'","A time machine","My phone battery at 1%",
-  "A mystery box","The void","A sentient refrigerator","A wizard in a business suit",
-  "My credit card bill","A malfunctioning robot","Elevator music","A second breakfast",
-  "Unsolicited life advice","A passive-aggressive sticky note",
-  "The person who microwaves fish at work","A penguin in a tuxedo","A plot twist",
-  "A very tiny violin","The last WiFi bar","A suspiciously clean hotel room",
-  "An overconfident GPS","My childhood dreams","Bubble wrap","A conspiracy theory",
-  "An empty fridge at midnight","A reply-all email disaster","My 3AM thoughts",
-  "A rubber chicken","That one drawer full of junk","A group project","Daylight saving time",
-  "The snooze button","Glitter","A dusty treadmill","Someone else's Netflix password",
-  "A speed bump","My backup plans","An unsolicited hug","A rickety elevator",
-  "The wrong Zoom meeting","My dentist's waiting room","A rogue autocorrect",
-  "A passive-aggressive emoji","An expired coupon","A surprise tornado drill"
+  "Helpful","Useless","Magical","Disgusting","Adorable","Epic","Awkward","Sneaky",
+  "Expensive","Overrated","Underrated","Spicy","Fluffy","Crunchy","Slippery","Sharp",
+  "Cheesy","Dramatic","Wholesome","Cursed","Iconic","Unstoppable","Legendary","Unhinged"
 ];
 
 const WIN_SCORE = 7;
@@ -435,201 +434,151 @@ const HAND_SIZE = 5;
 const ROOM_PATH = 'apples_rooms';
 const PLAYER_PATH = 'apples_players';
 
-// ═══════════════════════════════════════════
+// ══════════════════════════════════════════════════
 // STATE
-// ═══════════════════════════════════════════
+// ══════════════════════════════════════════════════
 let myName = '';
 let currentRoomId = null;
 let roomListener = null;
 let lobbyListener = null;
 let roomData = null;
 let advanceTimer = null;
+let mySelCats = new Set(ALL_CAT_IDS);
+let myVoteSubmitted = false;
 
-// ═══════════════════════════════════════════
+// ══════════════════════════════════════════════════
 // UTILS
-// ═══════════════════════════════════════════
+// ══════════════════════════════════════════════════
 function shuffle(arr) {
   const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
+  for (let i = a.length-1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
   return a;
 }
+function toArr(v) { if (!v) return []; if (Array.isArray(v)) return v; return Object.values(v); }
+function esc(t) { const d = document.createElement('div'); d.appendChild(document.createTextNode(String(t))); return d.innerHTML; }
+function showScreen(id) { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); window.scrollTo(0,0); }
 
-function toArr(val) {
-  if (!val) return [];
-  if (Array.isArray(val)) return val;
-  return Object.values(val);
-}
-
-function esc(t) {
-  const d = document.createElement('div');
-  d.appendChild(document.createTextNode(String(t)));
-  return d.innerHTML;
-}
-
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
-
-let toastTimer;
+let _toastT;
 function toast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+  const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(_toastT); _toastT = setTimeout(()=>el.classList.remove('show'), 3000);
 }
 
-function confetti(n = 45) {
-  const cols = ['#FFD60A','#C1121F','#40916C','#74C69D','#fff','#f4a261','#a8dadc'];
-  for (let i = 0; i < n; i++) {
-    const el = document.createElement('div');
-    el.className = 'confetti';
-    el.style.cssText = `left:${Math.random()*100}vw; top:-12px; width:${6+Math.random()*10}px; height:${6+Math.random()*10}px; background:${cols[Math.floor(Math.random()*cols.length)]}; animation-delay:${Math.random()*1.5}s; animation-duration:${2+Math.random()*2}s`;
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 4500);
+function confetti(n=45) {
+  const cols=['#FFD60A','#C1121F','#40916C','#74C69D','#fff','#f4a261'];
+  for (let i=0;i<n;i++) {
+    const el=document.createElement('div'); el.className='confetti';
+    el.style.cssText=`left:${Math.random()*100}vw;top:-12px;width:${6+Math.random()*10}px;height:${6+Math.random()*10}px;background:${cols[Math.floor(Math.random()*cols.length)]};animation-delay:${Math.random()*1.5}s;animation-duration:${2+Math.random()*2}s`;
+    document.body.appendChild(el); setTimeout(()=>el.remove(),4500);
   }
 }
 
-// Consistent judge order by joinedAt
 function judgeOrder(players) {
-  return Object.values(players)
-    .sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0))
-    .map(p => p.pcid);
+  return Object.values(players).sort((a,b)=>(a.joinedAt||0)-(b.joinedAt||0)).map(p=>p.pcid);
 }
-
-function nextJudge(players, currentPCID) {
+function nextJudge(players, curPCID) {
   const order = judgeOrder(players);
-  const idx = order.indexOf(currentPCID);
-  for (let i = 1; i <= order.length; i++) {
-    const next = order[(idx + i) % order.length];
-    if (players[next]) return next;
-  }
+  const idx = order.indexOf(curPCID);
+  for (let i=1;i<=order.length;i++) { const n=order[(idx+i)%order.length]; if (players[n]) return n; }
   return order[0];
 }
-
-// ═══════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════
-async function init() {
-  const snap = await db.ref(`${PLAYER_PATH}/${myPCID}`).get();
-  if (snap.exists()) {
-    myName = snap.val().name;
-    showLobby();
-  } else {
-    showScreen('screen-login');
-  }
+function buildRedDeck(votes) {
+  const inc = new Set();
+  Object.values(votes||{}).forEach(cats => toArr(cats).forEach(c=>inc.add(c)));
+  if (!inc.size) ALL_CAT_IDS.forEach(c=>inc.add(c));
+  let cards = [];
+  inc.forEach(id => { if (CATEGORIES[id]) cards.push(...CATEGORIES[id].cards); });
+  return shuffle(cards);
 }
 
-// ═══════════════════════════════════════════
+// ══════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════
+async function init() {
+  const snap = await db.ref(`${PLAYER_PATH}/${myPCID}`).get();
+  if (snap.exists()) { myName = snap.val().name; showLobby(); }
+  else showScreen('screen-login');
+}
+
+// ══════════════════════════════════════════════════
 // LOGIN
-// ═══════════════════════════════════════════
+// ══════════════════════════════════════════════════
 function submitLogin() {
   const n = document.getElementById('login-input').value.trim();
   if (!n) { toast('Please enter your name!'); return; }
   myName = n;
-  db.ref(`${PLAYER_PATH}/${myPCID}`).set({ name: n, pcid: myPCID });
+  db.ref(`${PLAYER_PATH}/${myPCID}`).set({name:n, pcid:myPCID});
   showLobby();
 }
-document.getElementById('login-input').addEventListener('keydown', e => { if (e.key === 'Enter') submitLogin(); });
+document.getElementById('login-input').addEventListener('keydown', e=>{ if(e.key==='Enter') submitLogin(); });
 
-// ═══════════════════════════════════════════
-// RENAME MODAL
-// ═══════════════════════════════════════════
-function openRename() {
-  document.getElementById('rename-input').value = myName;
-  document.getElementById('rename-modal').classList.add('open');
-  document.getElementById('rename-input').focus();
-}
+// ══════════════════════════════════════════════════
+// RENAME
+// ══════════════════════════════════════════════════
+function openRename() { document.getElementById('rename-input').value=myName; document.getElementById('rename-modal').classList.add('open'); document.getElementById('rename-input').focus(); }
 function closeRename() { document.getElementById('rename-modal').classList.remove('open'); }
-
 function submitRename() {
   const n = document.getElementById('rename-input').value.trim();
   if (!n) { toast('Name cannot be empty!'); return; }
   myName = n;
-  db.ref(`${PLAYER_PATH}/${myPCID}`).update({ name: n });
+  db.ref(`${PLAYER_PATH}/${myPCID}`).update({name:n});
   if (currentRoomId) db.ref(`${ROOM_PATH}/${currentRoomId}/players/${myPCID}/name`).set(n);
-  const lbl = document.getElementById('lobby-name');
-  if (lbl) lbl.textContent = n;
-  closeRename();
-  toast('Name updated ✅');
+  const lbl = document.getElementById('lobby-name'); if (lbl) lbl.textContent = n;
+  closeRename(); toast('Name updated ✅');
 }
-document.getElementById('rename-input').addEventListener('keydown', e => { if (e.key === 'Enter') submitRename(); });
+document.getElementById('rename-input').addEventListener('keydown', e=>{ if(e.key==='Enter') submitRename(); });
 
-// ═══════════════════════════════════════════
+// ══════════════════════════════════════════════════
 // LOBBY
-// ═══════════════════════════════════════════
+// ══════════════════════════════════════════════════
 function showLobby() {
-  detachRoom();
-  currentRoomId = null;
-  roomData = null;
+  detachRoom(); currentRoomId = null; roomData = null; myVoteSubmitted = false;
   document.getElementById('lobby-name').textContent = myName;
   showScreen('screen-lobby');
-
   if (lobbyListener) { db.ref(ROOM_PATH).off('value', lobbyListener); lobbyListener = null; }
-  lobbyListener = db.ref(ROOM_PATH).on('value', snap => renderRooms(snap.val() || {}));
+  lobbyListener = db.ref(ROOM_PATH).on('value', snap => renderRooms(snap.val()||{}));
 }
 
 function renderRooms(rooms) {
   const el = document.getElementById('rooms-list');
   const entries = Object.entries(rooms)
-    .filter(([, r]) => {
-      if (r.status === 'waiting') return true;
-      if ((r.status === 'playing' || r.status === 'finished') && r.players?.[myPCID]) return true;
+    .filter(([,r]) => {
+      if (r.status==='waiting'||r.status==='voting') return true;
+      if ((r.status==='playing'||r.status==='finished') && r.players?.[myPCID]) return true;
       return false;
     })
-    .sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
-
-  if (!entries.length) {
-    el.innerHTML = '<div class="empty-rooms">🃏 No open rooms — create one to start!</div>';
-    return;
-  }
-  el.innerHTML = '';
-  entries.forEach(([id, r]) => {
+    .sort((a,b) => (b[1].createdAt||0)-(a[1].createdAt||0));
+  if (!entries.length) { el.innerHTML='<div class="empty-rooms">🃏 No open rooms — create one!</div>'; return; }
+  el.innerHTML='';
+  const statusMap = { waiting:['badge-wait','⏳ Waiting'], voting:['badge-vote','🗳️ Voting'], playing:['badge-play','🎮 Playing'], finished:['badge-play','🏁 Finished'] };
+  entries.forEach(([id,r]) => {
     const cnt = r.players ? Object.keys(r.players).length : 0;
     const mine = r.players?.[myPCID];
-    const playing = r.status === 'playing';
+    const [bc,bl] = statusMap[r.status]||['badge-wait','⏳'];
     const div = document.createElement('div');
-    div.className = 'room-row' + (mine ? ' rejoining' : '');
-    div.innerHTML = `
-      <div>
-        <div class="room-row-name">${esc(r.name || 'Unnamed Room')}</div>
-        <div class="room-row-meta">${cnt} player${cnt !== 1 ? 's' : ''} ${mine ? '· 🔁 Rejoin' : ''}</div>
-      </div>
-      <span class="badge ${playing ? 'badge-play' : 'badge-wait'}">${playing ? '🎮 Playing' : '⏳ Waiting'}</span>
-    `;
-    div.onclick = () => joinRoom(id);
+    div.className = 'room-row'+(mine?' rejoining':'');
+    div.innerHTML = `<div><div class="room-row-name">${esc(r.name||'Unnamed Room')}</div><div class="room-row-meta">${cnt} player${cnt!==1?'s':''} ${mine?'· 🔁 Rejoin':''}</div></div><span class="badge ${bc}">${bl}</span>`;
+    div.onclick = ()=>joinRoom(id);
     el.appendChild(div);
   });
 }
 
-// ═══════════════════════════════════════════
-// CREATE / JOIN ROOM
-// ═══════════════════════════════════════════
+// ══════════════════════════════════════════════════
+// CREATE / JOIN / LEAVE
+// ══════════════════════════════════════════════════
 async function createRoom() {
   const ni = document.getElementById('room-name-input');
   const name = ni.value.trim() || `${myName}'s Room`;
   const ref = db.ref(ROOM_PATH).push();
-  await ref.set({
-    name, status: 'waiting', hostPCID: myPCID,
-    createdAt: firebase.database.ServerValue.TIMESTAMP,
-    players: {
-      [myPCID]: { name: myName, pcid: myPCID, score: 0, hand: [], joinedAt: Date.now() }
-    }
-  });
-  ni.value = '';
-  enterRoom(ref.key);
+  await ref.set({ name, status:'waiting', hostPCID:myPCID, createdAt:firebase.database.ServerValue.TIMESTAMP,
+    players:{ [myPCID]:{ name:myName, pcid:myPCID, score:0, hand:[], joinedAt:Date.now() } } });
+  ni.value=''; enterRoom(ref.key);
 }
 
 async function joinRoom(roomId) {
   const snap = await db.ref(`${ROOM_PATH}/${roomId}/players/${myPCID}`).get();
   if (!snap.exists()) {
-    await db.ref(`${ROOM_PATH}/${roomId}/players/${myPCID}`).set({
-      name: myName, pcid: myPCID, score: 0, hand: [], joinedAt: Date.now()
-    });
+    await db.ref(`${ROOM_PATH}/${roomId}/players/${myPCID}`).set({name:myName, pcid:myPCID, score:0, hand:[], joinedAt:Date.now()});
   } else {
     await db.ref(`${ROOM_PATH}/${roomId}/players/${myPCID}/name`).set(myName);
   }
@@ -641,469 +590,375 @@ function enterRoom(roomId) {
   if (lobbyListener) { db.ref(ROOM_PATH).off('value', lobbyListener); lobbyListener = null; }
   roomListener = db.ref(`${ROOM_PATH}/${roomId}`).on('value', snap => {
     if (!snap.exists()) { showLobby(); return; }
-    roomData = snap.val();
-    onRoomUpdate(roomData);
+    roomData = snap.val(); onRoomUpdate(roomData);
   });
 }
 
 function detachRoom() {
-  if (roomListener && currentRoomId) {
-    db.ref(`${ROOM_PATH}/${currentRoomId}`).off('value', roomListener);
-    roomListener = null;
-  }
+  if (roomListener && currentRoomId) { db.ref(`${ROOM_PATH}/${currentRoomId}`).off('value', roomListener); roomListener = null; }
   clearTimeout(advanceTimer);
 }
 
-// ═══════════════════════════════════════════
-// LEAVE ROOM
-// ═══════════════════════════════════════════
 async function leaveRoom() {
   if (!currentRoomId) { showLobby(); return; }
   const snap = await db.ref(`${ROOM_PATH}/${currentRoomId}`).get();
   if (snap.exists()) {
     const d = snap.val();
-    const remaining = Object.keys(d.players || {}).filter(p => p !== myPCID);
+    const rem = Object.keys(d.players||{}).filter(p=>p!==myPCID);
     await db.ref(`${ROOM_PATH}/${currentRoomId}/players/${myPCID}`).remove();
-    if (!remaining.length) {
-      await db.ref(`${ROOM_PATH}/${currentRoomId}`).remove();
-    } else if (d.hostPCID === myPCID && d.status === 'waiting') {
-      await db.ref(`${ROOM_PATH}/${currentRoomId}/hostPCID`).set(remaining[0]);
-    }
+    if (!rem.length) await db.ref(`${ROOM_PATH}/${currentRoomId}`).remove();
+    else if (d.hostPCID===myPCID && d.status==='waiting') await db.ref(`${ROOM_PATH}/${currentRoomId}/hostPCID`).set(rem[0]);
   }
-  detachRoom();
-  showLobby();
+  detachRoom(); showLobby();
 }
 
-// ═══════════════════════════════════════════
-// ROOM UPDATE ROUTER
-// ═══════════════════════════════════════════
+// ══════════════════════════════════════════════════
+// ROOM ROUTER
+// ══════════════════════════════════════════════════
 function onRoomUpdate(d) {
-  if (d.status === 'waiting') {
-    renderWaiting(d);
-  } else {
-    renderGame(d);
-  }
+  if (d.status==='waiting')      renderWaiting(d);
+  else if (d.status==='voting')  renderVotingScreen(d);
+  else                           renderGame(d);
 }
 
-// ═══════════════════════════════════════════
-// WAITING ROOM RENDER
-// ═══════════════════════════════════════════
+// ══════════════════════════════════════════════════
+// WAITING ROOM
+// ══════════════════════════════════════════════════
 function renderWaiting(d) {
   showScreen('screen-room');
-  document.getElementById('room-title').textContent = d.name || 'Room';
+  document.getElementById('room-title').textContent = d.name||'Room';
   document.getElementById('room-id-tag').textContent = currentRoomId.slice(-6).toUpperCase();
-
-  const players = d.players || {};
-  const grid = document.getElementById('wait-players');
-  grid.innerHTML = '';
-  Object.values(players).sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0)).forEach(p => {
-    const div = document.createElement('div');
-    div.className = 'player-tile' + (p.pcid === myPCID ? ' mine' : '');
-    div.innerHTML = `<div class="pname">${esc(p.name)}</div><div class="ptag">${p.pcid === myPCID ? '(you)' : ''} ${d.hostPCID === p.pcid ? '👑' : ''}</div>`;
+  const players = d.players||{};
+  const grid = document.getElementById('wait-players'); grid.innerHTML='';
+  Object.values(players).sort((a,b)=>(a.joinedAt||0)-(b.joinedAt||0)).forEach(p=>{
+    const div=document.createElement('div');
+    div.className='player-tile'+(p.pcid===myPCID?' mine':'');
+    div.innerHTML=`<div class="pname">${esc(p.name)}</div><div class="ptag">${p.pcid===myPCID?'(you)':''} ${d.hostPCID===p.pcid?'👑':''}</div>`;
     grid.appendChild(div);
   });
-
-  const isHost = d.hostPCID === myPCID;
-  document.getElementById('host-ctrl').style.display = isHost ? 'block' : 'none';
-  document.getElementById('nonhost-wait').style.display = isHost ? 'none' : 'block';
+  const isHost = d.hostPCID===myPCID;
+  document.getElementById('host-ctrl').style.display = isHost?'block':'none';
+  document.getElementById('nonhost-wait').style.display = isHost?'none':'block';
   document.getElementById('start-btn').disabled = Object.keys(players).length < 3;
 }
 
-// ═══════════════════════════════════════════
-// START GAME
-// ═══════════════════════════════════════════
-async function startGame() {
-  if (!currentRoomId || !roomData) return;
-  const players = roomData.players || {};
-  const pkeys = Object.keys(players);
-  if (pkeys.length < 3) { toast('Need at least 3 players!'); return; }
+async function triggerVoting() {
+  if (!currentRoomId||!roomData) return;
+  if (Object.keys(roomData.players||{}).length < 3) { toast('Need at least 3 players!'); return; }
+  await db.ref(`${ROOM_PATH}/${currentRoomId}`).update({ status:'voting', votes:null });
+}
 
-  const redDeck = shuffle([...RED_CARDS]);
-  const greenDeck = shuffle([...GREEN_CARDS]);
+// ══════════════════════════════════════════════════
+// VOTING SCREEN
+// ══════════════════════════════════════════════════
+function renderVotingScreen(d) {
+  showScreen('screen-voting');
+  const players = d.players||{};
+  const votes = d.votes||{};
+  const isHost = d.hostPCID===myPCID;
+  myVoteSubmitted = votes[myPCID] !== undefined;
 
-  const updates = { status: 'playing' };
-  let pos = 0;
-  pkeys.forEach(pcid => {
-    updates[`players/${pcid}/score`] = 0;
-    updates[`players/${pcid}/hand`] = redDeck.slice(pos, pos + HAND_SIZE);
-    pos += HAND_SIZE;
+  // Who's voted row
+  const whoRow = document.getElementById('vote-who-row'); whoRow.innerHTML='';
+  Object.values(players).sort((a,b)=>(a.joinedAt||0)-(b.joinedAt||0)).forEach(p=>{
+    const voted = votes[p.pcid]!==undefined;
+    const chip=document.createElement('div');
+    chip.className=`vote-who-chip ${voted?'voted':'pending'}`;
+    chip.textContent=`${voted?'✅':'⏳'} ${p.name}`;
+    whoRow.appendChild(chip);
   });
 
-  // Judge order by join time
+  // Render grid
+  if (myVoteSubmitted) renderLockedGrid(d, toArr(votes[myPCID]), votes, players);
+  else renderSelectGrid(votes, players);
+
+  // Controls
+  document.getElementById('host-skip-btn').style.display = isHost?'block':'none';
+  document.getElementById('submit-vote-btn').disabled = myVoteSubmitted || mySelCats.size===0;
+  document.getElementById('submit-vote-btn').textContent = myVoteSubmitted ? 'Vote Locked In ✅' : 'Lock In Vote ✅';
+
+  // Auto-launch if all voted and I'm host
+  const allVoted = Object.keys(players).every(p=>votes[p]!==undefined);
+  if (allVoted && isHost) launchGame(d);
+}
+
+function renderSelectGrid(votes, players) {
+  const grid = document.getElementById('cat-grid'); grid.innerHTML='';
+  ALL_CAT_IDS.forEach(id=>{
+    const cat = CATEGORIES[id];
+    const isSel = mySelCats.has(id);
+    // voters from others already voted
+    const voterNames = Object.entries(votes)
+      .filter(([pcid,cats])=>toArr(cats).includes(id))
+      .map(([pcid])=>({ name:players[pcid]?.name||'?', isMe:pcid===myPCID }));
+
+    const tile=document.createElement('div');
+    tile.className='cat-tile'+(isSel?' sel':'');
+    tile.id=`ct-${id}`;
+    tile.innerHTML=`
+      <div class="cat-check">✓</div>
+      <div class="cat-emoji">${cat.emoji}</div>
+      <div class="cat-name">${cat.name}</div>
+      <div class="cat-count">${cat.cards.length} cards</div>
+      <div class="cat-voters">${voterNames.map(v=>`<span class="cat-voter${v.isMe?' me':''}">${esc(v.name)}</span>`).join('')}</div>
+    `;
+    tile.onclick=()=>toggleCat(id, tile);
+    grid.appendChild(tile);
+  });
+  updateSelCount();
+}
+
+function renderLockedGrid(d, myVote, votes, players) {
+  const grid = document.getElementById('cat-grid'); grid.innerHTML='';
+  ALL_CAT_IDS.forEach(id=>{
+    const cat = CATEGORIES[id];
+    const isMine = myVote.includes(id);
+    const voterNames = Object.entries(votes)
+      .filter(([pcid,cats])=>toArr(cats).includes(id))
+      .map(([pcid])=>({ name:players[pcid]?.name||'?', isMe:pcid===myPCID }));
+    const totalVotes = voterNames.length;
+    const tile=document.createElement('div');
+    tile.className=`cat-tile locked ${isMine?'sel':''} ${totalVotes>0&&!isMine?'has-votes':''}`;
+    tile.innerHTML=`
+      ${isMine?'<div class="cat-check">✓</div>':''}
+      <div class="cat-emoji">${cat.emoji}</div>
+      <div class="cat-name">${cat.name}</div>
+      <div class="cat-count">${cat.cards.length} cards · <strong>${totalVotes} vote${totalVotes!==1?'s':''}</strong></div>
+      <div class="cat-voters">${voterNames.map(v=>`<span class="cat-voter${v.isMe?' me':''}">${esc(v.name)}</span>`).join('')}</div>
+    `;
+    grid.appendChild(tile);
+  });
+  document.getElementById('vote-sel-count').textContent = myVote.length;
+}
+
+function toggleCat(id, tile) {
+  if (myVoteSubmitted) return;
+  if (mySelCats.has(id)) { mySelCats.delete(id); tile.classList.remove('sel'); }
+  else { mySelCats.add(id); tile.classList.add('sel'); }
+  updateSelCount();
+}
+
+function updateSelCount() {
+  document.getElementById('vote-sel-count').textContent = mySelCats.size;
+  document.getElementById('submit-vote-btn').disabled = mySelCats.size===0;
+}
+
+async function submitVote() {
+  if (myVoteSubmitted||!currentRoomId) return;
+  if (!mySelCats.size) { toast('Pick at least one category!'); return; }
+  myVoteSubmitted = true;
+  await db.ref(`${ROOM_PATH}/${currentRoomId}/votes/${myPCID}`).set([...mySelCats]);
+  // Check if all voted
+  const snap = await db.ref(`${ROOM_PATH}/${currentRoomId}`).get();
+  if (!snap.exists()) return;
+  const d = snap.val();
+  const allVoted = Object.keys(d.players||{}).every(p=>(d.votes||{})[p]!==undefined);
+  if (allVoted && d.hostPCID===myPCID) launchGame(d);
+}
+
+async function hostLockAndStart() {
+  if (!currentRoomId||!roomData) return;
+  const players = roomData.players||{};
+  const votes = roomData.votes||{};
+  const updates = {};
+  Object.keys(players).forEach(pcid=>{ if (!votes[pcid]) updates[`votes/${pcid}`]=ALL_CAT_IDS; });
+  await db.ref(`${ROOM_PATH}/${currentRoomId}`).update(updates);
+  const snap = await db.ref(`${ROOM_PATH}/${currentRoomId}`).get();
+  launchGame(snap.val());
+}
+
+async function launchGame(d) {
+  if (!currentRoomId) return;
+  const result = await db.ref(`${ROOM_PATH}/${currentRoomId}/status`).transaction(cur=>{
+    if (cur==='voting') return 'launching'; return undefined;
+  });
+  if (!result.committed) return;
+
+  const players = d.players||{};
+  const votes = d.votes||{};
+  const pkeys = Object.keys(players);
+  const redDeck = buildRedDeck(votes);
+  const greenDeck = shuffle([...GREEN_CARDS]);
+  const updates = { status:'playing' };
+  let pos=0;
+  pkeys.forEach(pcid=>{ updates[`players/${pcid}/score`]=0; updates[`players/${pcid}/hand`]=redDeck.slice(pos,pos+HAND_SIZE); pos+=HAND_SIZE; });
   const order = judgeOrder(players);
   updates['game'] = {
-    round: 1,
-    phase: 'submitting',
-    judgePCID: order[0],
-    judgeIndex: 0,
-    judgeOrder: order,
-    greenCard: greenDeck[0],
-    greenDeck: greenDeck.slice(1),
-    redDeck: redDeck.slice(pos),
-    submissions: null,
-    roundWinnerPCID: null,
-    roundWinnerCard: null,
-    submissionOrder: null,
+    round:1, phase:'submitting', judgePCID:order[0], judgeIndex:0, judgeOrder:order,
+    greenCard:greenDeck[0], greenDeck:greenDeck.slice(1), redDeck:redDeck.slice(pos),
+    submissions:null, roundWinnerPCID:null, roundWinnerCard:null, submissionOrder:null
   };
   await db.ref(`${ROOM_PATH}/${currentRoomId}`).update(updates);
 }
 
-// ═══════════════════════════════════════════
-// RENDER GAME
-// ═══════════════════════════════════════════
+// ══════════════════════════════════════════════════
+// GAME RENDER
+// ══════════════════════════════════════════════════
 function renderGame(d) {
   showScreen('screen-game');
-  const game = d.game || {};
-  const players = d.players || {};
-  const myPlayer = players[myPCID] || {};
-  const isJudge = game.judgePCID === myPCID;
-  const judgePlayer = players[game.judgePCID] || {};
-  const phase = game.phase;
-
-  document.getElementById('round-tag').textContent = `Round ${game.round || 1}`;
+  const game=d.game||{}, players=d.players||{}, myP=players[myPCID]||{};
+  const isJudge=game.judgePCID===myPCID, judgeP=players[game.judgePCID]||{};
+  document.getElementById('round-tag').textContent=`Round ${game.round||1}`;
   renderScores(players, game);
-
-  const body = document.getElementById('game-body');
-  body.innerHTML = '';
-
-  if (phase === 'gameover') { renderGameOver(d, body); return; }
-
-  // Green card
-  const gcWrap = document.createElement('div');
-  gcWrap.className = 'green-card-wrap';
-  gcWrap.innerHTML = `
-    <div class="judge-label">⚖️ ${esc(judgePlayer.name || '?')} is the Judge</div>
-    <div class="card green green-display card-lg no-hover">
-      <div class="card-stripe">Green Apple</div>
-      <div class="card-body">${esc(game.greenCard || '…')}</div>
-    </div>
-  `;
+  const body=document.getElementById('game-body'); body.innerHTML='';
+  if (game.phase==='gameover') { renderGameOver(d,body); return; }
+  const gcWrap=document.createElement('div'); gcWrap.className='green-card-wrap';
+  gcWrap.innerHTML=`<div class="judge-label">⚖️ ${esc(judgeP.name||'?')} is the Judge</div><div class="card green green-display card-lg no-hover"><div class="card-stripe">Green Apple</div><div class="card-body">${esc(game.greenCard||'…')}</div></div>`;
   body.appendChild(gcWrap);
-
-  if (phase === 'submitting') renderSubmitting(d, body, isJudge, toArr(myPlayer.hand), game, players);
-  else if (phase === 'judging') renderJudging(body, isJudge, game, players);
-  else if (phase === 'results') renderResults(d, body, game, players);
+  if (game.phase==='submitting') renderSubmitting(d,body,isJudge,toArr(myP.hand),game,players);
+  else if (game.phase==='judging') renderJudging(body,isJudge,game,players);
+  else if (game.phase==='results') renderResults(d,body,game,players);
 }
 
-// ═══════════════════════════════════════════
-// SCORES
-// ═══════════════════════════════════════════
 function renderScores(players, game) {
-  const row = document.getElementById('scores-row');
-  row.innerHTML = '';
-  Object.values(players).sort((a, b) => (b.score || 0) - (a.score || 0)).forEach(p => {
-    const chip = document.createElement('div');
-    const j = p.pcid === game.judgePCID;
-    const m = p.pcid === myPCID;
-    chip.className = `score-chip${j ? ' is-judge' : ''}${m ? ' is-me' : ''}`;
-    chip.innerHTML = `${j ? '⚖️ ' : ''}${esc(p.name)}<span class="pts">${p.score || 0}</span>`;
+  const row=document.getElementById('scores-row'); row.innerHTML='';
+  Object.values(players).sort((a,b)=>(b.score||0)-(a.score||0)).forEach(p=>{
+    const chip=document.createElement('div');
+    chip.className=`score-chip${p.pcid===game.judgePCID?' is-judge':''}${p.pcid===myPCID?' is-me':''}`;
+    chip.innerHTML=`${p.pcid===game.judgePCID?'⚖️ ':''}${esc(p.name)}<span class="pts">${p.score||0}</span>`;
     row.appendChild(chip);
   });
 }
 
-// ═══════════════════════════════════════════
-// SUBMITTING PHASE
-// ═══════════════════════════════════════════
 function renderSubmitting(d, body, isJudge, myHand, game, players) {
-  const subs = game.submissions || {};
-  const nonJudges = Object.keys(players).filter(p => p !== game.judgePCID);
-
-  const chipsHtml = () => nonJudges.map(p => {
-    const done = subs[p] !== undefined;
-    return `<span class="sub-chip ${done ? 'done' : 'pending'}">${esc(players[p]?.name || '?')} ${done ? '✅' : '⏳'}</span>`;
-  }).join('');
-
+  const subs=game.submissions||{};
+  const nonJ=Object.keys(players).filter(p=>p!==game.judgePCID);
+  const chipsHtml=()=>nonJ.map(p=>`<span class="sub-chip ${subs[p]!==undefined?'done':'pending'}">${esc(players[p]?.name||'?')} ${subs[p]!==undefined?'✅':'⏳'}</span>`).join('');
   if (isJudge) {
-    const allIn = nonJudges.length > 0 && nonJudges.every(p => subs[p] !== undefined);
-
-    const ws = document.createElement('div');
-    ws.className = 'waiting-state';
-    ws.innerHTML = `
-      <p class="phase-heading">⚖️ You're the Judge!</p>
-      <p class="phase-sub">Waiting for players to pick their best card…</p>
-      <div class="submit-chips">${chipsHtml()}</div>
-      <div class="dot-loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-    `;
+    const allIn=nonJ.length>0&&nonJ.every(p=>subs[p]!==undefined);
+    const ws=document.createElement('div'); ws.className='waiting-state';
+    ws.innerHTML=`<p class="phase-heading">⚖️ You're the Judge!</p><p class="phase-sub">Waiting for players…</p><div class="sub-chips">${chipsHtml()}</div><div class="dot-loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
     body.appendChild(ws);
-
     if (allIn) {
-      // Transition to judging; write shuffled submission order
-      const shuffledOrder = shuffle(nonJudges);
-      db.ref(`${ROOM_PATH}/${currentRoomId}/game`).transaction(g => {
-        if (g && g.phase === 'submitting') {
-          g.phase = 'judging';
-          g.submissionOrder = shuffledOrder;
-          return g;
-        }
-        return undefined;
+      const ord=shuffle(nonJ);
+      db.ref(`${ROOM_PATH}/${currentRoomId}/game`).transaction(g=>{
+        if (g&&g.phase==='submitting') { g.phase='judging'; g.submissionOrder=ord; return g; } return undefined;
       });
     }
-
-  } else if (subs[myPCID] !== undefined) {
-    const ws = document.createElement('div');
-    ws.className = 'waiting-state';
-    ws.innerHTML = `
-      <p class="phase-heading">Card submitted! ✅</p>
-      <p class="phase-sub">You played: <strong>"${esc(subs[myPCID])}"</strong></p>
-      <div class="submit-chips">${chipsHtml()}</div>
-      <div class="dot-loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-    `;
+  } else if (subs[myPCID]!==undefined) {
+    const ws=document.createElement('div'); ws.className='waiting-state';
+    ws.innerHTML=`<p class="phase-heading">Card submitted! ✅</p><p class="phase-sub">You played: <strong>"${esc(subs[myPCID])}"</strong></p><div class="sub-chips">${chipsHtml()}</div><div class="dot-loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
     body.appendChild(ws);
-
   } else {
-    const hs = document.createElement('div');
-    hs.className = 'hand-section';
-    hs.innerHTML = `<div class="hand-lbl">🃏 Your Hand — tap a card to play it</div>`;
-    const scroll = document.createElement('div');
-    scroll.className = 'hand-scroll';
-    (myHand || []).forEach(cardText => {
-      const c = document.createElement('div');
-      c.className = 'card red hand-card card-sm';
-      c.innerHTML = `<div class="card-stripe">Red Apple</div><div class="card-body">${esc(cardText)}</div>`;
-      c.onclick = () => submitCard(cardText);
-      scroll.appendChild(c);
+    const hs=document.createElement('div'); hs.className='hand-section';
+    hs.innerHTML=`<div class="hand-lbl">🃏 Your Hand — tap a card to play it</div>`;
+    const scroll=document.createElement('div'); scroll.className='hand-scroll';
+    (myHand||[]).forEach(ct=>{
+      const c=document.createElement('div'); c.className='card red hand-card card-sm';
+      c.innerHTML=`<div class="card-stripe">Red Apple</div><div class="card-body">${esc(ct)}</div>`;
+      c.onclick=()=>submitCard(ct); scroll.appendChild(c);
     });
-    hs.appendChild(scroll);
-    body.appendChild(hs);
+    hs.appendChild(scroll); body.appendChild(hs);
   }
 }
 
 async function submitCard(cardText) {
-  const myHand = toArr(roomData?.players?.[myPCID]?.hand || []);
-  const newHand = myHand.filter(c => c !== cardText);
+  const myHand=toArr(roomData?.players?.[myPCID]?.hand||[]);
   await db.ref(`${ROOM_PATH}/${currentRoomId}`).update({
-    [`players/${myPCID}/hand`]: newHand,
-    [`game/submissions/${myPCID}`]: cardText
+    [`players/${myPCID}/hand`]:myHand.filter(c=>c!==cardText),
+    [`game/submissions/${myPCID}`]:cardText
   });
 }
 
-// ═══════════════════════════════════════════
-// JUDGING PHASE
-// ═══════════════════════════════════════════
 function renderJudging(body, isJudge, game, players) {
-  const subs = game.submissions || {};
-  const order = toArr(game.submissionOrder || []);
-  // Use stored order or fallback to Object.keys
-  const subOrder = order.length ? order : Object.keys(subs);
-
+  const subs=game.submissions||{};
+  const subOrder=toArr(game.submissionOrder||[]).length?toArr(game.submissionOrder):Object.keys(subs);
   if (isJudge) {
-    const title = document.createElement('p');
-    title.className = 'phase-heading';
-    title.textContent = '⚖️ Pick the best match!';
+    const title=document.createElement('p'); title.className='phase-heading'; title.textContent='⚖️ Pick the best match!';
     body.appendChild(title);
-
-    const grid = document.createElement('div');
-    grid.className = 'sub-grid';
-    subOrder.forEach(pcid => {
-      const cardText = subs[pcid];
-      if (cardText === undefined) return;
-      const c = document.createElement('div');
-      c.className = 'card red sub-card card-md';
-      c.innerHTML = `<div class="card-stripe">Red Apple</div><div class="card-body">${esc(cardText)}</div>`;
-      c.onclick = () => pickWinner(pcid, cardText);
-      grid.appendChild(c);
+    const grid=document.createElement('div'); grid.className='sub-grid';
+    subOrder.forEach(pcid=>{ const ct=subs[pcid]; if(ct===undefined)return;
+      const c=document.createElement('div'); c.className='card red sub-card card-md';
+      c.innerHTML=`<div class="card-stripe">Red Apple</div><div class="card-body">${esc(ct)}</div>`;
+      c.onclick=()=>pickWinner(pcid,ct); grid.appendChild(c);
     });
     body.appendChild(grid);
-
   } else {
-    const ws = document.createElement('div');
-    ws.className = 'waiting-state';
-    ws.innerHTML = `
-      <p class="phase-heading">🤔 Judge is deciding…</p>
-      <p class="phase-sub">${esc(players[game.judgePCID]?.name || '?')} is picking the best card!</p>
-      <div class="dot-loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-    `;
+    const ws=document.createElement('div'); ws.className='waiting-state';
+    ws.innerHTML=`<p class="phase-heading">🤔 Judge is deciding…</p><p class="phase-sub">${esc(players[game.judgePCID]?.name||'?')} is picking!</p><div class="dot-loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
     body.appendChild(ws);
   }
 }
 
 async function pickWinner(winnerPCID, cardText) {
-  const players = roomData?.players || {};
-  const newScore = (players[winnerPCID]?.score || 0) + 1;
+  const players=roomData?.players||{};
   await db.ref(`${ROOM_PATH}/${currentRoomId}`).update({
-    'game/phase': 'results',
-    'game/roundWinnerPCID': winnerPCID,
-    'game/roundWinnerCard': cardText,
-    [`players/${winnerPCID}/score`]: newScore,
+    'game/phase':'results','game/roundWinnerPCID':winnerPCID,'game/roundWinnerCard':cardText,
+    [`players/${winnerPCID}/score`]:(players[winnerPCID]?.score||0)+1
   });
 }
 
-// ═══════════════════════════════════════════
-// RESULTS PHASE
-// ═══════════════════════════════════════════
 function renderResults(d, body, game, players) {
-  const winner = players[game.roundWinnerPCID] || {};
-  const isWinner = game.roundWinnerPCID === myPCID;
-  if (isWinner) confetti(35);
-
-  const ra = document.createElement('div');
-  ra.className = 'results-area anim-pop';
-  ra.innerHTML = `
-    <div style="font-size:3rem">${isWinner ? '🏆' : '🎉'}</div>
-    <div class="winner-name-big">${esc(winner.name || '?')} wins the round!</div>
-    <div class="card red result-card-wrap card-md no-hover">
-      <div class="card-stripe">Red Apple</div>
-      <div class="card-body">${esc(game.roundWinnerCard || '?')}</div>
-    </div>
+  const winner=players[game.roundWinnerPCID]||{};
+  if (game.roundWinnerPCID===myPCID) confetti(35);
+  const ra=document.createElement('div'); ra.className='results-area anim-pop';
+  ra.innerHTML=`
+    <div style="font-size:3rem">${game.roundWinnerPCID===myPCID?'🏆':'🎉'}</div>
+    <div class="winner-name-big">${esc(winner.name||'?')} wins the round!</div>
+    <div class="card red no-hover" style="width:155px"><div class="card-stripe">Red Apple</div><div class="card-body" style="font-size:clamp(1rem,3vw,1.35rem);padding:14px 12px 18px">${esc(game.roundWinnerCard||'?')}</div></div>
     <div class="matched-label">matched with</div>
-    <div class="card green no-hover" style="width:148px">
-      <div class="card-stripe">Green Apple</div>
-      <div class="card-body" style="font-size:1.15rem; padding:12px 10px 16px">${esc(game.greenCard || '?')}</div>
-    </div>
-    <div class="score-chip" style="font-size:0.9rem; padding:7px 18px">
-      ${esc(winner.name)}'s score: <span class="pts">${winner.score || 0}</span>
-    </div>
+    <div class="card green no-hover" style="width:148px"><div class="card-stripe">Green Apple</div><div class="card-body" style="font-size:1.15rem;padding:12px 10px 16px">${esc(game.greenCard||'?')}</div></div>
+    <div class="score-chip" style="font-size:.9rem;padding:7px 18px">${esc(winner.name)}'s score: <span class="pts">${winner.score||0}</span></div>
   `;
-
-  const nextBtn = document.createElement('button');
-  nextBtn.className = 'btn btn-primary';
-  nextBtn.textContent = 'Next Round →';
-  nextBtn.onclick = () => advanceRound();
-  ra.appendChild(nextBtn);
-
-  body.appendChild(ra);
-
-  // Auto-advance after 6s (judge's client only)
+  const nb=document.createElement('button'); nb.className='btn btn-primary'; nb.textContent='Next Round →'; nb.onclick=advanceRound;
+  ra.appendChild(nb); body.appendChild(ra);
   clearTimeout(advanceTimer);
-  if (game.judgePCID === myPCID) {
-    advanceTimer = setTimeout(() => {
-      if (roomData?.game?.phase === 'results') advanceRound();
-    }, 6000);
-  }
+  if (game.judgePCID===myPCID) advanceTimer=setTimeout(()=>{ if(roomData?.game?.phase==='results') advanceRound(); }, 6000);
 }
 
-// ═══════════════════════════════════════════
-// ADVANCE ROUND
-// ═══════════════════════════════════════════
 async function advanceRound() {
-  if (!currentRoomId || !roomData) return;
+  if (!currentRoomId||!roomData) return;
   clearTimeout(advanceTimer);
-
-  // Lock with transaction so only one client runs this
-  const phaseRef = db.ref(`${ROOM_PATH}/${currentRoomId}/game/phase`);
-  const result = await phaseRef.transaction(cur => {
-    if (cur === 'results') return 'advancing';
-    return undefined;
-  });
-  if (!result.committed) return;
-
-  const d = roomData;
-  const game = d.game || {};
-  const players = d.players || {};
-
-  // Check win
-  const champion = Object.values(players).find(p => (p.score || 0) >= WIN_SCORE);
-  if (champion) {
-    await db.ref(`${ROOM_PATH}/${currentRoomId}`).update({
-      status: 'finished',
-      'game/phase': 'gameover'
-    });
-    return;
+  const res=await db.ref(`${ROOM_PATH}/${currentRoomId}/game/phase`).transaction(cur=>cur==='results'?'advancing':undefined);
+  if (!res.committed) return;
+  const d=roomData, game=d.game||{}, players=d.players||{};
+  if (Object.values(players).find(p=>(p.score||0)>=WIN_SCORE)) {
+    await db.ref(`${ROOM_PATH}/${currentRoomId}`).update({status:'finished','game/phase':'gameover'}); return;
   }
-
-  // Deal replacement cards
-  const updates = {};
-  const redDeck = [...toArr(game.redDeck)];
-  const subs = game.submissions || {};
-
-  Object.keys(subs).forEach(pcid => {
-    const hand = toArr(players[pcid]?.hand || []);
-    if (redDeck.length > 0) {
-      updates[`players/${pcid}/hand`] = [...hand, redDeck.shift()];
-    }
-  });
-
-  const greenDeck = [...toArr(game.greenDeck)];
-  const nextGreen = greenDeck.length > 0 ? greenDeck.shift() : GREEN_CARDS[Math.floor(Math.random() * GREEN_CARDS.length)];
-  const nextJ = nextJudge(players, game.judgePCID);
-
-  updates['game'] = {
-    round: (game.round || 1) + 1,
-    phase: 'submitting',
-    judgePCID: nextJ,
-    judgeIndex: (game.judgeIndex || 0) + 1,
-    judgeOrder: toArr(game.judgeOrder),
-    greenCard: nextGreen,
-    greenDeck: greenDeck,
-    redDeck: redDeck,
-    submissions: null,
-    roundWinnerPCID: null,
-    roundWinnerCard: null,
-    submissionOrder: null,
+  const updates={}, redDeck=[...toArr(game.redDeck)], subs=game.submissions||{};
+  Object.keys(subs).forEach(pcid=>{ const h=toArr(players[pcid]?.hand||[]); if(redDeck.length>0) updates[`players/${pcid}/hand`]=[...h,redDeck.shift()]; });
+  const greenDeck=[...toArr(game.greenDeck)];
+  const nextGreen=greenDeck.length>0?greenDeck.shift():GREEN_CARDS[Math.floor(Math.random()*GREEN_CARDS.length)];
+  updates['game']={
+    round:(game.round||1)+1, phase:'submitting', judgePCID:nextJudge(players,game.judgePCID),
+    judgeIndex:(game.judgeIndex||0)+1, judgeOrder:toArr(game.judgeOrder),
+    greenCard:nextGreen, greenDeck, redDeck,
+    submissions:null, roundWinnerPCID:null, roundWinnerCard:null, submissionOrder:null
   };
   await db.ref(`${ROOM_PATH}/${currentRoomId}`).update(updates);
 }
 
-// ═══════════════════════════════════════════
-// GAME OVER
-// ═══════════════════════════════════════════
 function renderGameOver(d, body) {
-  const players = d.players || {};
-  const sorted = Object.values(players).sort((a, b) => (b.score || 0) - (a.score || 0));
-  const topScore = sorted[0]?.score || 0;
-
+  const players=d.players||{}, sorted=Object.values(players).sort((a,b)=>(b.score||0)-(a.score||0));
   confetti(70);
-
-  const area = document.createElement('div');
-  area.className = 'gameover-area';
-  area.innerHTML = `
-    <div style="text-align:center">
-      <div style="font-size:3.5rem">🏆</div>
-      <div class="title-font" style="font-size:clamp(1.8rem,6vw,2.5rem); color:var(--gold); text-shadow:2px 3px 0 rgba(0,0,0,.4)">
-        ${esc(sorted[0]?.name || '?')} Wins!
-      </div>
-    </div>
-  `;
-
-  const list = document.createElement('div');
-  list.className = 'final-list';
-  const emojis = ['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣'];
-  sorted.forEach((p, i) => {
-    const row = document.createElement('div');
-    row.className = 'final-row' + ((p.score || 0) >= topScore ? ' top' : '');
-    row.innerHTML = `
-      <span class="fr-rank">${emojis[i] || (i + 1) + '.'}</span>
-      <span class="fr-name">${esc(p.name)}${p.pcid === myPCID ? ' (you)' : ''}</span>
-      <span class="fr-pts">${p.score || 0} pts</span>
-    `;
+  const area=document.createElement('div'); area.className='gameover-area';
+  area.innerHTML=`<div style="text-align:center"><div style="font-size:3.5rem">🏆</div><div class="title-font" style="font-size:clamp(1.8rem,6vw,2.5rem);color:var(--gold);text-shadow:2px 3px 0 rgba(0,0,0,.4)">${esc(sorted[0]?.name||'?')} Wins!</div></div>`;
+  const list=document.createElement('div'); list.className='final-list';
+  const emojis=['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣'];
+  sorted.forEach((p,i)=>{
+    const row=document.createElement('div'); const top=(p.score||0)>=(sorted[0]?.score||0);
+    row.className='final-row'+(top?' top':'');
+    row.innerHTML=`<span class="fr-rank">${emojis[i]||(i+1)+'.'}</span><span class="fr-name">${esc(p.name)}${p.pcid===myPCID?' (you)':''}</span><span class="fr-pts">${p.score||0} pts</span>`;
     list.appendChild(row);
   });
   area.appendChild(list);
-
-  const btns = document.createElement('div');
-  btns.className = 'btn-row';
-  const isHost = d.hostPCID === myPCID;
-  if (isHost) {
-    const again = document.createElement('button');
-    again.className = 'btn btn-primary';
-    again.textContent = '🔄 Play Again';
-    again.onclick = playAgain;
-    btns.appendChild(again);
+  const btns=document.createElement('div'); btns.className='btn-row';
+  if (d.hostPCID===myPCID) {
+    const a=document.createElement('button'); a.className='btn btn-primary'; a.textContent='🔄 Play Again'; a.onclick=playAgain; btns.appendChild(a);
   }
-  const lobby = document.createElement('button');
-  lobby.className = 'btn btn-ghost';
-  lobby.textContent = '🏠 Lobby';
-  lobby.onclick = showLobby;
-  btns.appendChild(lobby);
-  area.appendChild(btns);
-
-  body.appendChild(area);
+  const lb=document.createElement('button'); lb.className='btn btn-ghost'; lb.textContent='🏠 Lobby'; lb.onclick=showLobby;
+  btns.appendChild(lb); area.appendChild(btns); body.appendChild(area);
 }
 
 async function playAgain() {
-  if (!currentRoomId || !roomData) return;
-  const players = roomData.players || {};
-  const updates = { status: 'waiting', game: null };
-  Object.keys(players).forEach(pcid => {
-    updates[`players/${pcid}/score`] = 0;
-    updates[`players/${pcid}/hand`] = [];
-  });
+  if (!currentRoomId||!roomData) return;
+  const players=roomData.players||{};
+  const updates={status:'waiting',game:null,votes:null};
+  myVoteSubmitted=false; mySelCats=new Set(ALL_CAT_IDS);
+  Object.keys(players).forEach(pcid=>{ updates[`players/${pcid}/score`]=0; updates[`players/${pcid}/hand`]=[]; });
   await db.ref(`${ROOM_PATH}/${currentRoomId}`).update(updates);
 }
 
-// ═══════════════════════════════════════════
-// BOOT
-// ═══════════════════════════════════════════
 init();
 </script>
 </body>

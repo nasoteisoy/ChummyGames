@@ -1,1059 +1,1110 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Treasure Hunt - Multiplayer Co-op</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            touch-action: none;
-            -webkit-user-select: none;
-            user-select: none;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Apples & Apples 🍎</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <style>
+    :root {
+      --felt: #1B4332;
+      --felt-mid: #245C40;
+      --felt-light: #2D6A4F;
+      --cream: #FFFEF0;
+      --green-card: #40916C;
+      --red-card: #C1121F;
+      --gold: #FFD60A;
+      --gold-dark: #B89A00;
+      --text-dark: #111;
+      --shadow: 0 4px 18px rgba(0,0,0,0.45);
+      --shadow-lg: 0 10px 40px rgba(0,0,0,0.55);
+    }
 
-        body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            overflow: hidden;
-            width: 100vw;
-            height: 100vh;
-        }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        #gameContainer {
-            display: none;
-            width: 100%;
-            height: 100%;
-            position: relative;
-        }
+    html, body {
+      height: 100%;
+      font-family: 'Nunito', sans-serif;
+      background: var(--felt);
+      background-image:
+        radial-gradient(ellipse at 15% 15%, rgba(64,145,108,0.35) 0%, transparent 55%),
+        radial-gradient(ellipse at 85% 85%, rgba(10,30,20,0.7) 0%, transparent 55%),
+        repeating-linear-gradient(45deg, rgba(0,0,0,0.025) 0px, rgba(0,0,0,0.025) 1px, transparent 1px, transparent 9px);
+      color: #fff;
+      overflow-x: hidden;
+    }
 
-        #gameCanvas {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #1a1a2e;
-            border: 3px solid #16213e;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
-        }
+    .screen { display: none; min-height: 100vh; flex-direction: column; align-items: center; padding: 20px; }
+    .screen.active { display: flex; }
 
-        #ui {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            color: white;
-            font-size: 18px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-            z-index: 10;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 15px;
-            border-radius: 10px;
-        }
+    /* ─── TYPOGRAPHY ─── */
+    .title-font { font-family: 'Fredoka One', cursive; }
+    h1 { font-family: 'Fredoka One', cursive; font-size: clamp(2.4rem, 9vw, 4rem); color: var(--gold); text-shadow: 3px 4px 0 rgba(0,0,0,0.4); letter-spacing: 1px; }
+    h2 { font-family: 'Fredoka One', cursive; font-size: clamp(1.4rem, 5vw, 1.9rem); color: var(--cream); }
 
-        #minimap {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 200px;
-            height: 200px;
-            background: rgba(0, 0, 0, 0.8);
-            border: 2px solid #4CAF50;
-            border-radius: 5px;
-            z-index: 10;
-        }
+    /* ─── CARD BASE ─── */
+    .card {
+      background: var(--cream);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      color: var(--text-dark);
+      user-select: none;
+      transition: transform 0.18s cubic-bezier(.34,1.56,.64,1), box-shadow 0.18s;
+      position: relative;
+      cursor: pointer;
+    }
+    .card:hover  { transform: translateY(-7px) rotate(-1.5deg); box-shadow: var(--shadow-lg); }
+    .card:active { transform: translateY(-3px) scale(0.96); }
+    .card.selected {
+      outline: 3px solid var(--gold);
+      transform: translateY(-12px) rotate(1.5deg);
+      box-shadow: 0 14px 36px rgba(0,0,0,0.55), 0 0 0 4px rgba(255,214,10,0.3);
+    }
+    .card.no-hover { cursor: default; }
+    .card.no-hover:hover { transform: none; box-shadow: var(--shadow); }
 
-        #joystickContainer {
-            position: absolute;
-            bottom: 30px;
-            left: 30px;
-            width: 150px;
-            height: 150px;
-            z-index: 100;
-        }
+    .card-stripe { padding: 6px 12px; font-family: 'Fredoka One', cursive; font-size: 0.68rem; letter-spacing: 2px; text-transform: uppercase; color: #fff; }
+    .card.green .card-stripe { background: var(--green-card); }
+    .card.red   .card-stripe { background: var(--red-card); }
 
-        #joystickOuter {
-            width: 150px;
-            height: 150px;
-            background: rgba(255, 255, 255, 0.2);
-            border: 3px solid rgba(255, 255, 255, 0.5);
-            border-radius: 50%;
-            position: relative;
-        }
+    .card-body { padding: 14px 12px 20px; font-family: 'Fredoka One', cursive; text-align: center; line-height: 1.25; color: var(--text-dark); }
 
-        #joystickInner {
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.7);
-            border: 3px solid white;
-            border-radius: 50%;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
+    /* card size variants */
+    .card-lg  .card-body { font-size: clamp(1.6rem, 5vw, 2.2rem); padding: 22px 16px 28px; }
+    .card-md  .card-body { font-size: clamp(1rem, 3vw, 1.35rem); padding: 14px 12px 18px; }
+    .card-sm  .card-body { font-size: 0.92rem; padding: 10px 8px 14px; }
 
-        #colorButtons {
-            position: absolute;
-            bottom: 30px;
-            right: 30px;
-            display: flex;
-            gap: 10px;
-            z-index: 100;
-        }
+    /* ─── BUTTONS ─── */
+    .btn {
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.05rem;
+      padding: 11px 26px;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 0 rgba(0,0,0,0.35);
+      transition: transform 0.12s, box-shadow 0.12s;
+      white-space: nowrap;
+    }
+    .btn:hover   { transform: translateY(-2px); box-shadow: 0 6px 0 rgba(0,0,0,0.35); }
+    .btn:active  { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.35); }
+    .btn:disabled{ opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-primary { background: var(--gold); color: #111; }
+    .btn-ghost   { background: rgba(255,255,255,0.12); color: #fff; border: 1.5px solid rgba(255,255,255,0.2); }
+    .btn-danger  { background: var(--red-card); color: #fff; }
+    .btn-green   { background: var(--green-card); color: #fff; }
+    .btn-sm      { font-size: 0.82rem; padding: 7px 16px; }
 
-        .colorBtn {
-            width: 50px;
-            height: 50px;
-            border: 3px solid white;
-            border-radius: 50%;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
+    /* ─── INPUT ─── */
+    .inp {
+      font-family: 'Nunito', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 12px 18px;
+      border: 2.5px solid rgba(255,255,255,0.18);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.09);
+      color: #fff;
+      outline: none;
+      width: 100%;
+      transition: border-color 0.2s;
+    }
+    .inp::placeholder { color: rgba(255,255,255,0.35); }
+    .inp:focus { border-color: var(--gold); }
 
-        .colorBtn:active {
-            transform: scale(0.9);
-        }
+    /* ─── PANEL ─── */
+    .panel {
+      background: rgba(0,0,0,0.22);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 18px;
+      padding: 18px;
+      backdrop-filter: blur(6px);
+    }
 
-        .colorBtn.selected {
-            border: 4px solid gold;
-            box-shadow: 0 0 20px gold;
-        }
+    /* ─── SECTION TITLE ─── */
+    .section-title { font-family: 'Fredoka One', cursive; font-size: 1.1rem; color: var(--gold); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
 
-        #nameButton {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 16px;
-            z-index: 100;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-        }
+    /* ─── LOGIN SCREEN ─── */
+    #screen-login { justify-content: center; gap: 28px; }
+    .login-box { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 14px; }
+    .login-sub { text-align: center; color: rgba(255,255,255,0.55); font-size: 0.95rem; font-weight: 600; }
 
-        #nameButton:active {
-            transform: translateX(-50%) scale(0.95);
-        }
+    /* ─── LOBBY SCREEN ─── */
+    #screen-lobby { gap: 18px; width: 100%; max-width: 620px; margin: 0 auto; align-items: stretch; }
+    .lobby-topbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .name-pill { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.13); border-radius: 50px; padding: 7px 16px; font-weight: 800; font-size: 0.9rem; }
+    .name-pill .n { color: var(--gold); }
+    .room-list { display: flex; flex-direction: column; gap: 9px; }
+    .room-row {
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(0,0,0,0.2);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 13px 16px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.15s;
+      gap: 10px;
+    }
+    .room-row:hover { background: rgba(255,255,255,0.09); transform: translateX(4px); }
+    .room-row.rejoining { border-color: rgba(255,214,10,0.35); background: rgba(255,214,10,0.07); }
+    .room-row-name { font-weight: 800; font-size: 0.95rem; }
+    .room-row-meta { font-size: 0.76rem; color: rgba(255,255,255,0.45); margin-top: 2px; }
+    .badge { font-size: 0.72rem; font-weight: 800; padding: 4px 10px; border-radius: 50px; flex-shrink: 0; }
+    .badge-wait { background: rgba(255,214,10,0.18); color: var(--gold); }
+    .badge-play { background: rgba(64,145,108,0.3); color: #74C69D; }
+    .empty-rooms { text-align: center; padding: 28px; color: rgba(255,255,255,0.35); font-size: 0.9rem; }
+    .create-row { display: flex; gap: 10px; }
+    .divider { border: none; border-top: 1px solid rgba(255,255,255,0.08); }
 
-        #setupScreen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
+    /* ─── WAITING ROOM ─── */
+    #screen-room { gap: 18px; width: 100%; max-width: 620px; margin: 0 auto; align-items: stretch; }
+    .room-header { display: flex; flex-direction: column; gap: 4px; }
+    .room-id-tag { font-size: 0.78rem; color: rgba(255,255,255,0.35); letter-spacing: 3px; font-weight: 700; }
+    .players-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+    .player-tile { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.09); border-radius: 12px; padding: 14px 12px; text-align: center; }
+    .player-tile.mine { border-color: var(--gold); background: rgba(255,214,10,0.09); }
+    .player-tile .pname { font-weight: 800; font-size: 0.92rem; word-break: break-word; }
+    .player-tile .ptag  { font-size: 0.72rem; color: rgba(255,255,255,0.38); margin-top: 3px; }
 
-        .setupCard {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
-        }
+    /* ─── GAME SCREEN ─── */
+    #screen-game { padding: 0; gap: 0; max-width: 720px; margin: 0 auto; width: 100%; }
 
-        .setupCard h1 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 32px;
-        }
+    .game-topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px;
+      background: rgba(0,0,0,0.32);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      width: 100%; gap: 8px; flex-wrap: wrap;
+    }
+    .round-tag { font-family: 'Fredoka One', cursive; font-size: 0.88rem; color: rgba(255,255,255,0.55); background: rgba(255,255,255,0.08); padding: 4px 12px; border-radius: 50px; }
+    .scores-row { display: flex; gap: 7px; flex-wrap: wrap; }
+    .score-chip { display: flex; align-items: center; gap: 5px; background: rgba(0,0,0,0.28); border: 1px solid rgba(255,255,255,0.1); border-radius: 50px; padding: 4px 11px; font-size: 0.78rem; font-weight: 800; }
+    .score-chip.is-judge { border-color: rgba(255,214,10,0.55); color: var(--gold); }
+    .score-chip.is-me    { border-color: rgba(255,255,255,0.3); }
+    .score-chip .pts     { font-family: 'Fredoka One', cursive; font-size: 1rem; color: var(--gold); margin-left: 2px; }
 
-        .setupCard p {
-            color: #666;
-            margin-bottom: 30px;
-        }
+    .game-body { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 16px; width: 100%; }
 
-        .setupCard input {
-            width: 100%;
-            padding: 15px;
-            font-size: 18px;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            text-align: center;
-            text-transform: uppercase;
-        }
+    .phase-heading { font-family: 'Fredoka One', cursive; font-size: clamp(1.2rem, 4vw, 1.7rem); text-align: center; }
+    .phase-sub { font-size: 0.87rem; color: rgba(255,255,255,0.5); text-align: center; margin-top: -10px; }
 
-        .setupCard button {
-            width: 100%;
-            padding: 15px;
-            font-size: 18px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
+    /* green card center display */
+    .green-card-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .judge-label { font-size: 0.82rem; font-weight: 800; color: var(--gold); }
+    .green-display { width: 170px; }
 
-        .setupCard button:hover {
-            background: #45a049;
-        }
+    /* hand */
+    .hand-section { width: 100%; }
+    .hand-lbl { font-size: 0.8rem; font-weight: 700; color: rgba(255,255,255,0.45); margin-bottom: 6px; }
+    .hand-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 8px 2px 18px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent; }
+    .hand-scroll::-webkit-scrollbar { height: 3px; }
+    .hand-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+    .hand-card { min-width: 128px; width: 128px; flex-shrink: 0; }
 
-        .setupCard button:active {
-            transform: scale(0.98);
-        }
+    /* submissions grid */
+    .sub-grid { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; width: 100%; }
+    .sub-card { width: 148px; flex-shrink: 0; }
 
-        #statusMessage {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            color: white;
-            padding: 30px 50px;
-            border-radius: 15px;
-            font-size: 24px;
-            z-index: 2000;
-            display: none;
-            text-align: center;
-        }
+    /* waiting state */
+    .waiting-state { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 20px; width: 100%; }
+    .dot-loader { display: flex; gap: 8px; }
+    .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--gold); animation: dotBounce 1.3s infinite ease-in-out; }
+    .dot:nth-child(2) { animation-delay: 0.18s; }
+    .dot:nth-child(3) { animation-delay: 0.36s; }
+    @keyframes dotBounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-15px)} }
 
-        .gameOver {
-            background: rgba(255, 0, 0, 0.9) !important;
-        }
+    .submit-chips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+    .sub-chip { font-size: 0.77rem; font-weight: 800; padding: 4px 11px; border-radius: 50px; }
+    .sub-chip.done    { background: rgba(64,145,108,0.35); color: #74C69D; }
+    .sub-chip.pending { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.4); }
 
-        .levelComplete {
-            background: rgba(76, 175, 80, 0.9) !important;
-        }
+    /* results */
+    .results-area { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 16px; width: 100%; text-align: center; }
+    .winner-name-big { font-family: 'Fredoka One', cursive; font-size: clamp(1.8rem, 6vw, 2.6rem); color: var(--gold); text-shadow: 2px 3px 0 rgba(0,0,0,0.4); }
+    .result-card-wrap { width: 155px; }
+    .matched-label { font-size: 0.82rem; color: rgba(255,255,255,0.45); }
 
-        .revivePrompt {
-            position: absolute;
-            bottom: 200px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 100, 100, 0.95);
-            color: white;
-            padding: 15px 30px;
-            border-radius: 10px;
-            font-size: 18px;
-            font-weight: bold;
-            z-index: 150;
-            display: none;
-            animation: pulse 1s infinite;
-        }
+    /* game over */
+    .gameover-area { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 14px; }
+    .final-list { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+    .final-row { display: flex; align-items: center; justify-content: space-between; padding: 11px 16px; background: rgba(0,0,0,0.22); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; }
+    .final-row.top { background: rgba(255,214,10,0.14); border-color: var(--gold); }
+    .final-row .fr-rank { font-family: 'Fredoka One', cursive; font-size: 1.4rem; width: 34px; }
+    .final-row .fr-name { font-weight: 800; font-size: 0.95rem; flex: 1; padding: 0 12px; }
+    .final-row .fr-pts  { font-family: 'Fredoka One', cursive; font-size: 1.4rem; color: var(--gold); }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-    </style>
+    /* ─── MODAL ─── */
+    .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 999; align-items: center; justify-content: center; }
+    .modal-bg.open { display: flex; }
+    .modal-box { background: var(--felt-mid); border: 1px solid rgba(255,255,255,0.13); border-radius: 20px; padding: 26px; width: 90%; max-width: 340px; display: flex; flex-direction: column; gap: 14px; }
+    .modal-title { font-family: 'Fredoka One', cursive; font-size: 1.35rem; color: var(--gold); }
+    .modal-btns { display: flex; gap: 10px; }
+
+    /* ─── TOAST ─── */
+    .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(70px); background: rgba(5,20,12,0.92); color: #fff; padding: 11px 22px; border-radius: 50px; font-weight: 700; font-size: 0.92rem; z-index: 9999; transition: transform 0.3s cubic-bezier(.34,1.56,.64,1); white-space: nowrap; border: 1px solid rgba(255,255,255,0.12); pointer-events: none; }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ─── CONFETTI ─── */
+    .confetti { position: fixed; z-index: 9998; pointer-events: none; border-radius: 2px; animation: cffall 3s ease-in forwards; }
+    @keyframes cffall { 0%{transform:translateY(-20px) rotate(0)} 100%{transform:translateY(105vh) rotate(720deg); opacity:0} }
+
+    /* ─── BACK BTN ─── */
+    .back-link { background: none; border: none; color: rgba(255,255,255,0.45); font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 0.88rem; cursor: pointer; padding: 2px 0; display: flex; align-items: center; gap: 4px; transition: color 0.2s; }
+    .back-link:hover { color: #fff; }
+
+    /* ─── MISC ─── */
+    .win-note { font-size: 0.79rem; color: rgba(255,255,255,0.35); text-align: center; }
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+    @keyframes popIn  { 0%{transform:scale(0.4);opacity:0} 70%{transform:scale(1.08)} 100%{transform:scale(1);opacity:1} }
+    @keyframes slideU { 0%{transform:translateY(28px);opacity:0} 100%{transform:translateY(0);opacity:1} }
+    .anim-pop  { animation: popIn  0.5s cubic-bezier(.34,1.56,.64,1) forwards; }
+    .anim-up   { animation: slideU 0.38s ease forwards; }
+
+    @media (max-width: 480px) {
+      .screen { padding: 12px; }
+      .game-body { padding: 10px; }
+      .green-display { width: 148px; }
+    }
+  </style>
 </head>
 <body>
-    <div id="setupScreen">
-        <div class="setupCard">
-            <h1>🏴‍☠️ Treasure Hunt</h1>
-            <p>Enter a 4-character room code to join or create a game</p>
-            <input type="text" id="roomCodeInput" maxlength="4" placeholder="ABCD" />
-            <button id="joinButton">Join Game</button>
-        </div>
+
+<!-- ══════════ LOGIN ══════════ -->
+<div id="screen-login" class="screen">
+  <div class="anim-pop" style="text-align:center">
+    <h1>🍎 Apples &amp; Apples</h1>
+    <p style="color:rgba(255,255,255,0.45); font-size:0.95rem; margin-top:6px; font-weight:600">The hilarious card matching game</p>
+  </div>
+  <div class="login-box anim-up">
+    <p class="login-sub">What should we call you?</p>
+    <input id="login-input" class="inp" type="text" placeholder="Your name..." maxlength="20" autocomplete="off" />
+    <button class="btn btn-primary" onclick="submitLogin()">Let's Play 🎉</button>
+  </div>
+</div>
+
+<!-- ══════════ LOBBY ══════════ -->
+<div id="screen-lobby" class="screen">
+  <div class="lobby-topbar">
+    <h2>🍎 Apples &amp; Apples</h2>
+    <div class="name-pill">
+      👤 <span class="n" id="lobby-name"></span>
+      <button class="btn btn-sm btn-ghost" onclick="openRename()" style="padding:5px 11px">✏️</button>
     </div>
+  </div>
 
-    <div id="gameContainer">
-        <canvas id="gameCanvas"></canvas>
-        <canvas id="minimap"></canvas>
-        
-        <div id="ui">
-            <div>Level: <span id="levelNum">1</span></div>
-            <div>Treasures: <span id="treasureCount">0</span>/<span id="treasureGoal">5</span></div>
-            <div>Room: <span id="roomCode">----</span></div>
-        </div>
+  <div class="panel">
+    <div class="section-title">🎮 Open Rooms</div>
+    <div id="rooms-list"><div class="empty-rooms">Loading rooms…</div></div>
+  </div>
 
-        <button id="nameButton">Change Name</button>
+  <hr class="divider" />
 
-        <div id="joystickContainer">
-            <div id="joystickOuter">
-                <div id="joystickInner"></div>
-            </div>
-        </div>
-
-        <div id="colorButtons"></div>
-
-        <div id="revivePrompt">Touch teammate to revive!</div>
+  <div>
+    <div class="section-title">➕ Create Room</div>
+    <div class="create-row">
+      <input id="room-name-input" class="inp" type="text" placeholder="Room name (optional)" maxlength="30" autocomplete="off" />
+      <button class="btn btn-primary" onclick="createRoom()">Create</button>
     </div>
+  </div>
+</div>
 
-    <div id="statusMessage"></div>
+<!-- ══════════ WAITING ROOM ══════════ -->
+<div id="screen-room" class="screen">
+  <div class="room-header">
+    <button class="back-link" onclick="leaveRoom()">← Back to Lobby</button>
+    <h2 id="room-title">Room</h2>
+    <div class="room-id-tag" id="room-id-tag"></div>
+  </div>
 
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getDatabase, ref, set, onValue, update, remove, onDisconnect } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+  <div class="panel">
+    <div class="section-title">👥 Players</div>
+    <div id="wait-players" class="players-grid"></div>
+  </div>
 
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyDVbt_8GuRuHJRPAN7jFXbs_lJUfUHNxHE",
-            authDomain: "chummy-games.firebaseapp.com",
-            databaseURL: "https://chummy-games-default-rtdb.firebaseio.com",
-            projectId: "chummy-games",
-            storageBucket: "chummy-games.firebasestorage.app",
-            messagingSenderId: "869241598273",
-            appId: "1:869241598273:web:d97492b7308f785c37f1c0"
-        };
+  <div id="host-ctrl" style="text-align:center">
+    <p class="win-note" style="margin-bottom:10px">First to 7 points wins · Minimum 3 players</p>
+    <button id="start-btn" class="btn btn-primary" onclick="startGame()" disabled>Start Game 🚀</button>
+  </div>
 
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
+  <div id="nonhost-wait" style="text-align:center; color:rgba(255,255,255,0.4); font-weight:700; display:none">
+    ⏳ Waiting for host to start the game…
+  </div>
+</div>
 
-        // Utility functions
-        function getOrCreatePCID() {
-            const storageKey = 'ChummyGames-PC-ID';
-            let pcID = localStorage.getItem(storageKey);
-            if (!pcID || pcID.length !== 12) {
-                pcID = generateCode(12);
-                localStorage.setItem(storageKey, pcID);
-            }
-            return pcID;
+<!-- ══════════ GAME ══════════ -->
+<div id="screen-game" class="screen" style="padding:0; align-items:stretch;">
+  <div class="game-topbar">
+    <div class="round-tag" id="round-tag">Round 1</div>
+    <div id="scores-row" class="scores-row"></div>
+    <button class="btn btn-sm btn-ghost" onclick="openRename()" style="margin-left:auto; padding:5px 10px">✏️ Name</button>
+  </div>
+  <div id="game-body" class="game-body"></div>
+</div>
+
+<!-- ══════════ RENAME MODAL ══════════ -->
+<div id="rename-modal" class="modal-bg">
+  <div class="modal-box">
+    <div class="modal-title">Change Name ✏️</div>
+    <input id="rename-input" class="inp" type="text" placeholder="New name…" maxlength="20" autocomplete="off" />
+    <div class="modal-btns">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeRename()">Cancel</button>
+      <button class="btn btn-primary" style="flex:1" onclick="submitRename()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// FIREBASE + PCID
+// ═══════════════════════════════════════════
+firebase.initializeApp({
+  apiKey: "AIzaSyDVbt_8GuRuHJRPAN7jFXbs_lJUfUHNxHE",
+  authDomain: "chummy-games.firebaseapp.com",
+  databaseURL: "https://chummy-games-default-rtdb.firebaseio.com",
+  projectId: "chummy-games",
+  storageBucket: "chummy-games.firebasestorage.app",
+  messagingSenderId: "869241598273",
+  appId: "1:869241598273:web:d97492b7308f785c37f1c0"
+});
+const db = firebase.database();
+
+function getOrCreatePCID() {
+  const k = 'ChummyGames-PC-ID';
+  let id = localStorage.getItem(k);
+  if (!id || id.length !== 12) {
+    id = Array.from({ length: 12 }, () =>
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 26)]
+    ).join('');
+    localStorage.setItem(k, id);
+  }
+  return id;
+}
+const myPCID = getOrCreatePCID();
+
+// ═══════════════════════════════════════════
+// CARD DATA
+// ═══════════════════════════════════════════
+const GREEN_CARDS = [
+  "Scary","Delicious","Funny","Beautiful","Dangerous","Awesome","Mysterious","Exciting",
+  "Smelly","Loud","Fast","Slow","Tiny","Gigantic","Ancient","Modern","Silly","Serious",
+  "Sweet","Sour","Hot","Cold","Colorful","Dark","Bright","Peaceful","Chaotic","Lucky",
+  "Famous","Strange","Powerful","Weak","Clever","Boring","Surprising","Annoying",
+  "Helpful","Useless","Magical","Realistic","Disgusting","Adorable","Epic","Awkward",
+  "Sneaky","Expensive","Overrated","Underrated","Spicy","Fluffy","Crunchy","Slippery",
+  "Sharp","Cheesy","Dramatic","Mysterious","Wholesome","Cursed","Iconic","Chaotic"
+];
+
+const RED_CARDS = [
+  "A traffic jam","Pizza","The internet","My grandma","A dinosaur","The moon","A sneeze",
+  "My boss","A rubber duck","The dentist","WiFi","A roller coaster","Monday mornings",
+  "A cat video","The stock market","A broken printer","My neighbor's dog","Homework",
+  "The last slice of cake","A haunted house","Social media","A shopping cart with a wobbly wheel",
+  "My alarm clock","A crying baby on a plane","Taxes","A gym membership","A fortune cookie",
+  "The remote control","My ex","A participation trophy","Gas station sushi","A group text",
+  "My search history","Auto-correct","A motivational poster","A parking ticket",
+  "A spider in the bathtub","A first date","Decaf coffee","A surprise birthday party",
+  "The neighbor's loud music","A flat tire","Quicksand","A back massage","Winning the lottery",
+  "A bear hug","My sleep schedule","A hot shower","Pineapple on pizza","A power outage",
+  "A dog wearing sunglasses","My morning commute","A forgotten password","The last donut",
+  "A typo in an important email","A cold swimming pool","A fire drill at lunch",
+  "The button that says 'Do Not Press'","A time machine","My phone battery at 1%",
+  "A mystery box","The void","A sentient refrigerator","A wizard in a business suit",
+  "My credit card bill","A malfunctioning robot","Elevator music","A second breakfast",
+  "Unsolicited life advice","A passive-aggressive sticky note",
+  "The person who microwaves fish at work","A penguin in a tuxedo","A plot twist",
+  "A very tiny violin","The last WiFi bar","A suspiciously clean hotel room",
+  "An overconfident GPS","My childhood dreams","Bubble wrap","A conspiracy theory",
+  "An empty fridge at midnight","A reply-all email disaster","My 3AM thoughts",
+  "A rubber chicken","That one drawer full of junk","A group project","Daylight saving time",
+  "The snooze button","Glitter","A dusty treadmill","Someone else's Netflix password",
+  "A speed bump","My backup plans","An unsolicited hug","A rickety elevator",
+  "The wrong Zoom meeting","My dentist's waiting room","A rogue autocorrect",
+  "A passive-aggressive emoji","An expired coupon","A surprise tornado drill"
+];
+
+const WIN_SCORE = 7;
+const HAND_SIZE = 5;
+const ROOM_PATH = 'apples_rooms';
+const PLAYER_PATH = 'apples_players';
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let myName = '';
+let currentRoomId = null;
+let roomListener = null;
+let lobbyListener = null;
+let roomData = null;
+let advanceTimer = null;
+
+// ═══════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function toArr(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  return Object.values(val);
+}
+
+function esc(t) {
+  const d = document.createElement('div');
+  d.appendChild(document.createTextNode(String(t)));
+  return d.innerHTML;
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function confetti(n = 45) {
+  const cols = ['#FFD60A','#C1121F','#40916C','#74C69D','#fff','#f4a261','#a8dadc'];
+  for (let i = 0; i < n; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti';
+    el.style.cssText = `left:${Math.random()*100}vw; top:-12px; width:${6+Math.random()*10}px; height:${6+Math.random()*10}px; background:${cols[Math.floor(Math.random()*cols.length)]}; animation-delay:${Math.random()*1.5}s; animation-duration:${2+Math.random()*2}s`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4500);
+  }
+}
+
+// Consistent judge order by joinedAt
+function judgeOrder(players) {
+  return Object.values(players)
+    .sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0))
+    .map(p => p.pcid);
+}
+
+function nextJudge(players, currentPCID) {
+  const order = judgeOrder(players);
+  const idx = order.indexOf(currentPCID);
+  for (let i = 1; i <= order.length; i++) {
+    const next = order[(idx + i) % order.length];
+    if (players[next]) return next;
+  }
+  return order[0];
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+async function init() {
+  const snap = await db.ref(`${PLAYER_PATH}/${myPCID}`).get();
+  if (snap.exists()) {
+    myName = snap.val().name;
+    showLobby();
+  } else {
+    showScreen('screen-login');
+  }
+}
+
+// ═══════════════════════════════════════════
+// LOGIN
+// ═══════════════════════════════════════════
+function submitLogin() {
+  const n = document.getElementById('login-input').value.trim();
+  if (!n) { toast('Please enter your name!'); return; }
+  myName = n;
+  db.ref(`${PLAYER_PATH}/${myPCID}`).set({ name: n, pcid: myPCID });
+  showLobby();
+}
+document.getElementById('login-input').addEventListener('keydown', e => { if (e.key === 'Enter') submitLogin(); });
+
+// ═══════════════════════════════════════════
+// RENAME MODAL
+// ═══════════════════════════════════════════
+function openRename() {
+  document.getElementById('rename-input').value = myName;
+  document.getElementById('rename-modal').classList.add('open');
+  document.getElementById('rename-input').focus();
+}
+function closeRename() { document.getElementById('rename-modal').classList.remove('open'); }
+
+function submitRename() {
+  const n = document.getElementById('rename-input').value.trim();
+  if (!n) { toast('Name cannot be empty!'); return; }
+  myName = n;
+  db.ref(`${PLAYER_PATH}/${myPCID}`).update({ name: n });
+  if (currentRoomId) db.ref(`${ROOM_PATH}/${currentRoomId}/players/${myPCID}/name`).set(n);
+  const lbl = document.getElementById('lobby-name');
+  if (lbl) lbl.textContent = n;
+  closeRename();
+  toast('Name updated ✅');
+}
+document.getElementById('rename-input').addEventListener('keydown', e => { if (e.key === 'Enter') submitRename(); });
+
+// ═══════════════════════════════════════════
+// LOBBY
+// ═══════════════════════════════════════════
+function showLobby() {
+  detachRoom();
+  currentRoomId = null;
+  roomData = null;
+  document.getElementById('lobby-name').textContent = myName;
+  showScreen('screen-lobby');
+
+  if (lobbyListener) { db.ref(ROOM_PATH).off('value', lobbyListener); lobbyListener = null; }
+  lobbyListener = db.ref(ROOM_PATH).on('value', snap => renderRooms(snap.val() || {}));
+}
+
+function renderRooms(rooms) {
+  const el = document.getElementById('rooms-list');
+  const entries = Object.entries(rooms)
+    .filter(([, r]) => {
+      if (r.status === 'waiting') return true;
+      if ((r.status === 'playing' || r.status === 'finished') && r.players?.[myPCID]) return true;
+      return false;
+    })
+    .sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
+
+  if (!entries.length) {
+    el.innerHTML = '<div class="empty-rooms">🃏 No open rooms — create one to start!</div>';
+    return;
+  }
+  el.innerHTML = '';
+  entries.forEach(([id, r]) => {
+    const cnt = r.players ? Object.keys(r.players).length : 0;
+    const mine = r.players?.[myPCID];
+    const playing = r.status === 'playing';
+    const div = document.createElement('div');
+    div.className = 'room-row' + (mine ? ' rejoining' : '');
+    div.innerHTML = `
+      <div>
+        <div class="room-row-name">${esc(r.name || 'Unnamed Room')}</div>
+        <div class="room-row-meta">${cnt} player${cnt !== 1 ? 's' : ''} ${mine ? '· 🔁 Rejoin' : ''}</div>
+      </div>
+      <span class="badge ${playing ? 'badge-play' : 'badge-wait'}">${playing ? '🎮 Playing' : '⏳ Waiting'}</span>
+    `;
+    div.onclick = () => joinRoom(id);
+    el.appendChild(div);
+  });
+}
+
+// ═══════════════════════════════════════════
+// CREATE / JOIN ROOM
+// ═══════════════════════════════════════════
+async function createRoom() {
+  const ni = document.getElementById('room-name-input');
+  const name = ni.value.trim() || `${myName}'s Room`;
+  const ref = db.ref(ROOM_PATH).push();
+  await ref.set({
+    name, status: 'waiting', hostPCID: myPCID,
+    createdAt: firebase.database.ServerValue.TIMESTAMP,
+    players: {
+      [myPCID]: { name: myName, pcid: myPCID, score: 0, hand: [], joinedAt: Date.now() }
+    }
+  });
+  ni.value = '';
+  enterRoom(ref.key);
+}
+
+async function joinRoom(roomId) {
+  const snap = await db.ref(`${ROOM_PATH}/${roomId}/players/${myPCID}`).get();
+  if (!snap.exists()) {
+    await db.ref(`${ROOM_PATH}/${roomId}/players/${myPCID}`).set({
+      name: myName, pcid: myPCID, score: 0, hand: [], joinedAt: Date.now()
+    });
+  } else {
+    await db.ref(`${ROOM_PATH}/${roomId}/players/${myPCID}/name`).set(myName);
+  }
+  enterRoom(roomId);
+}
+
+function enterRoom(roomId) {
+  currentRoomId = roomId;
+  if (lobbyListener) { db.ref(ROOM_PATH).off('value', lobbyListener); lobbyListener = null; }
+  roomListener = db.ref(`${ROOM_PATH}/${roomId}`).on('value', snap => {
+    if (!snap.exists()) { showLobby(); return; }
+    roomData = snap.val();
+    onRoomUpdate(roomData);
+  });
+}
+
+function detachRoom() {
+  if (roomListener && currentRoomId) {
+    db.ref(`${ROOM_PATH}/${currentRoomId}`).off('value', roomListener);
+    roomListener = null;
+  }
+  clearTimeout(advanceTimer);
+}
+
+// ═══════════════════════════════════════════
+// LEAVE ROOM
+// ═══════════════════════════════════════════
+async function leaveRoom() {
+  if (!currentRoomId) { showLobby(); return; }
+  const snap = await db.ref(`${ROOM_PATH}/${currentRoomId}`).get();
+  if (snap.exists()) {
+    const d = snap.val();
+    const remaining = Object.keys(d.players || {}).filter(p => p !== myPCID);
+    await db.ref(`${ROOM_PATH}/${currentRoomId}/players/${myPCID}`).remove();
+    if (!remaining.length) {
+      await db.ref(`${ROOM_PATH}/${currentRoomId}`).remove();
+    } else if (d.hostPCID === myPCID && d.status === 'waiting') {
+      await db.ref(`${ROOM_PATH}/${currentRoomId}/hostPCID`).set(remaining[0]);
+    }
+  }
+  detachRoom();
+  showLobby();
+}
+
+// ═══════════════════════════════════════════
+// ROOM UPDATE ROUTER
+// ═══════════════════════════════════════════
+function onRoomUpdate(d) {
+  if (d.status === 'waiting') {
+    renderWaiting(d);
+  } else {
+    renderGame(d);
+  }
+}
+
+// ═══════════════════════════════════════════
+// WAITING ROOM RENDER
+// ═══════════════════════════════════════════
+function renderWaiting(d) {
+  showScreen('screen-room');
+  document.getElementById('room-title').textContent = d.name || 'Room';
+  document.getElementById('room-id-tag').textContent = currentRoomId.slice(-6).toUpperCase();
+
+  const players = d.players || {};
+  const grid = document.getElementById('wait-players');
+  grid.innerHTML = '';
+  Object.values(players).sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0)).forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'player-tile' + (p.pcid === myPCID ? ' mine' : '');
+    div.innerHTML = `<div class="pname">${esc(p.name)}</div><div class="ptag">${p.pcid === myPCID ? '(you)' : ''} ${d.hostPCID === p.pcid ? '👑' : ''}</div>`;
+    grid.appendChild(div);
+  });
+
+  const isHost = d.hostPCID === myPCID;
+  document.getElementById('host-ctrl').style.display = isHost ? 'block' : 'none';
+  document.getElementById('nonhost-wait').style.display = isHost ? 'none' : 'block';
+  document.getElementById('start-btn').disabled = Object.keys(players).length < 3;
+}
+
+// ═══════════════════════════════════════════
+// START GAME
+// ═══════════════════════════════════════════
+async function startGame() {
+  if (!currentRoomId || !roomData) return;
+  const players = roomData.players || {};
+  const pkeys = Object.keys(players);
+  if (pkeys.length < 3) { toast('Need at least 3 players!'); return; }
+
+  const redDeck = shuffle([...RED_CARDS]);
+  const greenDeck = shuffle([...GREEN_CARDS]);
+
+  const updates = { status: 'playing' };
+  let pos = 0;
+  pkeys.forEach(pcid => {
+    updates[`players/${pcid}/score`] = 0;
+    updates[`players/${pcid}/hand`] = redDeck.slice(pos, pos + HAND_SIZE);
+    pos += HAND_SIZE;
+  });
+
+  // Judge order by join time
+  const order = judgeOrder(players);
+  updates['game'] = {
+    round: 1,
+    phase: 'submitting',
+    judgePCID: order[0],
+    judgeIndex: 0,
+    judgeOrder: order,
+    greenCard: greenDeck[0],
+    greenDeck: greenDeck.slice(1),
+    redDeck: redDeck.slice(pos),
+    submissions: null,
+    roundWinnerPCID: null,
+    roundWinnerCard: null,
+    submissionOrder: null,
+  };
+  await db.ref(`${ROOM_PATH}/${currentRoomId}`).update(updates);
+}
+
+// ═══════════════════════════════════════════
+// RENDER GAME
+// ═══════════════════════════════════════════
+function renderGame(d) {
+  showScreen('screen-game');
+  const game = d.game || {};
+  const players = d.players || {};
+  const myPlayer = players[myPCID] || {};
+  const isJudge = game.judgePCID === myPCID;
+  const judgePlayer = players[game.judgePCID] || {};
+  const phase = game.phase;
+
+  document.getElementById('round-tag').textContent = `Round ${game.round || 1}`;
+  renderScores(players, game);
+
+  const body = document.getElementById('game-body');
+  body.innerHTML = '';
+
+  if (phase === 'gameover') { renderGameOver(d, body); return; }
+
+  // Green card
+  const gcWrap = document.createElement('div');
+  gcWrap.className = 'green-card-wrap';
+  gcWrap.innerHTML = `
+    <div class="judge-label">⚖️ ${esc(judgePlayer.name || '?')} is the Judge</div>
+    <div class="card green green-display card-lg no-hover">
+      <div class="card-stripe">Green Apple</div>
+      <div class="card-body">${esc(game.greenCard || '…')}</div>
+    </div>
+  `;
+  body.appendChild(gcWrap);
+
+  if (phase === 'submitting') renderSubmitting(d, body, isJudge, toArr(myPlayer.hand), game, players);
+  else if (phase === 'judging') renderJudging(body, isJudge, game, players);
+  else if (phase === 'results') renderResults(d, body, game, players);
+}
+
+// ═══════════════════════════════════════════
+// SCORES
+// ═══════════════════════════════════════════
+function renderScores(players, game) {
+  const row = document.getElementById('scores-row');
+  row.innerHTML = '';
+  Object.values(players).sort((a, b) => (b.score || 0) - (a.score || 0)).forEach(p => {
+    const chip = document.createElement('div');
+    const j = p.pcid === game.judgePCID;
+    const m = p.pcid === myPCID;
+    chip.className = `score-chip${j ? ' is-judge' : ''}${m ? ' is-me' : ''}`;
+    chip.innerHTML = `${j ? '⚖️ ' : ''}${esc(p.name)}<span class="pts">${p.score || 0}</span>`;
+    row.appendChild(chip);
+  });
+}
+
+// ═══════════════════════════════════════════
+// SUBMITTING PHASE
+// ═══════════════════════════════════════════
+function renderSubmitting(d, body, isJudge, myHand, game, players) {
+  const subs = game.submissions || {};
+  const nonJudges = Object.keys(players).filter(p => p !== game.judgePCID);
+
+  const chipsHtml = () => nonJudges.map(p => {
+    const done = subs[p] !== undefined;
+    return `<span class="sub-chip ${done ? 'done' : 'pending'}">${esc(players[p]?.name || '?')} ${done ? '✅' : '⏳'}</span>`;
+  }).join('');
+
+  if (isJudge) {
+    const allIn = nonJudges.length > 0 && nonJudges.every(p => subs[p] !== undefined);
+
+    const ws = document.createElement('div');
+    ws.className = 'waiting-state';
+    ws.innerHTML = `
+      <p class="phase-heading">⚖️ You're the Judge!</p>
+      <p class="phase-sub">Waiting for players to pick their best card…</p>
+      <div class="submit-chips">${chipsHtml()}</div>
+      <div class="dot-loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    `;
+    body.appendChild(ws);
+
+    if (allIn) {
+      // Transition to judging; write shuffled submission order
+      const shuffledOrder = shuffle(nonJudges);
+      db.ref(`${ROOM_PATH}/${currentRoomId}/game`).transaction(g => {
+        if (g && g.phase === 'submitting') {
+          g.phase = 'judging';
+          g.submissionOrder = shuffledOrder;
+          return g;
         }
-
-        function generateCode(length) {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-            return Array.from({ length }, () => 
-                chars[Math.floor(Math.random() * chars.length)]
-            ).join('');
-        }
-
-        // Game constants
-        const CANVAS_WIDTH = 800;
-        const CANVAS_HEIGHT = 600;
-        const PLAYER_SIZE = 20;
-        const TREASURE_SIZE = 15;
-        const ENEMY_SIZE = 18;
-        const ROOM_SIZE = 400;
-        const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F'];
-
-        // Game state
-        let gameState = {
-            players: {},
-            treasures: {},
-            enemies: {},
-            level: 1,
-            roomCode: '',
-            playerID: getOrCreatePCID(),
-            joystick: { x: 0, y: 0, active: false },
-            camera: { x: 0, y: 0 },
-            deadPlayers: new Set()
-        };
-
-        // Canvas setup
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const minimap = document.getElementById('minimap');
-        const minimapCtx = minimap.getContext('2d');
-        
-        canvas.width = CANVAS_WIDTH;
-        canvas.height = CANVAS_HEIGHT;
-
-        // Level definitions
-        const LEVELS = [
-            {
-                rooms: generateRooms(3, 3),
-                treasureCount: 5,
-                enemyCount: 3,
-                enemyTypes: ['chaser', 'patroller']
-            },
-            {
-                rooms: generateRooms(4, 3),
-                treasureCount: 7,
-                enemyCount: 5,
-                enemyTypes: ['chaser', 'patroller', 'shooter']
-            },
-            {
-                rooms: generateRooms(4, 4),
-                treasureCount: 9,
-                enemyCount: 8,
-                enemyTypes: ['chaser', 'patroller', 'shooter', 'teleporter']
-            },
-            {
-                rooms: generateRooms(5, 4),
-                treasureCount: 12,
-                enemyCount: 12,
-                enemyTypes: ['chaser', 'patroller', 'shooter', 'teleporter', 'splitter']
-            },
-            {
-                rooms: generateRooms(5, 5),
-                treasureCount: 15,
-                enemyCount: 15,
-                enemyTypes: ['chaser', 'patroller', 'shooter', 'teleporter', 'splitter']
-            }
-        ];
-
-        function generateRooms(cols, rows) {
-            const rooms = [];
-            for (let y = 0; y < rows; y++) {
-                for (let x = 0; x < cols; x++) {
-                    rooms.push({
-                        x: x * ROOM_SIZE,
-                        y: y * ROOM_SIZE,
-                        connections: {
-                            right: x < cols - 1,
-                            down: y < rows - 1,
-                            left: x > 0,
-                            up: y > 0
-                        }
-                    });
-                }
-            }
-            return rooms;
-        }
-
-        // Setup screen handlers
-        document.getElementById('joinButton').addEventListener('click', () => {
-            const roomCode = document.getElementById('roomCodeInput').value.toUpperCase();
-            if (roomCode.length === 4) {
-                gameState.roomCode = roomCode;
-                document.getElementById('setupScreen').style.display = 'none';
-                document.getElementById('gameContainer').style.display = 'block';
-                document.getElementById('roomCode').textContent = roomCode;
-                initializeGame();
-            } else {
-                alert('Please enter a 4-character room code');
-            }
-        });
-
-        // Name change handler
-        document.getElementById('nameButton').addEventListener('click', () => {
-            const newName = prompt('Enter your name:', gameState.players[gameState.playerID]?.name || 'Player');
-            if (newName && newName.trim()) {
-                updatePlayer({ name: newName.trim() });
-            }
-        });
-
-        // Initialize game
-        function initializeGame() {
-            setupColorButtons();
-            setupJoystick();
-            
-            const playerRef = ref(database, `treasureHunt/${gameState.roomCode}/players/${gameState.playerID}`);
-            const levelRef = ref(database, `treasureHunt/${gameState.roomCode}/level`);
-            const treasuresRef = ref(database, `treasureHunt/${gameState.roomCode}/treasures`);
-            const enemiesRef = ref(database, `treasureHunt/${gameState.roomCode}/enemies`);
-
-            // Set up disconnect handler
-            onDisconnect(playerRef).remove();
-
-            // Initialize player
-            const playerNum = Object.keys(gameState.players).length + 1;
-            set(playerRef, {
-                x: 50,
-                y: 50,
-                color: COLORS[0],
-                name: `Player${playerNum}`,
-                treasuresCollected: 0,
-                alive: true,
-                timestamp: Date.now()
-            });
-
-            // Listen for player updates
-            onValue(ref(database, `treasureHunt/${gameState.roomCode}/players`), (snapshot) => {
-                gameState.players = snapshot.val() || {};
-            });
-
-            // Listen for level updates
-            onValue(levelRef, (snapshot) => {
-                const level = snapshot.val() || 1;
-                if (level !== gameState.level) {
-                    gameState.level = level;
-                    document.getElementById('levelNum').textContent = level;
-                    if (gameState.playerID === getHostPlayer()) {
-                        initializeLevel(level);
-                    }
-                }
-            });
-
-            // Listen for treasure updates
-            onValue(treasuresRef, (snapshot) => {
-                gameState.treasures = snapshot.val() || {};
-                updateTreasureUI();
-            });
-
-            // Listen for enemy updates
-            onValue(enemiesRef, (snapshot) => {
-                gameState.enemies = snapshot.val() || {};
-            });
-
-            // Initialize level if host
-            if (Object.keys(gameState.players).length === 0) {
-                set(levelRef, 1);
-                initializeLevel(1);
-            }
-
-            // Start game loop
-            gameLoop();
-        }
-
-        function getHostPlayer() {
-            const players = Object.keys(gameState.players);
-            return players.sort()[0];
-        }
-
-        function initializeLevel(level) {
-            const levelData = LEVELS[level - 1];
-            const treasuresRef = ref(database, `treasureHunt/${gameState.roomCode}/treasures`);
-            const enemiesRef = ref(database, `treasureHunt/${gameState.roomCode}/enemies`);
-
-            // Generate treasures
-            const treasures = {};
-            for (let i = 0; i < levelData.treasureCount; i++) {
-                const room = levelData.rooms[Math.floor(Math.random() * levelData.rooms.length)];
-                treasures[`treasure${i}`] = {
-                    x: room.x + Math.random() * (ROOM_SIZE - 50) + 25,
-                    y: room.y + Math.random() * (ROOM_SIZE - 50) + 25,
-                    collected: false
-                };
-            }
-            set(treasuresRef, treasures);
-
-            // Generate enemies
-            const enemies = {};
-            for (let i = 0; i < levelData.enemyCount; i++) {
-                const room = levelData.rooms[Math.floor(Math.random() * levelData.rooms.length)];
-                const type = levelData.enemyTypes[Math.floor(Math.random() * levelData.enemyTypes.length)];
-                enemies[`enemy${i}`] = {
-                    x: room.x + Math.random() * (ROOM_SIZE - 100) + 50,
-                    y: room.y + Math.random() * (ROOM_SIZE - 100) + 50,
-                    type: type,
-                    vx: (Math.random() - 0.5) * 2,
-                    vy: (Math.random() - 0.5) * 2,
-                    timestamp: Date.now()
-                };
-            }
-            set(enemiesRef, enemies);
-
-            // Reset all players
-            Object.keys(gameState.players).forEach(pid => {
-                update(ref(database, `treasureHunt/${gameState.roomCode}/players/${pid}`), {
-                    x: 50,
-                    y: 50,
-                    treasuresCollected: 0,
-                    alive: true
-                });
-            });
-
-            gameState.deadPlayers.clear();
-            document.getElementById('treasureGoal').textContent = levelData.treasureCount;
-            showMessage(`Level ${level} Start!`, 'levelComplete', 2000);
-        }
-
-        function setupColorButtons() {
-            const container = document.getElementById('colorButtons');
-            COLORS.forEach((color, index) => {
-                const btn = document.createElement('div');
-                btn.className = 'colorBtn';
-                btn.style.background = color;
-                if (index === 0) btn.classList.add('selected');
-                btn.addEventListener('click', () => selectColor(color, btn));
-                container.appendChild(btn);
-            });
-        }
-
-        function selectColor(color, btn) {
-            // Check if color is already taken
-            const colorTaken = Object.entries(gameState.players).some(([pid, player]) => 
-                pid !== gameState.playerID && player.color === color
-            );
-
-            if (colorTaken) {
-                showMessage('Color already taken!', 'gameOver', 1000);
-                return;
-            }
-
-            document.querySelectorAll('.colorBtn').forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-            updatePlayer({ color });
-        }
-
-        function setupJoystick() {
-            const outer = document.getElementById('joystickOuter');
-            const inner = document.getElementById('joystickInner');
-            let rect;
-
-            function handleStart(e) {
-                e.preventDefault();
-                rect = outer.getBoundingClientRect();
-                gameState.joystick.active = true;
-                handleMove(e);
-            }
-
-            function handleMove(e) {
-                if (!gameState.joystick.active) return;
-                e.preventDefault();
-
-                const touch = e.touches ? e.touches[0] : e;
-                const centerX = rect.left + rect.width / 2;
-                const centerY = rect.top + rect.height / 2;
-                
-                let deltaX = touch.clientX - centerX;
-                let deltaY = touch.clientY - centerY;
-                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                const maxDistance = rect.width / 2 - 30;
-
-                if (distance > maxDistance) {
-                    deltaX = (deltaX / distance) * maxDistance;
-                    deltaY = (deltaY / distance) * maxDistance;
-                }
-
-                inner.style.transform = `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px))`;
-                
-                gameState.joystick.x = deltaX / maxDistance;
-                gameState.joystick.y = deltaY / maxDistance;
-            }
-
-            function handleEnd(e) {
-                e.preventDefault();
-                gameState.joystick.active = false;
-                gameState.joystick.x = 0;
-                gameState.joystick.y = 0;
-                inner.style.transform = 'translate(-50%, -50%)';
-            }
-
-            outer.addEventListener('touchstart', handleStart);
-            outer.addEventListener('touchmove', handleMove);
-            outer.addEventListener('touchend', handleEnd);
-            outer.addEventListener('mousedown', handleStart);
-            document.addEventListener('mousemove', handleMove);
-            document.addEventListener('mouseup', handleEnd);
-        }
-
-        function updatePlayer(data) {
-            const playerRef = ref(database, `treasureHunt/${gameState.roomCode}/players/${gameState.playerID}`);
-            update(playerRef, { ...data, timestamp: Date.now() });
-        }
-
-        function updateTreasureUI() {
-            const collected = Object.values(gameState.treasures).filter(t => t.collected).length;
-            const total = Object.keys(gameState.treasures).length;
-            document.getElementById('treasureCount').textContent = collected;
-            
-            // Check if all treasures collected
-            if (collected === total && total > 0) {
-                checkLevelComplete();
-            }
-        }
-
-        function checkLevelComplete() {
-            const myPlayer = gameState.players[gameState.playerID];
-            if (!myPlayer) return;
-
-            // Check if player is back at start
-            if (Math.abs(myPlayer.x - 50) < 30 && Math.abs(myPlayer.y - 50) < 30) {
-                // Check if all players are at start
-                const allAtStart = Object.values(gameState.players).every(p => 
-                    Math.abs(p.x - 50) < 50 && Math.abs(p.y - 50) < 50
-                );
-
-                if (allAtStart && gameState.playerID === getHostPlayer()) {
-                    if (gameState.level < 5) {
-                        set(ref(database, `treasureHunt/${gameState.roomCode}/level`), gameState.level + 1);
-                    } else {
-                        showMessage('🎉 GAME COMPLETE! 🎉', 'levelComplete', 5000);
-                    }
-                }
-            }
-        }
-
-        // Game loop
-        function gameLoop() {
-            updateGame();
-            renderGame();
-            renderMinimap();
-            requestAnimationFrame(gameLoop);
-        }
-
-        function updateGame() {
-            const myPlayer = gameState.players[gameState.playerID];
-            if (!myPlayer || !myPlayer.alive) {
-                document.getElementById('revivePrompt').style.display = myPlayer && !myPlayer.alive ? 'block' : 'none';
-                return;
-            }
-
-            document.getElementById('revivePrompt').style.display = 'none';
-
-            // Move player
-            const speed = 3;
-            const newX = myPlayer.x + gameState.joystick.x * speed;
-            const newY = myPlayer.y + gameState.joystick.y * speed;
-
-            const levelData = LEVELS[gameState.level - 1];
-            const maxX = Math.max(...levelData.rooms.map(r => r.x)) + ROOM_SIZE;
-            const maxY = Math.max(...levelData.rooms.map(r => r.y)) + ROOM_SIZE;
-
-            // Boundary check
-            if (newX >= 0 && newX <= maxX - PLAYER_SIZE && newY >= 0 && newY <= maxY - PLAYER_SIZE) {
-                updatePlayer({ x: newX, y: newY });
-            }
-
-            // Update camera
-            gameState.camera.x = myPlayer.x - CANVAS_WIDTH / 2;
-            gameState.camera.y = myPlayer.y - CANVAS_HEIGHT / 2;
-
-            // Collect treasures
-            Object.entries(gameState.treasures).forEach(([tid, treasure]) => {
-                if (!treasure.collected) {
-                    const dx = myPlayer.x - treasure.x;
-                    const dy = myPlayer.y - treasure.y;
-                    if (Math.sqrt(dx * dx + dy * dy) < PLAYER_SIZE + TREASURE_SIZE) {
-                        update(ref(database, `treasureHunt/${gameState.roomCode}/treasures/${tid}`), { 
-                            collected: true 
-                        });
-                        updatePlayer({ treasuresCollected: (myPlayer.treasuresCollected || 0) + 1 });
-                    }
-                }
-            });
-
-            // Check revive collision
-            Object.entries(gameState.players).forEach(([pid, player]) => {
-                if (pid !== gameState.playerID && !player.alive) {
-                    const dx = myPlayer.x - player.x;
-                    const dy = myPlayer.y - player.y;
-                    if (Math.sqrt(dx * dx + dy * dy) < PLAYER_SIZE * 2) {
-                        update(ref(database, `treasureHunt/${gameState.roomCode}/players/${pid}`), { 
-                            alive: true 
-                        });
-                        gameState.deadPlayers.delete(pid);
-                        showMessage('Teammate revived!', 'levelComplete', 1000);
-                    }
-                }
-            });
-
-            // Update enemies (host only)
-            if (gameState.playerID === getHostPlayer()) {
-                updateEnemies();
-            }
-
-            // Check enemy collisions
-            Object.entries(gameState.enemies).forEach(([eid, enemy]) => {
-                const dx = myPlayer.x - enemy.x;
-                const dy = myPlayer.y - enemy.y;
-                if (Math.sqrt(dx * dx + dy * dy) < PLAYER_SIZE + ENEMY_SIZE) {
-                    updatePlayer({ alive: false });
-                    gameState.deadPlayers.add(gameState.playerID);
-                    checkGameOver();
-                }
-            });
-        }
-
-        function updateEnemies() {
-            const levelData = LEVELS[gameState.level - 1];
-            const maxX = Math.max(...levelData.rooms.map(r => r.x)) + ROOM_SIZE;
-            const maxY = Math.max(...levelData.rooms.map(r => r.y)) + ROOM_SIZE;
-
-            Object.entries(gameState.enemies).forEach(([eid, enemy]) => {
-                let newX = enemy.x;
-                let newY = enemy.y;
-                let newVx = enemy.vx;
-                let newVy = enemy.vy;
-
-                switch(enemy.type) {
-                    case 'chaser':
-                        // Chase nearest alive player
-                        const nearestPlayer = findNearestAlivePlayer(enemy);
-                        if (nearestPlayer) {
-                            const dx = nearestPlayer.x - enemy.x;
-                            const dy = nearestPlayer.y - enemy.y;
-                            const dist = Math.sqrt(dx * dx + dy * dy);
-                            newVx = (dx / dist) * 1.5;
-                            newVy = (dy / dist) * 1.5;
-                        }
-                        break;
-
-                    case 'patroller':
-                        // Bounce off walls
-                        if (enemy.x <= 0 || enemy.x >= maxX - ENEMY_SIZE) newVx *= -1;
-                        if (enemy.y <= 0 || enemy.y >= maxY - ENEMY_SIZE) newVy *= -1;
-                        break;
-
-                    case 'shooter':
-                        // Stay still and shoot (simplified)
-                        newVx = 0;
-                        newVy = 0;
-                        break;
-
-                    case 'teleporter':
-                        // Teleport randomly every 3 seconds
-                        if (Date.now() - enemy.timestamp > 3000) {
-                            const room = levelData.rooms[Math.floor(Math.random() * levelData.rooms.length)];
-                            newX = room.x + Math.random() * (ROOM_SIZE - 100) + 50;
-                            newY = room.y + Math.random() * (ROOM_SIZE - 100) + 50;
-                            update(ref(database, `treasureHunt/${gameState.roomCode}/enemies/${eid}`), { 
-                                timestamp: Date.now() 
-                            });
-                        }
-                        break;
-
-                    case 'splitter':
-                        // Move in zigzag
-                        if (Math.random() < 0.02) {
-                            newVx = (Math.random() - 0.5) * 3;
-                            newVy = (Math.random() - 0.5) * 3;
-                        }
-                        break;
-                }
-
-                newX = enemy.x + newVx;
-                newY = enemy.y + newVy;
-
-                // Boundary check
-                newX = Math.max(0, Math.min(maxX - ENEMY_SIZE, newX));
-                newY = Math.max(0, Math.min(maxY - ENEMY_SIZE, newY));
-
-                update(ref(database, `treasureHunt/${gameState.roomCode}/enemies/${eid}`), {
-                    x: newX,
-                    y: newY,
-                    vx: newVx,
-                    vy: newVy
-                });
-            });
-        }
-
-        function findNearestAlivePlayer(enemy) {
-            let nearest = null;
-            let minDist = Infinity;
-
-            Object.values(gameState.players).forEach(player => {
-                if (player.alive) {
-                    const dx = player.x - enemy.x;
-                    const dy = player.y - enemy.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist < minDist) {
-                        minDist = dist;
-                        nearest = player;
-                    }
-                }
-            });
-
-            return nearest;
-        }
-
-        function checkGameOver() {
-            const allDead = Object.values(gameState.players).every(p => !p.alive);
-            if (allDead && gameState.playerID === getHostPlayer()) {
-                showMessage('💀 ALL PLAYERS DEAD! Restarting level...', 'gameOver', 3000);
-                setTimeout(() => {
-                    initializeLevel(gameState.level);
-                }, 3000);
-            }
-        }
-
-        function renderGame() {
-            ctx.fillStyle = '#0a0a0a';
-            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
-            const levelData = LEVELS[gameState.level - 1];
-
-            // Draw rooms
-            ctx.save();
-            ctx.translate(-gameState.camera.x, -gameState.camera.y);
-
-            levelData.rooms.forEach(room => {
-                // Room background
-                ctx.fillStyle = '#1a1a2e';
-                ctx.fillRect(room.x, room.y, ROOM_SIZE, ROOM_SIZE);
-
-                // Room border
-                ctx.strokeStyle = '#16213e';
-                ctx.lineWidth = 3;
-                ctx.strokeRect(room.x, room.y, ROOM_SIZE, ROOM_SIZE);
-
-                // Doorways
-                ctx.fillStyle = '#2a2a4e';
-                if (room.connections.right) {
-                    ctx.fillRect(room.x + ROOM_SIZE - 5, room.y + ROOM_SIZE / 2 - 30, 10, 60);
-                }
-                if (room.connections.down) {
-                    ctx.fillRect(room.x + ROOM_SIZE / 2 - 30, room.y + ROOM_SIZE - 5, 60, 10);
-                }
-            });
-
-            // Draw start zone
-            ctx.fillStyle = 'rgba(76, 175, 80, 0.3)';
-            ctx.beginPath();
-            ctx.arc(50, 50, 40, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#4CAF50';
-            ctx.lineWidth = 3;
-            ctx.stroke();
-
-            // Draw treasures
-            Object.values(gameState.treasures).forEach(treasure => {
-                if (!treasure.collected) {
-                    ctx.fillStyle = '#FFD700';
-                    ctx.beginPath();
-                    ctx.arc(treasure.x, treasure.y, TREASURE_SIZE, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.strokeStyle = '#FFA500';
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-
-                    // Sparkle
-                    ctx.fillStyle = '#FFED4E';
-                    ctx.beginPath();
-                    ctx.arc(treasure.x - 5, treasure.y - 5, 3, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            });
-
-            // Draw enemies
-            Object.values(gameState.enemies).forEach(enemy => {
-                const colors = {
-                    chaser: '#FF3333',
-                    patroller: '#FF9933',
-                    shooter: '#9933FF',
-                    teleporter: '#33FFFF',
-                    splitter: '#FF33FF'
-                };
-
-                ctx.fillStyle = colors[enemy.type];
-                
-                // Different shapes for different types
-                switch(enemy.type) {
-                    case 'chaser':
-                        // Triangle
-                        ctx.beginPath();
-                        ctx.moveTo(enemy.x, enemy.y - ENEMY_SIZE);
-                        ctx.lineTo(enemy.x - ENEMY_SIZE, enemy.y + ENEMY_SIZE);
-                        ctx.lineTo(enemy.x + ENEMY_SIZE, enemy.y + ENEMY_SIZE);
-                        ctx.closePath();
-                        ctx.fill();
-                        break;
-                    case 'shooter':
-                        // Square
-                        ctx.fillRect(enemy.x - ENEMY_SIZE, enemy.y - ENEMY_SIZE, ENEMY_SIZE * 2, ENEMY_SIZE * 2);
-                        break;
-                    case 'teleporter':
-                        // Diamond
-                        ctx.beginPath();
-                        ctx.moveTo(enemy.x, enemy.y - ENEMY_SIZE);
-                        ctx.lineTo(enemy.x + ENEMY_SIZE, enemy.y);
-                        ctx.lineTo(enemy.x, enemy.y + ENEMY_SIZE);
-                        ctx.lineTo(enemy.x - ENEMY_SIZE, enemy.y);
-                        ctx.closePath();
-                        ctx.fill();
-                        break;
-                    case 'splitter':
-                        // Star
-                        drawStar(ctx, enemy.x, enemy.y, 5, ENEMY_SIZE, ENEMY_SIZE / 2);
-                        break;
-                    default:
-                        // Circle
-                        ctx.beginPath();
-                        ctx.arc(enemy.x, enemy.y, ENEMY_SIZE, 0, Math.PI * 2);
-                        ctx.fill();
-                }
-
-                ctx.strokeStyle = '#000';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-            });
-
-            // Draw players
-            Object.entries(gameState.players).forEach(([pid, player]) => {
-                if (player.alive) {
-                    // Player circle
-                    ctx.fillStyle = player.color;
-                    ctx.beginPath();
-                    ctx.arc(player.x, player.y, PLAYER_SIZE, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.strokeStyle = '#fff';
-                    ctx.lineWidth = 3;
-                    ctx.stroke();
-
-                    // Name
-                    ctx.fillStyle = '#fff';
-                    ctx.font = 'bold 14px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.fillText(player.name, player.x, player.y - PLAYER_SIZE - 5);
-                } else {
-                    // Dead player (ghost)
-                    ctx.fillStyle = 'rgba(150, 150, 150, 0.5)';
-                    ctx.beginPath();
-                    ctx.arc(player.x, player.y, PLAYER_SIZE, 0, Math.PI * 2);
-                    ctx.fill();
-                    
-                    ctx.fillStyle = '#fff';
-                    ctx.font = 'bold 20px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('💀', player.x, player.y + 7);
-                }
-            });
-
-            ctx.restore();
-        }
-
-        function drawStar(ctx, x, y, points, outerRadius, innerRadius) {
-            ctx.beginPath();
-            for (let i = 0; i < points * 2; i++) {
-                const radius = i % 2 === 0 ? outerRadius : innerRadius;
-                const angle = (i * Math.PI) / points - Math.PI / 2;
-                const px = x + radius * Math.cos(angle);
-                const py = y + radius * Math.sin(angle);
-                if (i === 0) ctx.moveTo(px, py);
-                else ctx.lineTo(px, py);
-            }
-            ctx.closePath();
-            ctx.fill();
-        }
-
-        function renderMinimap() {
-            const mmCtx = minimapCtx;
-            mmCtx.fillStyle = '#000';
-            mmCtx.fillRect(0, 0, 200, 200);
-
-            const levelData = LEVELS[gameState.level - 1];
-            const maxX = Math.max(...levelData.rooms.map(r => r.x)) + ROOM_SIZE;
-            const maxY = Math.max(...levelData.rooms.map(r => r.y)) + ROOM_SIZE;
-            const scale = Math.min(180 / maxX, 180 / maxY);
-
-            // Draw rooms
-            levelData.rooms.forEach(room => {
-                mmCtx.fillStyle = '#2a2a4e';
-                mmCtx.fillRect(10 + room.x * scale, 10 + room.y * scale, ROOM_SIZE * scale, ROOM_SIZE * scale);
-            });
-
-            // Draw start
-            mmCtx.fillStyle = '#4CAF50';
-            mmCtx.fillRect(10, 10, 10, 10);
-
-            // Draw treasures
-            Object.values(gameState.treasures).forEach(treasure => {
-                if (!treasure.collected) {
-                    mmCtx.fillStyle = '#FFD700';
-                    mmCtx.fillRect(8 + treasure.x * scale, 8 + treasure.y * scale, 4, 4);
-                }
-            });
-
-            // Draw enemies
-            Object.values(gameState.enemies).forEach(enemy => {
-                mmCtx.fillStyle = '#FF0000';
-                mmCtx.fillRect(8 + enemy.x * scale, 8 + enemy.y * scale, 4, 4);
-            });
-
-            // Draw players
-            Object.entries(gameState.players).forEach(([pid, player]) => {
-                mmCtx.fillStyle = player.alive ? player.color : '#888';
-                mmCtx.fillRect(8 + player.x * scale, 8 + player.y * scale, 4, 4);
-            });
-        }
-
-        function showMessage(text, className, duration) {
-            const msg = document.getElementById('statusMessage');
-            msg.textContent = text;
-            msg.className = className;
-            msg.style.display = 'block';
-            setTimeout(() => {
-                msg.style.display = 'none';
-            }, duration);
-        }
-    </script>
+        return undefined;
+      });
+    }
+
+  } else if (subs[myPCID] !== undefined) {
+    const ws = document.createElement('div');
+    ws.className = 'waiting-state';
+    ws.innerHTML = `
+      <p class="phase-heading">Card submitted! ✅</p>
+      <p class="phase-sub">You played: <strong>"${esc(subs[myPCID])}"</strong></p>
+      <div class="submit-chips">${chipsHtml()}</div>
+      <div class="dot-loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    `;
+    body.appendChild(ws);
+
+  } else {
+    const hs = document.createElement('div');
+    hs.className = 'hand-section';
+    hs.innerHTML = `<div class="hand-lbl">🃏 Your Hand — tap a card to play it</div>`;
+    const scroll = document.createElement('div');
+    scroll.className = 'hand-scroll';
+    (myHand || []).forEach(cardText => {
+      const c = document.createElement('div');
+      c.className = 'card red hand-card card-sm';
+      c.innerHTML = `<div class="card-stripe">Red Apple</div><div class="card-body">${esc(cardText)}</div>`;
+      c.onclick = () => submitCard(cardText);
+      scroll.appendChild(c);
+    });
+    hs.appendChild(scroll);
+    body.appendChild(hs);
+  }
+}
+
+async function submitCard(cardText) {
+  const myHand = toArr(roomData?.players?.[myPCID]?.hand || []);
+  const newHand = myHand.filter(c => c !== cardText);
+  await db.ref(`${ROOM_PATH}/${currentRoomId}`).update({
+    [`players/${myPCID}/hand`]: newHand,
+    [`game/submissions/${myPCID}`]: cardText
+  });
+}
+
+// ═══════════════════════════════════════════
+// JUDGING PHASE
+// ═══════════════════════════════════════════
+function renderJudging(body, isJudge, game, players) {
+  const subs = game.submissions || {};
+  const order = toArr(game.submissionOrder || []);
+  // Use stored order or fallback to Object.keys
+  const subOrder = order.length ? order : Object.keys(subs);
+
+  if (isJudge) {
+    const title = document.createElement('p');
+    title.className = 'phase-heading';
+    title.textContent = '⚖️ Pick the best match!';
+    body.appendChild(title);
+
+    const grid = document.createElement('div');
+    grid.className = 'sub-grid';
+    subOrder.forEach(pcid => {
+      const cardText = subs[pcid];
+      if (cardText === undefined) return;
+      const c = document.createElement('div');
+      c.className = 'card red sub-card card-md';
+      c.innerHTML = `<div class="card-stripe">Red Apple</div><div class="card-body">${esc(cardText)}</div>`;
+      c.onclick = () => pickWinner(pcid, cardText);
+      grid.appendChild(c);
+    });
+    body.appendChild(grid);
+
+  } else {
+    const ws = document.createElement('div');
+    ws.className = 'waiting-state';
+    ws.innerHTML = `
+      <p class="phase-heading">🤔 Judge is deciding…</p>
+      <p class="phase-sub">${esc(players[game.judgePCID]?.name || '?')} is picking the best card!</p>
+      <div class="dot-loader"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    `;
+    body.appendChild(ws);
+  }
+}
+
+async function pickWinner(winnerPCID, cardText) {
+  const players = roomData?.players || {};
+  const newScore = (players[winnerPCID]?.score || 0) + 1;
+  await db.ref(`${ROOM_PATH}/${currentRoomId}`).update({
+    'game/phase': 'results',
+    'game/roundWinnerPCID': winnerPCID,
+    'game/roundWinnerCard': cardText,
+    [`players/${winnerPCID}/score`]: newScore,
+  });
+}
+
+// ═══════════════════════════════════════════
+// RESULTS PHASE
+// ═══════════════════════════════════════════
+function renderResults(d, body, game, players) {
+  const winner = players[game.roundWinnerPCID] || {};
+  const isWinner = game.roundWinnerPCID === myPCID;
+  if (isWinner) confetti(35);
+
+  const ra = document.createElement('div');
+  ra.className = 'results-area anim-pop';
+  ra.innerHTML = `
+    <div style="font-size:3rem">${isWinner ? '🏆' : '🎉'}</div>
+    <div class="winner-name-big">${esc(winner.name || '?')} wins the round!</div>
+    <div class="card red result-card-wrap card-md no-hover">
+      <div class="card-stripe">Red Apple</div>
+      <div class="card-body">${esc(game.roundWinnerCard || '?')}</div>
+    </div>
+    <div class="matched-label">matched with</div>
+    <div class="card green no-hover" style="width:148px">
+      <div class="card-stripe">Green Apple</div>
+      <div class="card-body" style="font-size:1.15rem; padding:12px 10px 16px">${esc(game.greenCard || '?')}</div>
+    </div>
+    <div class="score-chip" style="font-size:0.9rem; padding:7px 18px">
+      ${esc(winner.name)}'s score: <span class="pts">${winner.score || 0}</span>
+    </div>
+  `;
+
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'btn btn-primary';
+  nextBtn.textContent = 'Next Round →';
+  nextBtn.onclick = () => advanceRound();
+  ra.appendChild(nextBtn);
+
+  body.appendChild(ra);
+
+  // Auto-advance after 6s (judge's client only)
+  clearTimeout(advanceTimer);
+  if (game.judgePCID === myPCID) {
+    advanceTimer = setTimeout(() => {
+      if (roomData?.game?.phase === 'results') advanceRound();
+    }, 6000);
+  }
+}
+
+// ═══════════════════════════════════════════
+// ADVANCE ROUND
+// ═══════════════════════════════════════════
+async function advanceRound() {
+  if (!currentRoomId || !roomData) return;
+  clearTimeout(advanceTimer);
+
+  // Lock with transaction so only one client runs this
+  const phaseRef = db.ref(`${ROOM_PATH}/${currentRoomId}/game/phase`);
+  const result = await phaseRef.transaction(cur => {
+    if (cur === 'results') return 'advancing';
+    return undefined;
+  });
+  if (!result.committed) return;
+
+  const d = roomData;
+  const game = d.game || {};
+  const players = d.players || {};
+
+  // Check win
+  const champion = Object.values(players).find(p => (p.score || 0) >= WIN_SCORE);
+  if (champion) {
+    await db.ref(`${ROOM_PATH}/${currentRoomId}`).update({
+      status: 'finished',
+      'game/phase': 'gameover'
+    });
+    return;
+  }
+
+  // Deal replacement cards
+  const updates = {};
+  const redDeck = [...toArr(game.redDeck)];
+  const subs = game.submissions || {};
+
+  Object.keys(subs).forEach(pcid => {
+    const hand = toArr(players[pcid]?.hand || []);
+    if (redDeck.length > 0) {
+      updates[`players/${pcid}/hand`] = [...hand, redDeck.shift()];
+    }
+  });
+
+  const greenDeck = [...toArr(game.greenDeck)];
+  const nextGreen = greenDeck.length > 0 ? greenDeck.shift() : GREEN_CARDS[Math.floor(Math.random() * GREEN_CARDS.length)];
+  const nextJ = nextJudge(players, game.judgePCID);
+
+  updates['game'] = {
+    round: (game.round || 1) + 1,
+    phase: 'submitting',
+    judgePCID: nextJ,
+    judgeIndex: (game.judgeIndex || 0) + 1,
+    judgeOrder: toArr(game.judgeOrder),
+    greenCard: nextGreen,
+    greenDeck: greenDeck,
+    redDeck: redDeck,
+    submissions: null,
+    roundWinnerPCID: null,
+    roundWinnerCard: null,
+    submissionOrder: null,
+  };
+  await db.ref(`${ROOM_PATH}/${currentRoomId}`).update(updates);
+}
+
+// ═══════════════════════════════════════════
+// GAME OVER
+// ═══════════════════════════════════════════
+function renderGameOver(d, body) {
+  const players = d.players || {};
+  const sorted = Object.values(players).sort((a, b) => (b.score || 0) - (a.score || 0));
+  const topScore = sorted[0]?.score || 0;
+
+  confetti(70);
+
+  const area = document.createElement('div');
+  area.className = 'gameover-area';
+  area.innerHTML = `
+    <div style="text-align:center">
+      <div style="font-size:3.5rem">🏆</div>
+      <div class="title-font" style="font-size:clamp(1.8rem,6vw,2.5rem); color:var(--gold); text-shadow:2px 3px 0 rgba(0,0,0,.4)">
+        ${esc(sorted[0]?.name || '?')} Wins!
+      </div>
+    </div>
+  `;
+
+  const list = document.createElement('div');
+  list.className = 'final-list';
+  const emojis = ['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣'];
+  sorted.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'final-row' + ((p.score || 0) >= topScore ? ' top' : '');
+    row.innerHTML = `
+      <span class="fr-rank">${emojis[i] || (i + 1) + '.'}</span>
+      <span class="fr-name">${esc(p.name)}${p.pcid === myPCID ? ' (you)' : ''}</span>
+      <span class="fr-pts">${p.score || 0} pts</span>
+    `;
+    list.appendChild(row);
+  });
+  area.appendChild(list);
+
+  const btns = document.createElement('div');
+  btns.className = 'btn-row';
+  const isHost = d.hostPCID === myPCID;
+  if (isHost) {
+    const again = document.createElement('button');
+    again.className = 'btn btn-primary';
+    again.textContent = '🔄 Play Again';
+    again.onclick = playAgain;
+    btns.appendChild(again);
+  }
+  const lobby = document.createElement('button');
+  lobby.className = 'btn btn-ghost';
+  lobby.textContent = '🏠 Lobby';
+  lobby.onclick = showLobby;
+  btns.appendChild(lobby);
+  area.appendChild(btns);
+
+  body.appendChild(area);
+}
+
+async function playAgain() {
+  if (!currentRoomId || !roomData) return;
+  const players = roomData.players || {};
+  const updates = { status: 'waiting', game: null };
+  Object.keys(players).forEach(pcid => {
+    updates[`players/${pcid}/score`] = 0;
+    updates[`players/${pcid}/hand`] = [];
+  });
+  await db.ref(`${ROOM_PATH}/${currentRoomId}`).update(updates);
+}
+
+// ═══════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════
+init();
+</script>
 </body>
 </html>

@@ -432,13 +432,14 @@ function showLobbyAsHost(){
     lobby.push({index:idx,name:'P'+(idx+1),warrior:null,connected:true,isHost:false});
     c._pi=idx;
 
-    c.on('open',()=>{
+    function onConnOpen(){
       document.getElementById('lobbyStatus').textContent=
         'Share this code! ('+hostConns.filter(x=>x.open).length+'/3 joined)';
       c.send({type:'lobbyInit',lobby,yourIndex:idx,code:roomCode});
       hostSend({type:'lobbyUpdate',lobby});
       renderLobby();
-    });
+    }
+    c.on('open',onConnOpen);
     c.on('data',d=>handleGuestMsg(c,d));
     c.on('close',()=>{
       const lp=lobby.find(p=>p.index===c._pi);if(lp)lp.connected=false;
@@ -447,6 +448,8 @@ function showLobbyAsHost(){
         'Share this code! ('+hostConns.filter(x=>x.open).length+'/3 joined)';
       const gp=allPlayers.find(p=>p.idx===c._pi);if(gp){gp.alive=false;gp.hp=0}
     });
+    // PeerJS may have already opened before listeners attached
+    if(c.open) onConnOpen();
   });
 
   peer.on('error',err=>{
@@ -497,13 +500,16 @@ function joinRoom(){
   peer=new Peer(undefined,{debug:0});
   peer.on('open',()=>{
     guestConn=peer.connect('sde-'+code,{reliable:true});
-    guestConn.on('open',()=>{
+    let opened=false;
+    function onGuestOpen(){
+      if(opened)return;opened=true;
       document.getElementById('joinBtn').textContent='CONNECTED!';
       switchScreen('lobbyScreen');
       document.getElementById('lobbyCode').textContent=code;
       document.getElementById('lobbyStatus').textContent='Connected! Pick your warrior.';
       document.getElementById('startBtn').style.display='none';
-    });
+    }
+    guestConn.on('open',onGuestOpen);
     guestConn.on('data',d=>handleHostMsg(d));
     guestConn.on('close',()=>{
       if(gameRunning){gameRunning=false;showDisconnect()}
@@ -513,6 +519,8 @@ function joinRoom(){
       document.getElementById('joinError').textContent='Could not connect';
       document.getElementById('joinBtn').textContent='CONNECT';
     });
+    // PeerJS may have already opened before listeners attached
+    if(guestConn.open) onGuestOpen();
   });
   peer.on('error',()=>{
     document.getElementById('joinError').textContent='Connection failed';

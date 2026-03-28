@@ -52,8 +52,6 @@
   .rc-status.playing{color:#ff8800;border-color:#ff8800}
   .rc-status.paused{color:#ff4444;border-color:#ff4444}
   .my-room{border-color:#444}
-
-  /* LOBBY */
   .lobby-box{width:100%;max-width:360px;margin:8px 0}
   .lobby-slot{display:flex;align-items:center;gap:6px;padding:8px;
     border:2px solid #222;margin:4px 0;border-radius:4px;flex-wrap:wrap}
@@ -75,8 +73,6 @@
     justify-content:center;margin:8px 0}
   .copy-link{font-size:7px;color:#666;cursor:pointer;text-decoration:underline;margin:4px}
   .copy-link:active{color:#fff}
-
-  /* GAME */
   #gameScreen{flex-direction:column;background:#0a0a0a}
   .hud{width:100%;max-width:500px;display:flex;flex-wrap:wrap;gap:3px;padding:4px 8px;justify-content:center}
   .hud-p{display:flex;align-items:center;gap:3px;flex:1;min-width:100px;max-width:180px}
@@ -122,8 +118,6 @@
   .damage-flash{position:absolute;inset:0;pointer-events:none;z-index:5;opacity:0;
     transition:opacity .1s;background:rgba(255,255,255,.25)}
   .damage-flash.hit{opacity:1}
-
-  /* ADMIN */
   #adminScreen{background:#111;justify-content:flex-start;padding-top:40px}
   .admin-section{width:100%;max-width:500px;margin:10px 0}
   .admin-section h3{font-size:10px;color:#ff8800;margin:8px 0 4px}
@@ -132,8 +126,6 @@
   .admin-row input{font-family:'Press Start 2P',monospace;font-size:8px;background:#1a1a1a;
     border:1px solid #444;color:#fff;padding:4px 6px;width:120px}
   .admin-id{color:#666;font-size:7px;word-break:break-all}
-
-  /* TV */
   .tv-mode #gameScreen{justify-content:center}
   .tv-mode .controls,.tv-mode .game-btns,.tv-mode #resetBtn,.tv-mode .hud{display:flex}
   .tv-mode #canvasWrap{max-width:90vmin;border:none}
@@ -151,7 +143,7 @@
   <div class="error-text" id="nameError"></div>
 </div>
 
-<!-- MENU / ROOM BROWSER -->
+<!-- MENU -->
 <div id="menuScreen" class="screen">
   <div class="scr-title">SHOWDOWN<br><span class="sub">DEEZ ELEMENTS</span></div>
   <div class="status-text">Welcome, <span id="welcomeName">?</span></div>
@@ -262,6 +254,18 @@ const myPCID=getOrCreatePCID();
 let myName='';
 
 // ═══════════════════════════════════════════════════
+// NAME CACHE — fetch once, reuse everywhere
+// ═══════════════════════════════════════════════════
+const nameCache={};
+async function getName(pcid){
+  if(nameCache[pcid])return nameCache[pcid];
+  const s=await R('players/'+pcid+'/name').once('value');
+  const n=s.val()||'???';
+  nameCache[pcid]=n;
+  return n;
+}
+
+// ═══════════════════════════════════════════════════
 // WARRIOR + GAME CONFIG
 // ═══════════════════════════════════════════════════
 const W={
@@ -280,7 +284,8 @@ const FX={
 const T=32,MW=10,MH=8,CW=MW*T,CH=MH*T;
 const SPD=1.8,GSPD=0.8,MHP=100;
 const DMG=20,GDMG=7,ATKR=44,ATKW=250,ATKD=500,ATKCD=800;
-const SYNC=80,MAMMO=5,ORBMS=3500,MORBS=8,ODIST=18;
+const SYNC=100,MAMMO=5,ORBMS=1500,MORBS=8,ODIST=18;
+const LERP_SPEED=0.2; // interpolation factor per frame
 const SPAWNS=[{x:64,y:90},{x:256,y:90},{x:64,y:175},{x:256,y:175}];
 const MAP=[
   [1,1,1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,0,1],
@@ -334,11 +339,13 @@ const sfx={
 };
 
 // ═══════════════════════════════════════════════════
-// PLAYER CLASS
+// PLAYER CLASS (with interpolation targets)
 // ═══════════════════════════════════════════════════
 class Player{
   constructor(type,sx,sy,slot,pcid){
     this.type=type;this.x=sx;this.y=sy;this.slot=slot;this.pcid=pcid;
+    // Interpolation targets for remote players
+    this.tx=sx;this.ty=sy;
     this.dir=sx<CW/2?'right':'left';this.hp=MHP;this.ammo=0;this.state='idle';
     this.wf=0;this.wt=0;this.at=0;this.acd=0;this.hd=false;this.ft=0;this.alive=true;
     this.mv={up:false,down:false,left:false,right:false};
@@ -378,6 +385,18 @@ class Player{
     }else if(this.state!=='guarding'){this.state='idle';this.wt=0}
     return hits;
   }
+  // Interpolate remote player toward target position
+  interpolate(){
+    const dx=this.tx-this.x, dy=this.ty-this.y;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist>60){
+      // Too far = teleport (respawn or lag spike)
+      this.x=this.tx;this.y=this.ty;
+    }else if(dist>0.5){
+      this.x+=dx*LERP_SPEED;
+      this.y+=dy*LERP_SPEED;
+    }
+  }
   fac(dx,dy){switch(this.dir){case'right':return dx>-10;case'left':return dx<10;
     case'down':return dy>-10;case'up':return dy<10}return true}
   col(x,y){for(const[px,py]of[[x-10,y-6],[x+10,y-6],[x-10,y+6],[x+10,y+6]]){
@@ -390,10 +409,21 @@ class Player{
   startGrd(){if(this.state!=='attacking')this.state='guarding'}
   stopGrd(){if(this.state==='guarding')this.state='idle'}
   ser(){return{x:Math.round(this.x*10)/10,y:Math.round(this.y*10)/10,dir:this.dir,
-    state:this.state,hp:this.hp,ammo:this.ammo,wf:this.wf,at:this.at,ft:this.ft,
-    alive:this.alive,type:this.type,slot:this.slot,pcid:this.pcid}}
-  deser(s){this.x=s.x;this.y=s.y;this.dir=s.dir;this.state=s.state;this.hp=s.hp;
-    this.ammo=s.ammo;this.wf=s.wf;this.at=s.at;this.ft=s.ft;this.alive=s.alive}
+    state:this.state,hp:this.hp,ammo:this.ammo,wf:this.wf,at:Math.round(this.at),
+    ft:Math.round(this.ft),alive:this.alive,type:this.type,slot:this.slot,pcid:this.pcid}}
+  applyRemote(s){
+    // Set TARGETS, don't teleport
+    this.tx=s.x;this.ty=s.y;
+    // Non-positional state applies immediately
+    this.dir=s.dir;this.state=s.state;this.hp=s.hp;
+    this.ammo=s.ammo;this.wf=s.wf;this.at=s.at;this.ft=s.ft;this.alive=s.alive;
+  }
+  applyFull(s){
+    // Full apply (initial load / reconnect)
+    this.x=s.x;this.y=s.y;this.tx=s.x;this.ty=s.y;
+    this.dir=s.dir;this.state=s.state;this.hp=s.hp;this.ammo=s.ammo;
+    this.wf=s.wf;this.at=s.at;this.ft=s.ft;this.alive=s.alive;
+  }
 }
 
 // ═══════════════════════════════════════════════════
@@ -411,16 +441,18 @@ function updateFx(dt){for(let i=effects.length-1;i>=0;i--){effects[i].t+=dt;
 // ═══════════════════════════════════════════════════
 // GAME STATE
 // ═══════════════════════════════════════════════════
-let currentRoom=null; // {id, ref (db ref)}
-let roomData=null; // live snapshot of room
-let allPlayers=[]; // Player instances
+let currentRoom=null;
+let roomMeta=null; // {status, vip, slots, name, ...} — no gameData
+let allPlayers=[];
 let myPlayer=null;
 let orbs=[],orbId=0,orbSpT=0;
 let gameRunning=false,gameOver=false;
 let lastTime=0,syncT=0;
 let waterT=0,waterF=0,orbT=0,orbF=0;
 let isVip=false,isTv=false,isAdmin=false;
-let activeListeners=[]; // to cleanup Firebase listeners
+let activeListeners=[];
+let countdownActive=false; // guard against double countdown
+let currentScreen=''; // track which screen we're on
 
 const canvas=document.getElementById('gameCanvas');
 const ctx=canvas.getContext('2d');
@@ -429,29 +461,29 @@ ctx.imageSmoothingEnabled=false;
 // ═══════════════════════════════════════════════════
 // SCREEN MANAGEMENT
 // ═══════════════════════════════════════════════════
-function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById(id).classList.add('active')}
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  currentScreen=id;
+}
 
 // ═══════════════════════════════════════════════════
 // LOGIN / NAME
 // ═══════════════════════════════════════════════════
 async function init(){
-  // Check URL params
   const params=new URLSearchParams(location.search);
   if(params.has('admin')){isAdmin=true;show('adminScreen');loadAdmin();return}
   if(params.has('tv')){isTv=true;document.body.classList.add('tv-mode');
     const rid=params.get('tv');if(rid){joinRoomById(rid,true);return}}
-
-  // Normal flow: check if player exists
   const snap=await R('players/'+myPCID).once('value');
-  if(snap.exists()){myName=snap.val().name;showMenu()}
+  if(snap.exists()){myName=snap.val().name;nameCache[myPCID]=myName;showMenu()}
   else{show('loginScreen');setTimeout(()=>document.getElementById('nameInput').focus(),300)}
 }
 
 async function saveName(){
   const n=document.getElementById('nameInput').value.trim();
   if(!n||n.length<1){document.getElementById('nameError').textContent='Enter a name';return}
-  myName=n;
+  myName=n;nameCache[myPCID]=n;
   await R('players/'+myPCID).set({name:n,createdAt:Date.now()});
   showMenu();
 }
@@ -469,7 +501,6 @@ let roomListRef=null;
 function showMenu(){
   document.getElementById('welcomeName').textContent=myName;
   show('menuScreen');
-  // Listen for rooms
   if(roomListRef)roomListRef.off();
   roomListRef=R('rooms');
   roomListRef.on('value',snap=>{
@@ -498,20 +529,16 @@ function showMenu(){
 
 async function createRoom(){
   iA();
-  const id=genId();
-  const name='Room '+id.substring(0,4);
+  const id=Array.from({length:8},()=>'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random()*36)]).join('');
   await R('rooms/'+id).set({
-    name,status:'lobby',vip:myPCID,createdAt:Date.now(),
+    name:'Room '+id.substring(0,4),status:'lobby',vip:myPCID,createdAt:Date.now(),
     slots:{0:{pcid:myPCID,warrior:null,connected:true,lastSeen:Date.now()}}
   });
   joinRoomById(id);
 }
 
-function genId(){return Array.from({length:8},()=>
-  'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random()*36)]).join('')}
-
 // ═══════════════════════════════════════════════════
-// JOIN ROOM / LOBBY
+// JOIN ROOM — sets up SPLIT listeners
 // ═══════════════════════════════════════════════════
 async function joinRoomById(id,tvMode){
   iA();
@@ -519,95 +546,105 @@ async function joinRoomById(id,tvMode){
   cleanupListeners();
   currentRoom={id,ref:R('rooms/'+id)};
 
-  // Get room data
   const snap=await currentRoom.ref.once('value');
   if(!snap.exists()){alert('Room not found');showMenu();return}
-  roomData=snap.val();
+  roomMeta=snap.val();
 
   if(tvMode||isTv){
-    // TV spectator - just watch
-    setupRoomListener();
-    const st=roomData.status;
-    if(st==='playing'||st==='paused'||st==='countdown'){
-      enterGameAsSpectator();
-    }else{
-      show('lobbyScreen');
-      document.getElementById('lobbyRoomName').textContent=roomData.name||id;
-    }
+    setupListeners();
+    const st=roomMeta.status;
+    if(st==='playing'||st==='paused'||st==='countdown')enterGame(true);
+    else{show('lobbyScreen');document.getElementById('lobbyRoomName').textContent=roomMeta.name||id}
     return;
   }
 
-  // Check if already in a slot
-  const slots=roomData.slots||{};
+  // Find or take a slot
+  const slots=roomMeta.slots||{};
   let mySlot=null;
-  for(const[si,sl]of Object.entries(slots)){
-    if(sl&&sl.pcid===myPCID){mySlot=parseInt(si);break}
-  }
-
-  // If not in room, find empty slot
+  for(const[si,sl]of Object.entries(slots))if(sl&&sl.pcid===myPCID){mySlot=parseInt(si);break}
   if(mySlot===null){
-    for(let i=0;i<4;i++){
-      if(!slots[i]||!slots[i].pcid){mySlot=i;break}
-    }
+    for(let i=0;i<4;i++){if(!slots[i]||!slots[i].pcid){mySlot=i;break}}
     if(mySlot===null){alert('Room is full');showMenu();return}
     await currentRoom.ref.child('slots/'+mySlot).set({
       pcid:myPCID,warrior:null,connected:true,lastSeen:Date.now()});
   }else{
-    // Reconnecting - mark connected
     await currentRoom.ref.child('slots/'+mySlot+'/connected').set(true);
     await currentRoom.ref.child('slots/'+mySlot+'/lastSeen').set(Date.now());
   }
-
-  // Set disconnect handler
   currentRoom.ref.child('slots/'+mySlot+'/connected').onDisconnect().set(false);
 
-  // Setup listener
-  setupRoomListener();
+  setupListeners();
 
-  // Show appropriate screen based on status
-  const status=roomData.status;
-  if(status==='playing'||status==='countdown'){
-    enterGame();
-  }else if(status==='paused'){
-    enterGame();
-  }else{
-    showLobby();
-  }
+  const status=roomMeta.status;
+  if(status==='playing'||status==='countdown'||status==='paused')enterGame(false);
+  else showLobby();
 }
 
-function setupRoomListener(){
-  const listener=currentRoom.ref.on('value',snap=>{
-    if(!snap.exists()){
-      // Room deleted
-      cleanupListeners();currentRoom=null;roomData=null;
-      if(!isAdmin)showMenu();
-      return;
-    }
-    roomData=snap.val();
-    isVip=roomData.vip===myPCID;
-
-    // Update current screen
-    const activeScreen=document.querySelector('.screen.active');
-    if(activeScreen){
-      if(activeScreen.id==='lobbyScreen')renderLobby();
-      else if(activeScreen.id==='gameScreen'){
-        updateFromFirebase();
-        updateHUD();
-      }
-    }
+// ═══════════════════════════════════════════════════
+// SPLIT LISTENERS — the key fix for glitchiness
+// ═══════════════════════════════════════════════════
+function setupListeners(){
+  // 1) Room meta: status, vip, slots, name, votes (NOT gameData)
+  const metaRef=currentRoom.ref;
+  const metaFn=metaRef.on('value',snap=>{
+    if(!snap.exists()){cleanupListeners();currentRoom=null;roomMeta=null;showMenu();return}
+    const d=snap.val();
+    const oldStatus=roomMeta?.status;
+    // Store meta WITHOUT gameData to avoid huge object
+    roomMeta={status:d.status,vip:d.vip,slots:d.slots,name:d.name,
+      createdAt:d.createdAt,votes:d.votes};
+    isVip=d.vip===myPCID;
 
     // Status transitions
-    if(roomData.status==='countdown'&&activeScreen?.id==='lobbyScreen'){
-      enterGame();
-    }else if(roomData.status==='lobby'&&activeScreen?.id==='gameScreen'){
-      // Reset happened
-      gameRunning=false;gameOver=false;allPlayers=[];myPlayer=null;
-      showLobby();
+    if(currentScreen==='lobbyScreen'){
+      renderLobby();
+      if(d.status==='countdown'&&oldStatus!=='countdown'){
+        enterGame(isTv);
+      }
+    }
+    if(currentScreen==='gameScreen'){
+      // Check for reset-to-lobby
+      if(d.status==='lobby'){
+        gameRunning=false;gameOver=false;countdownActive=false;
+        allPlayers=[];myPlayer=null;
+        showLobby();return;
+      }
+      // Pause/unpause
+      if(d.status==='paused'&&gameRunning){
+        gameRunning=false;
+        document.getElementById('pauseOverlay').classList.add('active');
+      }
+      if(d.status==='playing'&&!gameRunning&&!gameOver&&!countdownActive){
+        document.getElementById('pauseOverlay').classList.remove('active');
+        gameRunning=true;lastTime=performance.now();requestAnimationFrame(gameLoop);
+      }
+      if(d.status==='gameover'&&!gameOver){
+        gameOver=true;gameRunning=false;sfx.ko();
+        setTimeout(()=>showGameOverUI(),600);
+      }
+      document.getElementById('resetGameBtn').style.display=isVip?'':'none';
     }
   });
-  activeListeners.push({ref:currentRoom.ref,ev:'value',fn:listener});
+  activeListeners.push({ref:metaRef,ev:'value',fn:metaFn});
 
-  // Hit listener
+  // 2) Remote player states — individual listeners per player
+  // (set up in enterGame when we know who the players are)
+
+  // 3) Orbs
+  const orbRef=currentRoom.ref.child('gameData/orbs');
+  const orbFn=orbRef.on('value',snap=>{
+    if(!snap.exists()){orbs=[];return}
+    try{orbs=JSON.parse(snap.val())}catch(e){orbs=[]}
+  });
+  activeListeners.push({ref:orbRef,ev:'value',fn:orbFn});
+
+  const orbCRef=currentRoom.ref.child('gameData/orbCounter');
+  const orbCFn=orbCRef.on('value',snap=>{
+    if(snap.exists())orbId=snap.val();
+  });
+  activeListeners.push({ref:orbCRef,ev:'value',fn:orbCFn});
+
+  // 4) Hit listener (for my player)
   if(!isTv){
     const hitRef=currentRoom.ref.child('hits/'+myPCID);
     const hitFn=hitRef.on('child_added',snap=>{
@@ -617,12 +654,30 @@ function setupRoomListener(){
         const fl=document.getElementById('damageFlash');
         fl.classList.add('hit');setTimeout(()=>fl.classList.remove('hit'),150);
         spawnFx(h.aType||'fire_none',myPlayer.x,myPlayer.y-20,h.dir||'right');
-        // Write updated state
         writeMyState();
       }
       snap.ref.remove();
     });
     activeListeners.push({ref:hitRef,ev:'child_added',fn:hitFn});
+  }
+
+  // 5) Winner
+  const winRef=currentRoom.ref.child('gameData/winner');
+  const winFn=winRef.on('value',snap=>{/* handled by status change */});
+  activeListeners.push({ref:winRef,ev:'value',fn:winFn});
+}
+
+function setupPlayerListeners(){
+  // Listen to each REMOTE player's state individually
+  for(const p of allPlayers){
+    if(p===myPlayer)continue;
+    const ref=currentRoom.ref.child('gameData/playerStates/'+p.pcid);
+    const fn=ref.on('value',snap=>{
+      const s=snap.val();
+      if(!s)return;
+      p.applyRemote(s);
+    });
+    activeListeners.push({ref,ev:'value',fn});
   }
 }
 
@@ -636,35 +691,30 @@ function cleanupListeners(){
 // ═══════════════════════════════════════════════════
 function showLobby(){
   show('lobbyScreen');
-  document.getElementById('lobbyRoomName').textContent=roomData?.name||currentRoom?.id||'?';
+  document.getElementById('lobbyRoomName').textContent=roomMeta?.name||currentRoom?.id||'?';
   renderLobby();
 }
 
 async function renderLobby(){
-  if(!roomData)return;
-  const slots=roomData.slots||{};
+  if(!roomMeta)return;
+  const slots=roomMeta.slots||{};
   const taken=Object.values(slots).filter(s=>s&&s.warrior&&s.warrior!=='spectator').map(s=>s.warrior);
 
-  // Load player names
+  // Pre-fetch names (uses cache after first call)
+  const pcids=Object.values(slots).filter(s=>s&&s.pcid).map(s=>s.pcid);
   const names={};
-  for(const sl of Object.values(slots)){
-    if(sl&&sl.pcid&&!names[sl.pcid]){
-      const ns=await R('players/'+sl.pcid+'/name').once('value');
-      names[sl.pcid]=ns.val()||'???';
-    }
-  }
+  await Promise.all(pcids.map(async p=>{names[p]=await getName(p)}));
 
   let html='';
   for(let i=0;i<4;i++){
     const sl=slots[i];
     const hasPcid=sl&&sl.pcid;
     const isMe=hasPcid&&sl.pcid===myPCID;
-    const isSlotVip=hasPcid&&sl.pcid===roomData.vip;
+    const isSlotVip=hasPcid&&sl.pcid===roomMeta.vip;
     const connected=sl&&sl.connected;
 
     html+=`<div class="lobby-slot ${isMe?'me':''}">`;
     html+=`<div class="slot-label ${isSlotVip?'vip':''}">${isSlotVip?'★VIP':'P'+(i+1)}</div>`;
-
     if(hasPcid){
       html+=`<div class="lobby-picks">`;
       for(const wk of WK){
@@ -674,7 +724,7 @@ async function renderLobby(){
         const canClick=isMe&&!tak;
         let cls='pick-btn';
         if(sel)cls+=' selected';if(tak)cls+=' taken';if(!canClick&&!sel)cls+=' disabled';
-        const oc=canClick||sel&&isMe?` onclick="pickW('${sel?'':wk}',${i})"`:'';
+        const oc=canClick||(sel&&isMe)?` onclick="pickW('${sel?'':wk}',${i})"`:'';
         html+=`<button class="${cls}"${oc} title="${w.label}">${w.emoji}</button>`;
       }
       const specSel=sl.warrior==='spectator';
@@ -682,20 +732,19 @@ async function renderLobby(){
       const specOc=isMe?` onclick="pickW('${specSel?'':'spectator'}',${i})"`:'';
       html+=`<button class="${specCls}"${specOc} title="WATCH">👁️</button>`;
       html+=`</div>`;
-      html+=`<div class="slot-name ${connected?'connected':''}">${names[sl.pcid]||'???'}${connected?'':'(away)'}</div>`;
+      html+=`<div class="slot-name ${connected?'connected':''}">${names[sl.pcid]||'???'}${connected?'':' (away)'}</div>`;
     }else{
       html+=`<div class="slot-empty">Empty</div>`;
     }
     html+=`</div>`;
   }
   document.getElementById('slotList').innerHTML=html;
-  document.getElementById('vipControls').style.display=isVip?'flex':'none';
+  document.getElementById('vipControls').style.display=isVip&&!isTv?'flex':'none';
 }
 
 async function pickW(warrior,slot){
   if(!currentRoom)return;
-  const w=warrior||null;
-  await currentRoom.ref.child('slots/'+slot+'/warrior').set(w);
+  await currentRoom.ref.child('slots/'+slot+'/warrior').set(warrior||null);
 }
 
 // ═══════════════════════════════════════════════════
@@ -703,16 +752,14 @@ async function pickW(warrior,slot){
 // ═══════════════════════════════════════════════════
 async function vipStartGame(){
   if(!isVip||!currentRoom)return;
-  // Generate initial orbs
-  const initOrbs=[];orbId=0;
+  const initOrbs=[];let oid=0;
   for(let i=0;i<3;i++){
     const t=GRASS[Math.floor(Math.random()*GRASS.length)];
     const els=['fire','earth','water','air'];
-    initOrbs.push({id:orbId++,element:els[Math.floor(Math.random()*4)],x:t.tx*T+16,y:t.ty*T+16});
+    initOrbs.push({id:oid++,element:els[Math.floor(Math.random()*4)],x:t.tx*T+16,y:t.ty*T+16});
   }
-  // Initialize game state
-  const slots=roomData.slots||{};
-  const gd={playerStates:{},orbs:JSON.stringify(initOrbs),orbCounter:orbId,winner:null};
+  const slots=roomMeta.slots||{};
+  const gd={playerStates:{},orbs:JSON.stringify(initOrbs),orbCounter:oid,winner:null};
   let si=0;
   for(let i=0;i<4;i++){
     const sl=slots[i];
@@ -723,6 +770,7 @@ async function vipStartGame(){
     si++;
   }
   await currentRoom.ref.child('gameData').set(gd);
+  await currentRoom.ref.child('hits').remove();
   await currentRoom.ref.child('status').set('countdown');
   await currentRoom.ref.child('votes').remove();
 }
@@ -731,44 +779,40 @@ async function vipDeleteRoom(){
   if(!isVip||!currentRoom)return;
   if(!confirm('Delete this room?'))return;
   await currentRoom.ref.remove();
-  cleanupListeners();currentRoom=null;roomData=null;showMenu();
+  cleanupListeners();currentRoom=null;roomMeta=null;showMenu();
 }
 
 async function vipResetFromGame(){
   if(!isVip||!currentRoom)return;
+  gameRunning=false;gameOver=false;countdownActive=false;
   await currentRoom.ref.child('gameData').remove();
-  await currentRoom.ref.child('status').set('lobby');
+  await currentRoom.ref.child('hits').remove();
   await currentRoom.ref.child('votes').remove();
-  // Clear warriors
-  const slots=roomData.slots||{};
-  for(const i of Object.keys(slots))await currentRoom.ref.child('slots/'+i+'/warrior').set(null);
+  const slots=roomMeta.slots||{};
+  const updates={};
+  for(const i of Object.keys(slots))updates['slots/'+i+'/warrior']=null;
+  updates['status']='lobby';
+  await currentRoom.ref.update(updates);
 }
 
 async function voteReset(type){
   if(!currentRoom)return;
   await currentRoom.ref.child('votes/'+myPCID).set(type);
-  if(isVip)processVotes();
-}
-
-async function processVotes(){
-  if(!isVip||!currentRoom)return;
-  const votes=roomData.votes||{};
-  const slots=roomData.slots||{};
-  const activePcids=Object.values(slots).filter(s=>s&&s.pcid&&s.connected).map(s=>s.pcid);
-  const voteCount=activePcids.filter(p=>votes[p]).length;
-  if(voteCount<activePcids.length)return; // not everyone voted
-
-  const sameVotes=activePcids.filter(p=>votes[p]==='same').length;
-  if(sameVotes>activePcids.length/2){
-    // Rematch same players
-    await currentRoom.ref.child('gameData').remove();
-    await currentRoom.ref.child('status').set('countdown');
-    await currentRoom.ref.child('votes').remove();
-    // Re-init game with same warriors
-    vipStartGame();
-  }else{
-    // New players
-    await vipResetFromGame();
+  if(isVip){
+    // Re-read votes fresh
+    const vSnap=await currentRoom.ref.child('votes').once('value');
+    const votes=vSnap.val()||{};
+    const slots=roomMeta.slots||{};
+    const activePcids=Object.values(slots).filter(s=>s&&s.pcid&&s.connected).map(s=>s.pcid);
+    const voteCount=activePcids.filter(p=>votes[p]).length;
+    if(voteCount<activePcids.length)return;
+    const sameVotes=activePcids.filter(p=>votes[p]==='same').length;
+    if(sameVotes>activePcids.length/2){
+      await currentRoom.ref.child('votes').remove();
+      vipStartGame();
+    }else{
+      vipResetFromGame();
+    }
   }
 }
 
@@ -777,64 +821,54 @@ async function processVotes(){
 // ═══════════════════════════════════════════════════
 async function leaveRoom(){
   if(!currentRoom)return;
-  const slots=roomData?.slots||{};
-
-  // Find my slot
+  const slots=roomMeta?.slots||{};
   let mySlot=null;
   for(const[si,sl]of Object.entries(slots))if(sl&&sl.pcid===myPCID)mySlot=parseInt(si);
   if(mySlot===null){cleanupListeners();currentRoom=null;showMenu();return}
-
-  // Clear my slot
   await currentRoom.ref.child('slots/'+mySlot).set(null);
-
-  // If game is playing, pause it
-  if(roomData.status==='playing'){
-    await currentRoom.ref.child('status').set('paused');
-  }
-
-  // VIP transfer
+  if(roomMeta.status==='playing')await currentRoom.ref.child('status').set('paused');
   if(isVip){
     const remaining=Object.entries(slots).filter(([i,s])=>s&&s.pcid&&s.pcid!==myPCID&&s.connected);
-    if(remaining.length>0){
-      await currentRoom.ref.child('vip').set(remaining[0][1].pcid);
-    }else{
-      // Last player - delete room
-      await currentRoom.ref.remove();
-    }
+    if(remaining.length>0)await currentRoom.ref.child('vip').set(remaining[0][1].pcid);
+    else await currentRoom.ref.remove();
   }else{
-    // Check if room is now empty
     const remaining=Object.values(slots).filter(s=>s&&s.pcid&&s.pcid!==myPCID);
     if(remaining.length===0)await currentRoom.ref.remove();
   }
-
-  cleanupListeners();currentRoom=null;roomData=null;
-  gameRunning=false;gameOver=false;allPlayers=[];myPlayer=null;
+  cleanupListeners();currentRoom=null;roomMeta=null;
+  gameRunning=false;gameOver=false;countdownActive=false;allPlayers=[];myPlayer=null;
   showMenu();
 }
 
 function backToLobby(){
-  gameRunning=false;gameOver=false;
+  gameRunning=false;gameOver=false;countdownActive=false;
   showLobby();
 }
 
 // ═══════════════════════════════════════════════════
 // ENTER GAME
 // ═══════════════════════════════════════════════════
-function enterGame(){
-  if(!roomData?.gameData)return;
+async function enterGame(spectatorMode){
+  // Load full gameData once
+  const gdSnap=await currentRoom.ref.child('gameData').once('value');
+  const gd=gdSnap.val();
+  if(!gd){showLobby();return}
+
   allPlayers=[];myPlayer=null;effects.length=0;gameOver=false;
 
-  const gd=roomData.gameData;
   const ps=gd.playerStates||{};
   for(const[pcid,s]of Object.entries(ps)){
     const p=new Player(s.type,s.x,s.y,s.slot,pcid);
-    p.hp=s.hp;p.ammo=s.ammo;p.alive=s.alive;p.dir=s.dir;p.state=s.state;
+    p.applyFull(s);
     allPlayers.push(p);
-    if(pcid===myPCID)myPlayer=p;
+    if(pcid===myPCID&&!spectatorMode)myPlayer=p;
   }
 
-  orbs=JSON.parse(gd.orbs||'[]');
+  try{orbs=JSON.parse(gd.orbs||'[]')}catch(e){orbs=[]}
   orbId=gd.orbCounter||0;
+
+  // Set up per-player listeners for remote state
+  setupPlayerListeners();
 
   buildHUD();
   document.getElementById('controlsArea').style.display=myPlayer?'flex':'none';
@@ -843,28 +877,24 @@ function enterGame(){
   document.getElementById('gameOverOverlay').classList.remove('active');
   document.getElementById('pauseOverlay').classList.remove('active');
 
-  if(roomData.status==='countdown'){
+  const status=roomMeta.status;
+  if(status==='countdown'&&!countdownActive){
+    countdownActive=true;
     countdown(3,()=>{
-      currentRoom.ref.child('status').set('playing');
+      countdownActive=false;
+      if(isVip)currentRoom.ref.child('status').set('playing');
       gameRunning=true;lastTime=performance.now();orbSpT=0;
       requestAnimationFrame(gameLoop);
     });
-  }else if(roomData.status==='playing'){
+  }else if(status==='playing'){
     gameRunning=true;lastTime=performance.now();orbSpT=0;
     requestAnimationFrame(gameLoop);
-  }else if(roomData.status==='paused'){
+  }else if(status==='paused'){
     document.getElementById('pauseOverlay').classList.add('active');
-    render(); // show current state
-  }else if(roomData.status==='gameover'){
-    gameOver=true;
-    showGameOverUI();
     render();
+  }else if(status==='gameover'){
+    gameOver=true;showGameOverUI();render();
   }
-}
-
-function enterGameAsSpectator(){
-  myPlayer=null;
-  enterGame();
 }
 
 function buildHUD(){
@@ -877,63 +907,48 @@ function buildHUD(){
       <div class="hud-ammo" id="am-${p.slot}">×0</div></div>`;
   }
   hud.innerHTML=h;
-  // Load names
   for(const p of allPlayers){
-    R('players/'+p.pcid+'/name').once('value').then(s=>{
+    getName(p.pcid).then(n=>{
       const el=document.getElementById('nm-'+p.slot);
-      if(el)el.textContent=(p===myPlayer?'YOU':s.val()||'P'+(p.slot+1));
+      if(el)el.textContent=(p===myPlayer?'YOU':n);
     });
   }
 }
 
-// ═══════════════════════════════════════════════════
-// FIREBASE SYNC
-// ═══════════════════════════════════════════════════
-function updateFromFirebase(){
-  if(!roomData?.gameData)return;
-  const ps=roomData.gameData.playerStates||{};
+function updateHUD(){
   for(const p of allPlayers){
-    if(p===myPlayer)continue;
-    const s=ps[p.pcid];if(s)p.deser(s);
+    const hpEl=document.getElementById('hp-'+p.slot);
+    const amEl=document.getElementById('am-'+p.slot);
+    if(hpEl)hpEl.style.width=(p.hp/MHP*100)+'%';
+    if(amEl)amEl.textContent='×'+p.ammo;
+    const hudEl=document.getElementById('hud-'+p.slot);
+    if(hudEl)hudEl.style.opacity=p.alive?'1':'.3';
   }
-  // Update orbs from Firebase
-  try{orbs=JSON.parse(roomData.gameData.orbs||'[]')}catch(e){orbs=[]}
-  orbId=roomData.gameData.orbCounter||0;
-
-  // Check pause
-  if(roomData.status==='paused'&&gameRunning){
-    gameRunning=false;
-    document.getElementById('pauseOverlay').classList.add('active');
-    renderPauseSlots();
+  if(myPlayer){
+    const ab=document.getElementById('atkBtn');
+    ab.classList.toggle('cooldown',myPlayer.state==='attacking'||myPlayer.acd>0);
+    ab.classList.toggle('no-ammo',myPlayer.ammo<=0&&myPlayer.state!=='attacking');
   }
-  if(roomData.status==='playing'&&!gameRunning&&!gameOver){
-    document.getElementById('pauseOverlay').classList.remove('active');
-    gameRunning=true;lastTime=performance.now();requestAnimationFrame(gameLoop);
-  }
-  if(roomData.status==='gameover'&&!gameOver){
-    gameOver=true;gameRunning=false;sfx.ko();
-    showGameOverUI();
-  }
-
-  // Update VIP btn
-  document.getElementById('resetGameBtn').style.display=isVip?'':'none';
 }
 
-function renderPauseSlots(){
-  const slots=roomData?.slots||{};
-  let html='<div class="status-text">Waiting for players to fill slots...</div>';
-  document.getElementById('pauseSlots').innerHTML=html;
-}
-
+// ═══════════════════════════════════════════════════
+// FIREBASE WRITES (throttled)
+// ═══════════════════════════════════════════════════
+let lastWrittenState=null;
 async function writeMyState(){
   if(!currentRoom||!myPlayer)return;
-  await currentRoom.ref.child('gameData/playerStates/'+myPCID).update(myPlayer.ser());
+  const s=myPlayer.ser();
+  // Only write if something actually changed
+  const key=JSON.stringify(s);
+  if(key===lastWrittenState)return;
+  lastWrittenState=key;
+  currentRoom.ref.child('gameData/playerStates/'+myPCID).set(s);
 }
 
-async function writeOrbs(){
-  if(!currentRoom||!isVip)return;
-  await currentRoom.ref.child('gameData/orbs').set(JSON.stringify(orbs));
-  await currentRoom.ref.child('gameData/orbCounter').set(orbId);
+function writeOrbs(){
+  if(!currentRoom)return;
+  currentRoom.ref.child('gameData/orbs').set(JSON.stringify(orbs));
+  currentRoom.ref.child('gameData/orbCounter').set(orbId);
 }
 
 // ═══════════════════════════════════════════════════
@@ -958,19 +973,25 @@ function gameLoop(ts){
   if(!gameRunning)return;
   const dt=Math.min(ts-lastTime,50);lastTime=ts;
 
+  // Update local player
   if(myPlayer&&myPlayer.alive){
     const hits=myPlayer.update(dt,allPlayers);
     for(const h of hits){
-      // Push hit to Firebase
       currentRoom.ref.child('hits/'+h.tgt).push({
         dmg:h.dmg,aType:myPlayer.type,dir:myPlayer.dir,ts:Date.now()});
-      // Spawn local effect
       const o=atkOff(myPlayer.dir);
       spawnFx(myPlayer.type,myPlayer.x+o[0],myPlayer.y+o[1],myPlayer.dir);
     }
   }
+
+  // Interpolate remote players
+  for(const p of allPlayers){
+    if(p!==myPlayer)p.interpolate();
+  }
+
   updateFx(dt);
 
+  // Tile animation
   waterT+=dt;if(waterT>500){waterF=1-waterF;waterT=0}
   orbT+=dt;if(orbT>400){orbF=1-orbF;orbT=0}
 
@@ -992,8 +1013,7 @@ function gameLoop(ts){
         const match=(orb.element+'_none')===myPlayer.type;
         if(match){myPlayer.ammo=Math.min(MAMMO,myPlayer.ammo+1);sfx.orb()}else sfx.brk();
         orbs.splice(i,1);
-        if(isVip)writeOrbs();
-        else currentRoom.ref.child('gameData/orbs').set(JSON.stringify(orbs));
+        writeOrbs();
         break;
       }
     }
@@ -1003,29 +1023,17 @@ function gameLoop(ts){
   syncT+=dt;
   if(syncT>=SYNC){syncT=0;if(myPlayer)writeMyState()}
 
-  // Update HUD
-  for(const p of allPlayers){
-    const hpEl=document.getElementById('hp-'+p.slot);
-    const amEl=document.getElementById('am-'+p.slot);
-    if(hpEl)hpEl.style.width=(p.hp/MHP*100)+'%';
-    if(amEl)amEl.textContent='×'+p.ammo;
-    const hudEl=document.getElementById('hud-'+p.slot);
-    if(hudEl)hudEl.style.opacity=p.alive?'1':'.3';
-  }
-
-  if(myPlayer){
-    const ab=document.getElementById('atkBtn');
-    ab.classList.toggle('cooldown',myPlayer.state==='attacking'||myPlayer.acd>0);
-    ab.classList.toggle('no-ammo',myPlayer.ammo<=0&&myPlayer.state!=='attacking');
-  }
+  updateHUD();
 
   // Check game over
   const alive=allPlayers.filter(p=>p.alive);
   if(!gameOver&&allPlayers.length>=2&&alive.length<=1){
     gameOver=true;gameRunning=false;sfx.ko();
     const winner=alive[0]||null;
-    currentRoom.ref.child('gameData/winner').set(winner?winner.pcid:null);
-    currentRoom.ref.child('status').set('gameover');
+    if(isVip){
+      currentRoom.ref.child('gameData/winner').set(winner?winner.pcid:null);
+      currentRoom.ref.child('status').set('gameover');
+    }
     setTimeout(()=>showGameOverUI(winner),600);
   }
 
@@ -1036,9 +1044,12 @@ function gameLoop(ts){
 // ═══════════════════════════════════════════════════
 // GAME OVER
 // ═══════════════════════════════════════════════════
-function showGameOverUI(winner){
-  if(!winner&&roomData?.gameData?.winner){
-    winner=allPlayers.find(p=>p.pcid===roomData.gameData.winner);
+async function showGameOverUI(winner){
+  if(!winner){
+    // Try to find winner from Firebase
+    const ws=await currentRoom.ref.child('gameData/winner').once('value');
+    const wpcid=ws.val();
+    if(wpcid)winner=allPlayers.find(p=>p.pcid===wpcid);
   }
   const wt=document.getElementById('winnerText');
   if(winner){const w=W[winner.type];
@@ -1156,10 +1167,9 @@ function copyTvLink(){
 }
 
 // ═══════════════════════════════════════════════════
-// ADMIN PANEL
+// ADMIN
 // ═══════════════════════════════════════════════════
-async function loadAdmin(){
-  // Rooms
+function loadAdmin(){
   R('rooms').on('value',snap=>{
     const rooms=snap.val()||{};
     let html='<h3>ROOMS ('+Object.keys(rooms).length+')</h3>';
@@ -1176,8 +1186,6 @@ async function loadAdmin(){
     }
     document.getElementById('adminRooms').innerHTML=html;
   });
-
-  // Players
   R('players').on('value',snap=>{
     const players=snap.val()||{};
     let html='<h3>PLAYERS ('+Object.keys(players).length+')</h3>';
@@ -1192,42 +1200,25 @@ async function loadAdmin(){
     document.getElementById('adminPlayers').innerHTML=html;
   });
 }
-
-async function adminRenameRoom(id){
-  const n=document.getElementById('rn-'+id).value.trim();
-  if(n)await R('rooms/'+id+'/name').set(n);
-}
-async function adminDelRoom(id){
-  if(confirm('Delete room '+id+'?'))await R('rooms/'+id).remove();
-}
-async function adminRenamePl(pcid){
-  const n=document.getElementById('pn-'+pcid).value.trim();
-  if(n)await R('players/'+pcid+'/name').set(n);
-}
-async function adminDelPl(pcid){
-  if(confirm('Delete player '+pcid+'?'))await R('players/'+pcid).remove();
-}
-async function adminCreatePcid(){
-  const name=prompt('Player name:');if(!name)return;
+async function adminRenameRoom(id){const n=document.getElementById('rn-'+id).value.trim();if(n)await R('rooms/'+id+'/name').set(n)}
+async function adminDelRoom(id){if(confirm('Delete room '+id+'?'))await R('rooms/'+id).remove()}
+async function adminRenamePl(pcid){const n=document.getElementById('pn-'+pcid).value.trim();if(n){await R('players/'+pcid+'/name').set(n);nameCache[pcid]=n}}
+async function adminDelPl(pcid){if(confirm('Delete player '+pcid+'?'))await R('players/'+pcid).remove();delete nameCache[pcid]}
+async function adminCreatePcid(){const name=prompt('Player name:');if(!name)return;
   const pcid=Array.from({length:12},()=>'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random()*26)]).join('');
-  await R('players/'+pcid).set({name,createdAt:Date.now()});
-  alert('Created PCID: '+pcid);
-}
+  await R('players/'+pcid).set({name,createdAt:Date.now()});nameCache[pcid]=name;alert('Created PCID: '+pcid)}
 
 // ═══════════════════════════════════════════════════
-// PREVENT SCROLL
+// SCROLL PREVENTION + KEEPALIVE
 // ═══════════════════════════════════════════════════
 document.addEventListener('touchmove',e=>{
   if(document.querySelector('#gameScreen.active'))e.preventDefault();
 },{passive:false});
 document.addEventListener('gesturestart',e=>e.preventDefault());
 
-// ═══════════════════════════════════════════════════
-// KEEPALIVE
-// ═══════════════════════════════════════════════════
 setInterval(()=>{
-  if(!currentRoom||!roomData)return;
-  const slots=roomData.slots||{};
+  if(!currentRoom||!roomMeta)return;
+  const slots=roomMeta.slots||{};
   for(const[i,sl]of Object.entries(slots)){
     if(sl&&sl.pcid===myPCID){
       currentRoom.ref.child('slots/'+i+'/lastSeen').set(Date.now());

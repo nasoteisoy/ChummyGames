@@ -430,16 +430,21 @@ function showLobbyAsHost(){
     const idx=lobby.length;
     hostConns.push(c);
     lobby.push({index:idx,name:'P'+(idx+1),warrior:null,connected:true,isHost:false});
-    c._pi=idx;
+    c._pi=idx; c._initSent=false;
 
-    function onConnOpen(){
+    function sendInit(){
+      if(!c.open) return;
+      c._initSent=true;
       document.getElementById('lobbyStatus').textContent=
         'Share this code! ('+hostConns.filter(x=>x.open).length+'/3 joined)';
       c.send({type:'lobbyInit',lobby,yourIndex:idx,code:roomCode});
       hostSend({type:'lobbyUpdate',lobby});
       renderLobby();
+      // Retry sends in case guest missed the first one
+      setTimeout(()=>{if(c.open)c.send({type:'lobbyInit',lobby,yourIndex:idx,code:roomCode})},500);
+      setTimeout(()=>{if(c.open)c.send({type:'lobbyInit',lobby,yourIndex:idx,code:roomCode})},1500);
     }
-    c.on('open',onConnOpen);
+    c.on('open',sendInit);
     c.on('data',d=>handleGuestMsg(c,d));
     c.on('close',()=>{
       const lp=lobby.find(p=>p.index===c._pi);if(lp)lp.connected=false;
@@ -448,8 +453,7 @@ function showLobbyAsHost(){
         'Share this code! ('+hostConns.filter(x=>x.open).length+'/3 joined)';
       const gp=allPlayers.find(p=>p.idx===c._pi);if(gp){gp.alive=false;gp.hp=0}
     });
-    // PeerJS may have already opened before listeners attached
-    if(c.open) onConnOpen();
+    if(c.open) sendInit();
   });
 
   peer.on('error',err=>{
@@ -498,35 +502,48 @@ function joinRoom(){
   roomCode=code;
 
   peer=new Peer(undefined,{debug:0});
-  peer.on('open',()=>{
-    guestConn=peer.connect('sde-'+code,{reliable:true});
-    let opened=false;
-    function onGuestOpen(){
-      if(opened)return;opened=true;
+
+  function doConnect(){
+    guestConn=peer.connect('sde-'+code);
+    let joined=false;
+
+    function onJoined(){
+      if(joined)return;joined=true;
       document.getElementById('joinBtn').textContent='CONNECTED!';
       switchScreen('lobbyScreen');
       document.getElementById('lobbyCode').textContent=code;
       document.getElementById('lobbyStatus').textContent='Connected! Pick your warrior.';
       document.getElementById('startBtn').style.display='none';
     }
-    guestConn.on('open',onGuestOpen);
-    guestConn.on('data',d=>handleHostMsg(d));
+
+    guestConn.on('open',onJoined);
+    guestConn.on('data',d=>{
+      // Receiving data means connection is alive — also trigger joined
+      onJoined();
+      handleHostMsg(d);
+    });
     guestConn.on('close',()=>{
       if(gameRunning){gameRunning=false;showDisconnect()}
-      else switchScreen('menuScreen');
+      else if(joined) switchScreen('menuScreen');
     });
     guestConn.on('error',()=>{
       document.getElementById('joinError').textContent='Could not connect';
       document.getElementById('joinBtn').textContent='CONNECT';
     });
-    // PeerJS may have already opened before listeners attached
-    if(guestConn.open) onGuestOpen();
-  });
+    if(guestConn.open) onJoined();
+  }
+
+  peer.on('open',doConnect);
+  // In case peer is already open
+  if(peer.open) doConnect();
+
   peer.on('error',()=>{
     document.getElementById('joinError').textContent='Connection failed';
     document.getElementById('joinBtn').textContent='CONNECT';
   });
   setTimeout(()=>{if(!guestConn||!guestConn.open){
+    // Check if we already joined via data receipt
+    if(document.getElementById('lobbyScreen').classList.contains('active')) return;
     document.getElementById('joinError').textContent='Timed out';
     document.getElementById('joinBtn').textContent='CONNECT'}},12000);
 }

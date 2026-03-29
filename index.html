@@ -280,8 +280,8 @@ const FX={
 const T=32,MW=10,MH=8,CW=MW*T,CH=MH*T;
 const SPD=1.8,GSPD=0.8,MHP=100;
 const DMG=20,GDMG=7,ATKR=44,ATKW=250,ATKD=500,ATKCD=800;
-const SYNC=100,MAMMO=5,ORBMS=1200,MORBS=12,ODIST=18;
-const LERP_SPEED=0.2; // interpolation factor per frame
+const SYNC=66,MAMMO=5,ORBMS=1200,MORBS=12,ODIST=18;
+const CORRECTION=0.15; // how aggressively to correct prediction drift
 const SPAWNS=[{x:64,y:90},{x:256,y:90},{x:64,y:175},{x:256,y:175}];
 const MAP=[
   [1,1,1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,0,0,1],
@@ -335,13 +335,15 @@ const sfx={
 };
 
 // ═══════════════════════════════════════════════════
-// PLAYER CLASS (with interpolation targets)
+// PLAYER CLASS (with dead reckoning for remote)
 // ═══════════════════════════════════════════════════
 class Player{
   constructor(type,sx,sy,slot,pcid){
     this.type=type;this.x=sx;this.y=sy;this.slot=slot;this.pcid=pcid;
-    // Interpolation targets for remote players
+    // Dead reckoning: target position from Firebase + remote movement info
     this.tx=sx;this.ty=sy;
+    this.rdir='right'; // remote direction for prediction
+    this.rstate='idle'; // remote state for prediction
     this.dir=sx<CW/2?'right':'left';this.hp=MHP;this.ammo=0;this.state='idle';
     this.wf=0;this.wt=0;this.at=0;this.acd=0;this.hd=false;this.ft=0;this.alive=true;
     this.mv={up:false,down:false,left:false,right:false};
@@ -381,16 +383,35 @@ class Player{
     }else if(this.state!=='guarding'){this.state='idle';this.wt=0}
     return hits;
   }
-  // Interpolate remote player toward target position
-  interpolate(){
-    const dx=this.tx-this.x, dy=this.ty-this.y;
-    const dist=Math.sqrt(dx*dx+dy*dy);
-    if(dist>60){
-      // Too far = teleport (respawn or lag spike)
+  // Dead reckoning: predict remote movement + correct drift
+  predict(dt){
+    if(!this.alive)return;
+    // Animate walk frames for remote players too
+    if(this.state==='walking'){
+      this.wt+=dt;if(this.wt>180){this.wf=1-this.wf;this.wt=0}
+    }
+    // If remote is walking, simulate movement in their direction
+    if(this.rstate==='walking'||this.rstate==='guarding'){
+      const s=this.rstate==='guarding'?GSPD:SPD;
+      let dx=0,dy=0;
+      switch(this.rdir){
+        case'left':dx=-1;break;case'right':dx=1;break;
+        case'up':dy=-1;break;case'down':dy=1;break;
+      }
+      const nx=this.x+dx*s;
+      const ny=this.y+dy*s;
+      if(!this.col(nx,this.y))this.x=nx;
+      if(!this.col(this.x,ny))this.y=ny;
+    }
+    // Correct drift toward actual Firebase position
+    const ex=this.tx-this.x, ey=this.ty-this.y;
+    const dist=Math.sqrt(ex*ex+ey*ey);
+    if(dist>80){
+      // Way off — teleport (respawn / big lag)
       this.x=this.tx;this.y=this.ty;
     }else if(dist>0.5){
-      this.x+=dx*LERP_SPEED;
-      this.y+=dy*LERP_SPEED;
+      this.x+=ex*CORRECTION;
+      this.y+=ey*CORRECTION;
     }
   }
   fac(dx,dy){switch(this.dir){case'right':return dx>-10;case'left':return dx<10;
@@ -408,15 +429,17 @@ class Player{
     state:this.state,hp:this.hp,ammo:this.ammo,wf:this.wf,at:Math.round(this.at),
     ft:Math.round(this.ft),alive:this.alive,type:this.type,slot:this.slot,pcid:this.pcid}}
   applyRemote(s){
-    // Set TARGETS, don't teleport
+    // Set target position for drift correction
     this.tx=s.x;this.ty=s.y;
-    // Non-positional state applies immediately
+    // Store remote movement info for prediction
+    this.rdir=s.dir;this.rstate=s.state;
+    // Apply non-positional state immediately
     this.dir=s.dir;this.state=s.state;this.hp=s.hp;
-    this.ammo=s.ammo;this.wf=s.wf;this.at=s.at;this.ft=s.ft;this.alive=s.alive;
+    this.ammo=s.ammo;this.at=s.at;this.ft=s.ft;this.alive=s.alive;
   }
   applyFull(s){
-    // Full apply (initial load / reconnect)
     this.x=s.x;this.y=s.y;this.tx=s.x;this.ty=s.y;
+    this.rdir=s.dir;this.rstate=s.state;
     this.dir=s.dir;this.state=s.state;this.hp=s.hp;this.ammo=s.ammo;
     this.wf=s.wf;this.at=s.at;this.ft=s.ft;this.alive=s.alive;
   }
@@ -980,9 +1003,9 @@ function gameLoop(ts){
     }
   }
 
-  // Interpolate remote players
+  // Dead reckon remote players
   for(const p of allPlayers){
-    if(p!==myPlayer)p.interpolate();
+    if(p!==myPlayer)p.predict(dt);
   }
 
   updateFx(dt);

@@ -87,13 +87,12 @@
   #gameCanvas{width:100%;height:100%;image-rendering:pixelated;display:block}
   .controls{width:100%;max-width:500px;display:flex;justify-content:space-between;
     align-items:center;padding:8px 10px;flex-shrink:0}
-  .dpad{display:grid;grid-template:". up ." 46px "left . right" 46px ". down ." 46px / 46px 8px 46px;gap:2px}
-  .dpad-btn{background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.15);
-    border-radius:6px;color:#666;font-size:17px;display:flex;align-items:center;
-    justify-content:center;cursor:pointer}
-  .dpad-btn:active,.dpad-btn.pressed{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.4);color:#fff}
-  .dpad-btn[data-dir="up"]{grid-area:up}.dpad-btn[data-dir="down"]{grid-area:down}
-  .dpad-btn[data-dir="left"]{grid-area:left}.dpad-btn[data-dir="right"]{grid-area:right}
+  .joystick-area{width:120px;height:120px;position:relative;border-radius:50%;
+    background:rgba(255,255,255,.05);border:2px solid rgba(255,255,255,.1);flex-shrink:0}
+  .joystick-knob{width:48px;height:48px;border-radius:50%;
+    background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.25);
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    pointer-events:none;transition:none}
   .action-btns{display:flex;flex-direction:column;gap:5px}
   .action-btn{width:68px;height:42px;border:2px solid;border-radius:8px;
     font-family:'Press Start 2P',monospace;font-size:8px;cursor:pointer;
@@ -196,11 +195,8 @@
     <div class="damage-flash" id="damageFlash"></div>
   </div>
   <div class="controls" id="controlsArea">
-    <div class="dpad">
-      <div class="dpad-btn" data-dir="up">▲</div>
-      <div class="dpad-btn" data-dir="left">◀</div>
-      <div class="dpad-btn" data-dir="right">▶</div>
-      <div class="dpad-btn" data-dir="down">▼</div>
+    <div class="joystick-area" id="joystickArea">
+      <div class="joystick-knob" id="joystickKnob"></div>
     </div>
     <div class="action-btns">
       <div class="action-btn atk-btn" id="atkBtn">ATK</div>
@@ -284,7 +280,7 @@ const FX={
 const T=32,MW=10,MH=8,CW=MW*T,CH=MH*T;
 const SPD=1.8,GSPD=0.8,MHP=100;
 const DMG=20,GDMG=7,ATKR=44,ATKW=250,ATKD=500,ATKCD=800;
-const SYNC=100,MAMMO=5,ORBMS=1500,MORBS=8,ODIST=18;
+const SYNC=100,MAMMO=5,ORBMS=1200,MORBS=12,ODIST=18;
 const LERP_SPEED=0.2; // interpolation factor per frame
 const SPAWNS=[{x:64,y:90},{x:256,y:90},{x:64,y:175},{x:256,y:175}];
 const MAP=[
@@ -1122,16 +1118,67 @@ function uK(){if(!myPlayer)return;
   myPlayer.mv.left=keys['ArrowLeft']||keys['a']||keys['A'];
   myPlayer.mv.right=keys['ArrowRight']||keys['d']||keys['D']}
 
-document.querySelectorAll('.dpad-btn').forEach(btn=>{
-  const dir=btn.dataset.dir;
-  const on=()=>{iA();btn.classList.add('pressed');if(myPlayer)myPlayer.mv[dir]=true};
-  const off=()=>{btn.classList.remove('pressed');if(myPlayer)myPlayer.mv[dir]=false};
-  btn.addEventListener('touchstart',e=>{e.preventDefault();on()});
-  btn.addEventListener('touchend',e=>{e.preventDefault();off()});
-  btn.addEventListener('touchcancel',off);
-  btn.addEventListener('mousedown',e=>{e.preventDefault();on()});
-  btn.addEventListener('mouseup',off);btn.addEventListener('mouseleave',off);
+// ── VIRTUAL JOYSTICK ──
+const joyArea=document.getElementById('joystickArea');
+const joyKnob=document.getElementById('joystickKnob');
+let joyActive=false,joyTouchId=null;
+const DEAD_ZONE=0.15; // fraction of radius
+
+function joyUpdate(cx,cy){
+  const rect=joyArea.getBoundingClientRect();
+  const ox=cx-rect.left-rect.width/2;
+  const oy=cy-rect.top-rect.height/2;
+  const maxR=rect.width/2-4;
+  let dist=Math.sqrt(ox*ox+oy*oy);
+  let nx=ox,ny=oy;
+  if(dist>maxR){nx=ox/dist*maxR;ny=oy/dist*maxR;dist=maxR}
+  joyKnob.style.transform=`translate(calc(-50% + ${nx}px), calc(-50% + ${ny}px))`;
+
+  if(!myPlayer)return;
+  const frac=dist/maxR;
+  if(frac<DEAD_ZONE){
+    myPlayer.mv.up=false;myPlayer.mv.down=false;myPlayer.mv.left=false;myPlayer.mv.right=false;
+    return;
+  }
+  const angle=Math.atan2(oy,ox);
+  // 8-direction from angle
+  myPlayer.mv.right=angle>-Math.PI/3&&angle<Math.PI/3;
+  myPlayer.mv.left=angle>Math.PI*2/3||angle<-Math.PI*2/3;
+  myPlayer.mv.down=angle>Math.PI/6&&angle<Math.PI*5/6;
+  myPlayer.mv.up=angle<-Math.PI/6&&angle>-Math.PI*5/6;
+}
+
+function joyReset(){
+  joyActive=false;joyTouchId=null;
+  joyKnob.style.transform='translate(-50%,-50%)';
+  if(myPlayer){myPlayer.mv.up=false;myPlayer.mv.down=false;myPlayer.mv.left=false;myPlayer.mv.right=false}
+}
+
+joyArea.addEventListener('touchstart',e=>{
+  e.preventDefault();iA();
+  if(joyTouchId!==null)return;
+  const t=e.changedTouches[0];
+  joyTouchId=t.identifier;joyActive=true;
+  joyUpdate(t.clientX,t.clientY);
 });
+joyArea.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  for(const t of e.changedTouches){
+    if(t.identifier===joyTouchId){joyUpdate(t.clientX,t.clientY);break}
+  }
+});
+joyArea.addEventListener('touchend',e=>{
+  for(const t of e.changedTouches){
+    if(t.identifier===joyTouchId){joyReset();break}
+  }
+});
+joyArea.addEventListener('touchcancel',()=>joyReset());
+
+// Mouse fallback for joystick
+let joyMouse=false;
+joyArea.addEventListener('mousedown',e=>{e.preventDefault();iA();joyMouse=true;joyUpdate(e.clientX,e.clientY)});
+document.addEventListener('mousemove',e=>{if(joyMouse)joyUpdate(e.clientX,e.clientY)});
+document.addEventListener('mouseup',()=>{if(joyMouse){joyMouse=false;joyReset()}});
 
 const atkEl=document.getElementById('atkBtn');
 atkEl.addEventListener('touchstart',e=>{e.preventDefault();iA();doAtk();atkEl.classList.add('pressed')});

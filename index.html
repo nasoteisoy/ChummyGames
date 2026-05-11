@@ -2,9 +2,1512 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>⚓ Battle of the Pacific</title>
-<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>5 Crowns 👑</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --felt: #1e5631;
+  --felt-dark: #0f2e1a;
+  --felt-mid: #173f25;
+  --gold: #d4a017;
+  --gold-l: #f0c840;
+  --gold-d: #a07810;
+  --red: #c0392b;
+  --red-l: #e74c3c;
+  --bg-panel: rgba(0,0,0,0.35);
+  --border: rgba(255,255,255,0.07);
+  --text: #f0ebe0;
+  --muted: #7fa88a;
+  --radius: 10px;
+  --g1: #3b82f6; --g2: #10b981; --g3: #f59e0b;
+  --g4: #ec4899; --g5: #8b5cf6; --gd: #ef4444;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: radial-gradient(ellipse at 30% 20%, #256b3a 0%, #0f2e1a 60%);
+  min-height: 100svh; height: 100svh;
+  color: var(--text);
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ─── SCREENS ─── */
+.screen { display: none; width: 100%; height: 100svh; flex-direction: column; }
+.screen.active { display: flex; }
+
+/* ─── LOADING ─── */
+#loading {
+  position: fixed; inset: 0;
+  background: var(--felt-dark);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 14px; z-index: 999;
+}
+.spinner {
+  width: 42px; height: 42px;
+  border: 3px solid rgba(212,160,23,.2);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── TOAST ─── */
+#toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(70px);
+  background: rgba(0,0,0,.88); color: #fff;
+  padding: 10px 22px; border-radius: 20px;
+  font-size: 13px; font-weight: 600;
+  z-index: 500; pointer-events: none;
+  transition: transform .28s cubic-bezier(.34,1.56,.64,1);
+  white-space: nowrap; max-width: 90vw;
+  text-overflow: ellipsis; overflow: hidden;
+}
+#toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ─── COMMON COMPONENTS ─── */
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 12px 18px; border-radius: 10px; border: none;
+  font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 800;
+  cursor: pointer; transition: all .15s; letter-spacing: .3px;
+  -webkit-appearance: none;
+}
+.btn:active { transform: scale(.96); }
+.btn-gold { background: linear-gradient(135deg, var(--gold), var(--gold-l)); color: #1a1000; }
+.btn-outline { background: rgba(255,255,255,.07); border: 1px solid rgba(212,160,23,.35); color: var(--gold); }
+.btn-red { background: var(--red); color: #fff; }
+.btn-sm { padding: 8px 14px; font-size: 12px; }
+.btn:disabled { opacity: .38; cursor: default; pointer-events: none; }
+
+input {
+  background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.15);
+  border-radius: 8px; color: #fff; font-size: 16px;
+  padding: 11px 14px; outline: none; font-family: 'Nunito', sans-serif;
+  transition: border-color .2s; width: 100%;
+}
+input:focus { border-color: var(--gold); }
+input::placeholder { color: var(--muted); }
+
+label {
+  display: block; font-size: 11px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
+}
+
+.divider {
+  display: flex; align-items: center; gap: 10px;
+  color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: 1px;
+}
+.divider::before, .divider::after {
+  content: ''; flex: 1; height: 1px; background: rgba(255,255,255,.1);
+}
+
+/* ─── LOGIN ─── */
+#screen-login {
+  align-items: center; justify-content: center;
+  padding: 24px; gap: 28px;
+}
+.logo { text-align: center; }
+.logo h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 3rem; font-weight: 900; color: var(--gold);
+  text-shadow: 0 2px 20px rgba(212,160,23,.4);
+  letter-spacing: 2px; line-height: 1;
+}
+.logo .sub { color: var(--muted); font-size: 13px; margin-top: 6px; }
+.logo .crowns { font-size: 1.5rem; letter-spacing: 6px; margin-bottom: 8px; }
+
+.login-box {
+  background: rgba(0,0,0,.38);
+  border: 1px solid rgba(212,160,23,.18);
+  border-radius: 14px; padding: 24px; width: 100%; max-width: 340px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.field { display: flex; flex-direction: column; }
+.join-row { display: flex; gap: 8px; }
+.join-row input { text-transform: uppercase; letter-spacing: 4px; font-weight: 800; }
+.join-row .btn { flex-shrink: 0; }
+.err-msg { color: var(--red-l); font-size: 12px; font-weight: 700; min-height: 16px; text-align: center; }
+
+/* ─── LOBBY ─── */
+#screen-lobby { padding: 0; gap: 0; }
+.lobby-header {
+  background: var(--bg-panel); border-bottom: 1px solid var(--border);
+  padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;
+}
+.lobby-header h2 {
+  font-family: 'Playfair Display', serif; font-size: 1.3rem; color: var(--gold);
+}
+.code-box {
+  margin: 16px; padding: 16px; text-align: center;
+  background: rgba(0,0,0,.35); border: 2px dashed rgba(212,160,23,.3);
+  border-radius: 12px; cursor: pointer; active: opacity(.8);
+}
+.code-box .code-label { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+.code-box .code-val {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.6rem; font-weight: 900; color: var(--gold);
+  letter-spacing: 10px; margin: 4px 0;
+}
+.code-box .code-hint { font-size: 11px; color: var(--muted); }
+.lobby-players-label {
+  padding: 0 16px 8px; font-size: 11px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase; color: var(--muted);
+}
+.players-list { flex: 1; overflow-y: auto; padding: 0 16px; }
+.player-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; background: rgba(0,0,0,.28);
+  border-radius: 10px; margin-bottom: 6px;
+  border: 1px solid var(--border);
+}
+.avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--felt); display: flex; align-items: center;
+  justify-content: center; font-size: 16px; font-weight: 800;
+  flex-shrink: 0;
+}
+.player-name { font-weight: 700; flex: 1; }
+.player-score { font-size: 12px; color: var(--muted); }
+.host-badge {
+  font-size: 10px; font-weight: 800; padding: 2px 8px;
+  background: var(--gold); color: #1a1000; border-radius: 8px; letter-spacing: .5px;
+}
+.lobby-footer { padding: 16px; }
+
+/* ─── GAME SCREEN ─── */
+#screen-game { overflow: hidden; }
+
+.game-header {
+  background: var(--bg-panel); border-bottom: 1px solid var(--border);
+  padding: 8px 14px; display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0; min-height: 48px;
+}
+.gh-round {
+  font-family: 'Playfair Display', serif;
+  font-size: 15px; color: var(--gold);
+}
+.gh-wild { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.gh-score { font-size: 13px; font-weight: 700; text-align: right; }
+.gh-score span { color: var(--gold-l); }
+
+.opponents-row {
+  display: flex; gap: 6px; padding: 8px 10px;
+  overflow-x: auto; flex-shrink: 0; scrollbar-width: none;
+  border-bottom: 1px solid var(--border);
+}
+.opponents-row::-webkit-scrollbar { display: none; }
+
+.opp-chip {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  min-width: 62px; padding: 6px 8px; background: rgba(0,0,0,.3);
+  border-radius: 8px; border: 1px solid var(--border); flex-shrink: 0;
+  transition: border-color .2s, box-shadow .2s;
+}
+.opp-chip.active { border-color: var(--gold); box-shadow: 0 0 8px rgba(212,160,23,.3); }
+.opp-chip.went-out { border-color: var(--g2); box-shadow: 0 0 6px rgba(16,185,129,.3); }
+.opp-name { font-size: 10px; font-weight: 800; max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.opp-meta { font-size: 9px; color: var(--muted); }
+.mini-cards { display: flex; gap: 1.5px; height: 14px; align-items: flex-end; }
+.mini-card { width: 7px; height: 11px; background: #f5f0e8; border-radius: 1px; border: .5px solid #bbb; }
+
+.table-area {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  gap: 24px; padding: 10px; overflow: hidden;
+}
+.pile-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.pile-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: 700; }
+
+/* ─── CARDS ─── */
+.card {
+  width: 60px; height: 88px; border-radius: 7px;
+  box-shadow: 0 3px 8px rgba(0,0,0,.4); flex-shrink: 0;
+  position: relative; cursor: pointer; display: flex; flex-direction: column;
+  background: #fffef8; border: 1px solid #ddd;
+  transition: transform .12s, box-shadow .12s;
+  overflow: hidden;
+}
+.card-back {
+  background: linear-gradient(135deg, #0e5428 25%, #186336 25%, #186336 50%, #0e5428 50%, #0e5428 75%, #186336 75%);
+  background-size: 12px 12px;
+  border: 2px solid rgba(212,160,23,.5);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+}
+.card-back::after { content: '👑'; }
+
+.c-top { position: absolute; top: 3px; left: 5px; display: flex; flex-direction: column; align-items: flex-start; line-height: 1.1; }
+.c-bot { position: absolute; bottom: 3px; right: 5px; display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1; transform: rotate(180deg); }
+.c-rank { font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 700; }
+.c-suit { font-size: 10px; line-height: 1; }
+.c-mid { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 24px; }
+
+.card.wild { box-shadow: 0 0 10px 2px rgba(212,160,23,.65) !important; border-color: var(--gold) !important; border-width: 2px; }
+.card.selected { transform: translateY(-16px); box-shadow: 0 10px 24px rgba(0,0,0,.5); border-color: var(--gold-l) !important; border-width: 2px; }
+.card.swap-src { border: 2px dashed var(--gold) !important; box-shadow: 0 0 8px rgba(212,160,23,.5); }
+.card.drag-over { transform: translateX(6px); }
+.card.dragging { opacity: .35; }
+
+.deck-pile { position: relative; }
+.deck-count-badge {
+  position: absolute; bottom: -22px; left: 50%;
+  transform: translateX(-50%); font-size: 10px; color: var(--muted);
+  white-space: nowrap; font-weight: 700;
+}
+.discard-empty {
+  width: 60px; height: 88px; border-radius: 7px;
+  border: 2px dashed rgba(255,255,255,.18);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-size: 11px;
+}
+.draw-hint {
+  font-size: 10px; color: var(--muted); text-align: center; font-weight: 700;
+  letter-spacing: .5px; margin-top: 4px;
+}
+.pile-wrap.can-draw .card { cursor: pointer; }
+.pile-wrap.can-draw .card:active { transform: scale(.94); }
+
+.status-bar {
+  text-align: center; padding: 5px 16px; font-size: 13px; font-weight: 800;
+  flex-shrink: 0; min-height: 28px;
+  letter-spacing: .3px;
+}
+.status-bar.myturn { color: var(--gold-l); }
+.status-bar.waiting { color: var(--muted); }
+.status-bar.lasturn { color: #e74c3c; }
+
+/* ─── HAND AREA ─── */
+.hand-area {
+  background: rgba(0,0,0,.32); border-top: 1px solid var(--border);
+  flex-shrink: 0; padding-bottom: 4px;
+}
+.hand-header {
+  display: flex; align-items: center; padding: 6px 12px 2px;
+}
+.hand-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); flex: 1; }
+.hand-btns { display: flex; gap: 6px; }
+.hand-btn {
+  font-size: 10px; font-weight: 800; padding: 3px 10px;
+  background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.15);
+  border-radius: 6px; color: var(--text); cursor: pointer; letter-spacing: .3px;
+}
+.hand-btn:active { background: rgba(255,255,255,.18); }
+
+.hand-scroll {
+  display: flex; gap: 5px; padding: 6px 12px 8px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.hand-scroll::-webkit-scrollbar { display: none; }
+.card-slot { display: flex; flex-direction: column; align-items: center; gap: 2px; flex-shrink: 0; }
+.slot-idx { font-size: 9px; color: rgba(255,255,255,.25); font-weight: 700; }
+
+/* ─── ACTION BAR ─── */
+.action-bar {
+  display: flex; gap: 8px; padding: 4px 10px 10px; flex-shrink: 0;
+}
+.action-bar .btn { flex: 1; padding: 10px 6px; font-size: 13px; }
+
+/* ─── MODAL ─── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.7); z-index: 200;
+  align-items: flex-end;
+}
+.modal-overlay.open { display: flex; }
+.modal-sheet {
+  width: 100%; background: #152b1d;
+  border-radius: 18px 18px 0 0; border-top: 2px solid rgba(212,160,23,.3);
+  padding: 20px 16px; max-height: 92svh; overflow-y: auto;
+}
+.modal-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.25rem; color: var(--gold); text-align: center; margin-bottom: 12px;
+}
+.modal-sub { font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 14px; line-height: 1.5; }
+
+.group-bar {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;
+}
+.gbadge {
+  padding: 5px 12px; border-radius: 10px; font-size: 12px; font-weight: 800;
+  cursor: pointer; transition: transform .1s; border: 2px solid transparent;
+}
+.gbadge:active { transform: scale(.95); }
+.gbadge.active-group { border-color: white; transform: scale(1.06); }
+
+.active-group-info {
+  font-size: 11px; font-weight: 700; margin-bottom: 10px;
+  padding: 4px 12px; border-radius: 8px; display: inline-block;
+}
+
+.go-cards-grid {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;
+}
+.gc-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.gc-tag {
+  font-size: 9px; font-weight: 800; padding: 2px 8px;
+  border-radius: 6px; letter-spacing: .3px;
+  background: rgba(255,255,255,.12); color: var(--muted);
+}
+.gc-tag.assigned { color: white; }
+
+.go-groups-preview { margin-bottom: 12px; }
+.group-preview-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; border-radius: 8px; margin-bottom: 4px;
+  border: 1px solid rgba(255,255,255,.08);
+}
+.gp-label { font-size: 11px; font-weight: 800; width: 64px; }
+.gp-valid { font-size: 11px; margin-left: auto; font-weight: 700; }
+
+.go-error { color: var(--red-l); font-size: 12px; font-weight: 700; text-align: center; margin: 6px 0; }
+.go-buttons { display: flex; gap: 8px; margin-top: 12px; }
+.go-buttons .btn { flex: 1; }
+
+/* ─── SCORES MODAL ─── */
+#modal-scores .modal-sheet { padding-bottom: 30px; }
+.score-table { width: 100%; }
+.score-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.score-row:last-child { border-bottom: none; }
+.score-row.winner { color: var(--gold); }
+.score-row .sname { font-weight: 700; }
+.score-row .sdelta { font-size: 12px; color: var(--muted); margin-left: 6px; }
+.score-row .stotal { font-family: 'Playfair Display', serif; font-size: 1.1rem; }
+
+/* ─── ROUND END ─── */
+#screen-round-end {
+  align-items: center; justify-content: center;
+  padding: 28px 20px; gap: 22px;
+}
+.re-title { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: var(--gold); text-align: center; }
+.re-sub { color: var(--muted); font-size: 14px; text-align: center; font-weight: 600; }
+.re-box { background: rgba(0,0,0,.32); border-radius: 12px; padding: 16px; width: 100%; max-width: 360px; }
+.re-next { color: var(--muted); font-size: 13px; text-align: center; font-weight: 600; }
+
+/* ─── GAME OVER ─── */
+#screen-game-over {
+  align-items: center; justify-content: center;
+  padding: 28px 20px; gap: 22px;
+}
+.go-title { font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--gold); text-align: center; }
+.go-box { background: rgba(0,0,0,.32); border-radius: 12px; padding: 16px; width: 100%; max-width: 360px; }
+
+/* ─── PASS TURN (HOST EMERGENCY) ─── */
+#btn-pass-turn {
+  position: fixed; top: 54px; right: 10px; z-index: 50;
+  font-size: 10px; padding: 5px 10px; display: none;
+}
+
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="spinner"></div>
+  <div style="font-family:'Playfair Display',serif;color:var(--gold);font-size:1.1rem">5 Crowns</div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- PASS TURN (host emergency) -->
+<button class="btn btn-outline btn-sm" id="btn-pass-turn" onclick="hostPassTurn()">⏭ Pass Turn</button>
+
+<!-- ════════════════════════════════════ LOGIN ════════════════════════════════════ -->
+<div id="screen-login" class="screen">
+  <div class="logo">
+    <div class="crowns">👑 👑 👑 👑 👑</div>
+    <h1>5 Crowns</h1>
+    <div class="sub">The Classic 5-Suit Rummy Game</div>
+  </div>
+  <div class="login-box">
+    <div class="field">
+      <label>Your Name</label>
+      <input id="inp-name" type="text" placeholder="Enter your name" maxlength="16" autocomplete="off" autocorrect="off">
+    </div>
+    <button class="btn btn-gold" style="width:100%" onclick="createRoom()">✨ Create New Room</button>
+    <div class="divider">OR JOIN EXISTING</div>
+    <div class="join-row">
+      <input id="inp-code" type="text" placeholder="CODE" maxlength="4" autocomplete="off" autocorrect="off" spellcheck="false">
+      <button class="btn btn-outline" onclick="joinRoom()">Join →</button>
+    </div>
+    <div class="err-msg" id="login-err"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════ LOBBY ════════════════════════════════════ -->
+<div id="screen-lobby" class="screen">
+  <div class="lobby-header">
+    <h2>5 Crowns 👑</h2>
+    <button class="btn btn-outline btn-sm" onclick="leaveRoom()">Leave</button>
+  </div>
+  <div class="code-box" onclick="copyCode()">
+    <div class="code-label">Room Code · Tap to copy</div>
+    <div class="code-val" id="lobby-code">----</div>
+    <div class="code-hint">Share this code with your friends</div>
+  </div>
+  <div class="lobby-players-label">Players (<span id="lobby-count">0</span>)</div>
+  <div class="players-list" id="lobby-players"></div>
+  <div class="lobby-footer">
+    <button class="btn btn-gold" id="btn-start" style="width:100%;display:none" onclick="startGame()">🎴 Start Game</button>
+    <div id="lobby-wait" style="text-align:center;color:var(--muted);font-size:13px;font-weight:700">Waiting for host to start…</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════ GAME ════════════════════════════════════ -->
+<div id="screen-game" class="screen">
+  <div class="game-header">
+    <div>
+      <div class="gh-round" id="gh-round">Round 1 / 11</div>
+      <div class="gh-wild" id="gh-wild">Wild: 3s & Jokers</div>
+    </div>
+    <div class="gh-score">My Score: <span id="gh-score-val">0</span></div>
+  </div>
+
+  <!-- Opponents -->
+  <div class="opponents-row" id="opp-row"></div>
+
+  <!-- Table -->
+  <div class="table-area">
+    <div class="pile-wrap" id="deck-wrap">
+      <div class="pile-label">Draw Pile</div>
+      <div class="deck-pile" onclick="drawFromDeck()">
+        <div class="card card-back"></div>
+        <div class="deck-count-badge" id="deck-count">0 left</div>
+      </div>
+      <div class="draw-hint" id="deck-hint"></div>
+    </div>
+    <div class="pile-wrap" id="discard-wrap">
+      <div class="pile-label">Discard</div>
+      <div id="discard-top" onclick="drawFromDiscard()"></div>
+      <div class="draw-hint" id="discard-hint"></div>
+    </div>
+  </div>
+
+  <div class="status-bar" id="status-bar">…</div>
+
+  <!-- Hand -->
+  <div class="hand-area">
+    <div class="hand-header">
+      <div class="hand-label">Your Hand (<span id="hand-count">0</span>)</div>
+      <div class="hand-btns">
+        <div class="hand-btn" onclick="sortHand('suit')">Sort Suit</div>
+        <div class="hand-btn" onclick="sortHand('rank')">Sort Rank</div>
+      </div>
+    </div>
+    <div class="hand-scroll" id="hand-scroll"></div>
+  </div>
+
+  <!-- Actions -->
+  <div class="action-bar">
+    <button class="btn btn-outline" id="btn-discard" onclick="discardSelected()" disabled>Discard ▼</button>
+    <button class="btn btn-gold" id="btn-goout" onclick="openGoOut()" disabled>Go Out 👑</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════ ROUND END ════════════════════════════════════ -->
+<div id="screen-round-end" class="screen">
+  <div class="re-title">Round <span id="re-num">1</span> Complete 🎴</div>
+  <div class="re-sub" id="re-sub"></div>
+  <div class="re-box">
+    <div id="re-scores"></div>
+  </div>
+  <div class="re-next" id="re-next"></div>
+  <button class="btn btn-gold" id="btn-next-round" style="display:none;min-width:180px" onclick="nextRound()">Next Round →</button>
+  <div id="re-wait" style="color:var(--muted);font-size:13px;font-weight:700">Waiting for host…</div>
+</div>
+
+<!-- ════════════════════════════════════ GAME OVER ════════════════════════════════════ -->
+<div id="screen-game-over" class="screen">
+  <div class="go-title">👑 Game Over 👑</div>
+  <div style="color:var(--muted);font-size:14px;font-weight:600;text-align:center" id="go-winner"></div>
+  <div class="go-box">
+    <div id="go-scores"></div>
+  </div>
+  <button class="btn btn-gold" style="min-width:180px" onclick="playAgain()">Play Again ↺</button>
+</div>
+
+<!-- ════════════════════════════════════ GO OUT MODAL ════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-goout">
+  <div class="modal-sheet">
+    <div class="modal-title">👑 Go Out</div>
+    <div class="modal-sub">
+      Tap a <strong>Group</strong> button, then tap cards to assign.<br>
+      You must have exactly <strong>1 Discard</strong> card. All other cards must form valid books or runs (3+ cards).
+    </div>
+
+    <!-- Group selector -->
+    <div class="group-bar" id="group-bar">
+      <div class="gbadge active-group" style="background:var(--g1);color:white" data-g="1" onclick="setGroup(1)">Group 1</div>
+      <div class="gbadge" style="background:var(--g2);color:white" data-g="2" onclick="setGroup(2)">Group 2</div>
+      <div class="gbadge" style="background:var(--g3);color:#1a1000" data-g="3" onclick="setGroup(3)">Group 3</div>
+      <div class="gbadge" style="background:var(--g4);color:white" data-g="4" onclick="setGroup(4)">Group 4</div>
+      <div class="gbadge" style="background:var(--g5);color:white" data-g="5" onclick="setGroup(5)">Group 5</div>
+      <div class="gbadge" style="background:var(--gd);color:white" data-g="0" onclick="setGroup(0)">Discard</div>
+      <div class="gbadge" style="background:rgba(255,255,255,.1);color:var(--muted)" data-g="-1" onclick="setGroup(-1)">Clear</div>
+    </div>
+    <div class="active-group-info" id="ag-info" style="background:var(--g1);color:white">Active: Group 1 — tap cards to assign</div>
+
+    <div class="go-cards-grid" id="go-cards"></div>
+
+    <!-- Groups preview -->
+    <div class="go-groups-preview" id="go-preview"></div>
+
+    <div class="go-error" id="go-error" style="display:none"></div>
+    <div class="go-buttons">
+      <button class="btn btn-outline" onclick="closeGoOut()">Cancel</button>
+      <button class="btn btn-gold" onclick="validateGoOut()">Validate & Go Out 👑</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════ SCRIPT ════════════════════════════════════ -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, set, get, update, onValue, off }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+// ═══════════════════════════════════════════════════════════════
+//  🔧 FIREBASE CONFIG — Replace with your Firebase project config
+//  Get this from: Firebase Console → Project Settings → Web App
+// ═══════════════════════════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyDVbt_8GuRuHJRPAN7jFXbs_lJUfUHNxHE",
+  authDomain:        "chummy-games.firebaseapp.com",
+  databaseURL:       "https://chummy-games-default-rtdb.firebaseio.com",
+  projectId:         "chummy-games",
+  storageBucket:     "chummy-games.firebasestorage.app",
+  messagingSenderId: "869241598273",
+  appId:             "1:869241598273:web:d97492b7308f785c37f1c0"
+};
+// ═══════════════════════════════════════════════════════════════
+
+// ─── CONSTANTS ───
+const PCID_KEY  = 'ChummyGames-PC-ID';
+const NAME_KEY  = '5crowns-name';
+const SUITS     = ['spade','heart','diamond','club','star'];
+const RANKS     = [3,4,5,6,7,8,9,10,11,12,13];
+const SYM = { spade:'♠', heart:'♥', diamond:'♦', club:'♣', star:'★', joker:'🃏' };
+const CLR = { spade:'#1a1a2e', heart:'#c0392b', diamond:'#c0392b', club:'#1a1a2e', star:'#b8860b', joker:'#7c3aed' };
+const G_CLR = { '-1':'rgba(255,255,255,.1)', 0:'#ef4444', 1:'#3b82f6', 2:'#10b981', 3:'#f59e0b', 4:'#ec4899', 5:'#8b5cf6' };
+const G_TXT = { '-1':'var(--muted)', 0:'white', 1:'white', 2:'white', 3:'#1a1000', 4:'white', 5:'white' };
+const G_NM  = { '-1':'Clear', 0:'Discard', 1:'Group 1', 2:'Group 2', 3:'Group 3', 4:'Group 4', 5:'Group 5' };
+
+// ─── STATE ───
+let db, myPcid, myName, roomId, roomSnap = null;
+let roomRef = null, roomUnsub = null;
+let myHandOrder = [];   // local display order
+let selectedCard = null; // cardId selected for discard
+let swapSrc = null;      // idx selected for reorder
+let goAssign = {};       // cardId → group (-1=unassigned,0=discard,1-5=group)
+let activeGroup = 1;     // currently painting group in go-out modal
+let dragSrcIdx = null;
+
+// ─── UTILITIES ───
+function toArr(v) {
+  if (!v) return [];
+  if (Array.isArray(v)) return v;
+  if (typeof v === 'object') return Object.values(v);
+  return [];
+}
+function getPcid() {
+  let id = localStorage.getItem(PCID_KEY);
+  if (!id) {
+    const c = '0123456789abcdefghijklmnopqrstuvwxyz';
+    id = Array.from({length:12}, ()=>c[Math.floor(Math.random()*c.length)]).join('');
+    localStorage.setItem(PCID_KEY, id);
+  }
+  return id;
+}
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length-1; i>0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+function roomCode() {
+  const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length:4}, ()=>c[Math.floor(Math.random()*c.length)]).join('');
+}
+function showErr(id, msg) { const el=document.getElementById(id); el.textContent=msg; el.style.display='block'; }
+function hideEl(id) { const el=document.getElementById(id); if(el) el.style.display='none'; }
+function showEl(id, display='block') { const el=document.getElementById(id); if(el) el.style.display=display; }
+
+let toastTimer;
+window.toast = function(msg, dur=2500) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), dur);
+};
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ─── CARD SYSTEM ───
+let cardMap = {};
+
+function buildCardMap() {
+  const m = {};
+  for (let copy=0; copy<2; copy++) {
+    for (const suit of SUITS) {
+      for (const rank of RANKS) {
+        const id=`${suit}-${rank}-${copy}`;
+        m[id]={id,suit,rank};
+      }
+    }
+    for (let j=0; j<3; j++) {
+      const id=`joker-${j}-${copy}`;
+      m[id]={id,suit:'joker',rank:0};
+    }
+  }
+  return m;
+}
+
+function wildRank(round) { return round+2; } // round1→3, round11→13
+function isWild(card, round) {
+  if (!card) return false;
+  return card.suit==='joker' || card.rank===wildRank(round);
+}
+function cardScore(card) {
+  if (!card) return 0;
+  if (card.suit==='joker') return 50;
+  return card.rank;
+}
+function rankName(r) {
+  if (r===11) return 'J';
+  if (r===12) return 'Q';
+  if (r===13) return 'K';
+  if (r===0) return '★';
+  return String(r);
+}
+
+// Validate a group: must be book (3+ same rank) or run (3+ consecutive same suit)
+function isValidGroup(ids, round) {
+  if (!ids || ids.length < 3) return false;
+  const cards = ids.map(id=>cardMap[id]).filter(Boolean);
+  if (cards.length < 3) return false;
+  const wilds = cards.filter(c=>isWild(c,round));
+  const nats = cards.filter(c=>!isWild(c,round));
+  if (nats.length === 0) return true; // all wilds
+
+  // Book: all same rank
+  if (nats.every(c=>c.rank===nats[0].rank)) return true;
+
+  // Run: all same suit, distinct ranks, fillable with wilds
+  const suit = nats[0].suit;
+  if (suit==='joker') return false;
+  if (!nats.every(c=>c.suit===suit)) return false;
+  const ranks = nats.map(c=>c.rank).sort((a,b)=>a-b);
+  // No duplicate ranks
+  if (new Set(ranks).size !== ranks.length) return false;
+  const lo = ranks[0], hi = ranks[ranks.length-1];
+  const span = hi - lo + 1;           // min slots needed
+  const gaps = span - nats.length;    // natural gaps to fill
+  if (gaps < 0) return false;         // duplicate (already caught)
+  // Total cards must cover the span (plus possible extra wilds at ends)
+  // Just need: we have enough wilds to fill all gaps within, rest extend ends
+  // Simpler rule: gaps ≤ wilds.length AND total cards ≥ 3
+  return gaps <= wilds.length;
+}
+
+// ─── DEAL ───
+function dealRound(playerOrder, round) {
+  cardMap = buildCardMap();
+  const allIds = shuffle(Object.keys(cardMap));
+  const handSize = round + 2;
+  let idx = 0;
+  const hands = {}, handOrders = {};
+  for (const pid of playerOrder) {
+    const h = allIds.slice(idx, idx+handSize);
+    hands[pid] = h; handOrders[pid] = h; idx+=handSize;
+  }
+  const discard = [allIds[idx]]; idx++;
+  const deck = allIds.slice(idx);
+  return { hands, handOrders, deck, discard };
+}
+
+// ─── FIREBASE INIT ───
+function initFirebase() {
+  try {
+    const app = initializeApp(FIREBASE_CONFIG);
+    db = getDatabase(app);
+    return true;
+  } catch(e) {
+    console.error('Firebase init failed:', e);
+    return false;
+  }
+}
+
+// ─── CREATE ROOM ───
+window.createRoom = async function() {
+  const name = document.getElementById('inp-name').value.trim();
+  if (!name) { showErr('login-err','Enter your name first'); return; }
+  myName = name; localStorage.setItem(NAME_KEY, name);
+
+  roomId = roomCode();
+  const data = {
+    host: myPcid, state:'lobby', round:1,
+    players: { [myPcid]: {name, totalScore:0, connected:true} },
+    playerOrder: [myPcid]
+  };
+  try {
+    await set(ref(db, `rooms/${roomId}`), data);
+    enterLobby();
+  } catch(e) {
+    showErr('login-err','Firebase error — check your config in index.html');
+    console.error(e);
+  }
+};
+
+// ─── JOIN ROOM ───
+window.joinRoom = async function() {
+  const name = document.getElementById('inp-name').value.trim();
+  const code = document.getElementById('inp-code').value.trim().toUpperCase();
+  if (!name) { showErr('login-err','Enter your name first'); return; }
+  if (code.length !== 4) { showErr('login-err','Enter a 4-letter room code'); return; }
+  myName = name; localStorage.setItem(NAME_KEY, name);
+  roomId = code;
+
+  let snap;
+  try { snap = await get(ref(db, `rooms/${roomId}`)); } catch(e) {
+    showErr('login-err','Cannot reach Firebase — check config'); return;
+  }
+  if (!snap.exists()) { showErr('login-err','Room not found'); return; }
+  const d = snap.val();
+  if (d.state !== 'lobby') { showErr('login-err','Game already in progress'); return; }
+  const cnt = Object.keys(d.players||{}).length;
+  if (cnt>=7) { showErr('login-err','Room is full (max 7 players)'); return; }
+
+  const updates = {};
+  updates[`rooms/${roomId}/players/${myPcid}`] = {name, totalScore:0, connected:true};
+  if (!toArr(d.playerOrder).includes(myPcid)) {
+    updates[`rooms/${roomId}/playerOrder`] = [...toArr(d.playerOrder), myPcid];
+  }
+  await update(ref(db), updates);
+  enterLobby();
+};
+
+// ─── LOBBY ───
+function enterLobby() {
+  myHandOrder = []; selectedCard = null; swapSrc = null;
+  showScreen('screen-lobby');
+  document.getElementById('lobby-code').textContent = roomId;
+  subscribeRoom();
+}
+
+window.leaveRoom = function() {
+  unsubRoom();
+  roomId = null; roomSnap = null;
+  showScreen('screen-login');
+};
+
+window.copyCode = function() {
+  navigator.clipboard.writeText(roomId).then(()=>toast('Copied: '+roomId)).catch(()=>toast(roomId));
+};
+
+window.startGame = async function() {
+  if (!roomSnap) return;
+  const order = toArr(roomSnap.playerOrder);
+  if (order.length < 2) { toast('Need at least 2 players'); return; }
+  const {hands, handOrders, deck, discard} = dealRound(order, 1);
+  const updates = {
+    [`rooms/${roomId}/state`]:'playing',
+    [`rooms/${roomId}/round`]:1,
+    [`rooms/${roomId}/game`]:{
+      currentPlayer: order[0], phase:'draw',
+      deck, discard, hands, handOrders,
+      goOutPlayer:null, lastTurnQueue:[], roundScores:{}
+    }
+  };
+  await update(ref(db), updates);
+};
+
+function renderLobby(d) {
+  const order = toArr(d.playerOrder);
+  document.getElementById('lobby-count').textContent = order.length;
+  const pl = d.players||{};
+  const container = document.getElementById('lobby-players');
+  container.innerHTML = '';
+  for (const pid of order) {
+    const p = pl[pid]||{};
+    const row = document.createElement('div');
+    row.className = 'player-row';
+    row.innerHTML = `
+      <div class="avatar">${(p.name||'?')[0].toUpperCase()}</div>
+      <div class="player-name">${p.name||'?'}${pid===myPcid?' <span style="color:var(--muted);font-weight:600">(You)</span>':''}</div>
+      ${pid===d.host?'<div class="host-badge">HOST</div>':''}
+    `;
+    container.appendChild(row);
+  }
+  const isHost = d.host===myPcid;
+  document.getElementById('btn-start').style.display = (isHost&&order.length>=2)?'block':'none';
+  document.getElementById('lobby-wait').style.display = isHost?'none':'block';
+}
+
+// ─── ROOM SUBSCRIPTION ───
+function subscribeRoom() {
+  unsubRoom();
+  roomRef = ref(db, `rooms/${roomId}`);
+  roomUnsub = onValue(roomRef, snap => {
+    if (!snap.exists()) { toast('Room closed'); showScreen('screen-login'); return; }
+    const d = snap.val();
+    roomSnap = d;
+    cardMap = buildCardMap(); // always up-to-date locally
+
+    const cur = document.querySelector('.screen.active')?.id;
+
+    if (d.state==='lobby') {
+      renderLobby(d);
+      if (cur!=='screen-lobby') showScreen('screen-lobby');
+    } else if (d.state==='playing') {
+      if (cur!=='screen-game') {
+        myHandOrder = []; selectedCard = null; swapSrc = null;
+      }
+      renderGame(d);
+      if (cur!=='screen-game') showScreen('screen-game');
+    } else if (d.state==='roundEnd') {
+      renderRoundEnd(d);
+      if (cur!=='screen-round-end') showScreen('screen-round-end');
+    } else if (d.state==='gameOver') {
+      renderGameOver(d);
+      if (cur!=='screen-game-over') showScreen('screen-game-over');
+    }
+  });
+}
+function unsubRoom() {
+  if (roomUnsub) { roomUnsub(); roomUnsub=null; }
+}
+
+// ─── RENDER GAME ───
+function renderGame(d) {
+  const g = d.game||{};
+  const round = d.round||1;
+  const wRank = wildRank(round);
+  const order = toArr(d.playerOrder);
+  const players = d.players||{};
+
+  document.getElementById('gh-round').textContent = `Round ${round} / 11`;
+  document.getElementById('gh-wild').textContent = `Wild: ${rankName(wRank)}s & Jokers`;
+  document.getElementById('gh-score-val').textContent = (players[myPcid]||{}).totalScore||0;
+
+  // Opponents
+  const oppRow = document.getElementById('opp-row');
+  oppRow.innerHTML = '';
+  for (const pid of order) {
+    if (pid===myPcid) continue;
+    const p = players[pid]||{};
+    const hand = toArr((g.hands||{})[pid]);
+    const isActive = g.currentPlayer===pid;
+    const wentOut = g.goOutPlayer===pid;
+    const chip = document.createElement('div');
+    chip.className = `opp-chip${isActive?' active':''}${wentOut?' went-out':''}`;
+    const mc = Math.min(hand.length,7);
+    chip.innerHTML = `
+      <div class="opp-name">${p.name||'?'}</div>
+      <div class="mini-cards">${Array.from({length:mc},()=>'<div class="mini-card"></div>').join('')}</div>
+      <div class="opp-meta">${hand.length} cards · ${p.totalScore||0}pts</div>
+    `;
+    oppRow.appendChild(chip);
+  }
+
+  // Sync local hand order
+  const myHandDB = toArr((g.hands||{})[myPcid]);
+  const myHSet = new Set(myHandDB);
+  if (myHandOrder.length===0 && myHandDB.length>0) {
+    // First load or rejoin — load from Firebase
+    const dbOrder = toArr((g.handOrders||{})[myPcid]);
+    myHandOrder = dbOrder.filter(id=>myHSet.has(id));
+    for (const id of myHandDB) if(!myHandOrder.includes(id)) myHandOrder.push(id);
+  } else {
+    myHandOrder = myHandOrder.filter(id=>myHSet.has(id));
+    for (const id of myHandDB) if(!myHandOrder.includes(id)) myHandOrder.push(id);
+  }
+
+  // Deck
+  const deck = toArr(g.deck);
+  document.getElementById('deck-count').textContent = deck.length+' left';
+
+  // Discard top
+  const discard = toArr(g.discard);
+  const discardEl = document.getElementById('discard-top');
+  if (discard.length>0) {
+    const top = cardMap[discard[discard.length-1]];
+    discardEl.innerHTML = '';
+    if (top) discardEl.appendChild(makeCard(top, round, false));
+  } else {
+    discardEl.innerHTML = '<div class="discard-empty">Empty</div>';
+  }
+
+  // Status & turn info
+  const isMyTurn = g.currentPlayer===myPcid;
+  const phase = g.phase;
+  const hasLastTurn = g.goOutPlayer!==null;
+  const lastQ = toArr(g.lastTurnQueue);
+  const isMyLastTurn = hasLastTurn && lastQ[0]===myPcid;
+  const iCanAct = isMyTurn || isMyLastTurn;
+
+  let statusMsg='', statusCls='waiting';
+  if (isMyTurn || isMyLastTurn) {
+    if (phase==='draw') {
+      statusMsg = hasLastTurn ? '⚡ Last Turn — Draw a card' : '🃏 Your Turn — Draw a card';
+      statusCls = hasLastTurn ? 'lasturn' : 'myturn';
+    } else {
+      statusMsg = hasLastTurn ? '⚡ Last Turn — Select & Discard' : '♻️ Select a card to discard';
+      statusCls = hasLastTurn ? 'lasturn' : 'myturn';
+    }
+  } else {
+    const cp = players[g.currentPlayer]||{};
+    statusMsg = hasLastTurn
+      ? `⚡ Last turn — Waiting for ${lastQ[0]===myPcid?'you':((players[lastQ[0]]||{}).name||'...')}`
+      : `Waiting for ${cp.name||'...'}`;
+  }
+  const sb = document.getElementById('status-bar');
+  sb.textContent = statusMsg; sb.className = `status-bar ${statusCls}`;
+
+  // Deck/discard clickable hints
+  const canDraw = (isMyTurn||isMyLastTurn) && phase==='draw';
+  document.getElementById('deck-wrap').className = `pile-wrap${canDraw?' can-draw':''}`;
+  document.getElementById('discard-wrap').className = `pile-wrap${(canDraw&&discard.length>0)?' can-draw':''}`;
+  document.getElementById('deck-hint').textContent = canDraw ? '← tap to draw' : '';
+  document.getElementById('discard-hint').textContent = (canDraw&&discard.length>0) ? '← tap to take' : '';
+
+  // Hand
+  renderHand(round, phase, isMyTurn||isMyLastTurn);
+
+  // Buttons
+  const canDiscard = (isMyTurn||isMyLastTurn) && phase==='discard';
+  document.getElementById('btn-discard').disabled = !(canDiscard && selectedCard!==null);
+  document.getElementById('btn-goout').disabled = !(isMyTurn && phase==='discard' && !hasLastTurn);
+
+  // Host pass-turn button
+  const isHost = d.host===myPcid;
+  document.getElementById('btn-pass-turn').style.display = isHost ? 'flex' : 'none';
+}
+
+function renderHand(round, phase, canAct) {
+  const container = document.getElementById('hand-scroll');
+  container.innerHTML = '';
+  document.getElementById('hand-count').textContent = myHandOrder.length;
+
+  for (let i=0; i<myHandOrder.length; i++) {
+    const id = myHandOrder[i];
+    const card = cardMap[id];
+    if (!card) continue;
+
+    const slot = document.createElement('div');
+    slot.className = 'card-slot';
+
+    const el = makeCard(card, round, false);
+    if (id===selectedCard) el.classList.add('selected');
+    if (i===swapSrc) el.classList.add('swap-src');
+
+    el.dataset.id = id;
+    el.dataset.idx = i;
+
+    // Click: select for discard OR swap for reorder
+    el.onclick = () => onCardClick(id, i, phase, canAct, round);
+
+    // HTML5 drag (desktop)
+    el.draggable = true;
+    el.addEventListener('dragstart', e => { dragSrcIdx=i; el.classList.add('dragging'); });
+    el.addEventListener('dragend', () => el.classList.remove('dragging'));
+    el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('drag-over'); });
+    el.addEventListener('dragleave', () => el.classList.remove('drag-over'));
+    el.addEventListener('drop', e => {
+      e.preventDefault(); el.classList.remove('drag-over');
+      if (dragSrcIdx!==null && dragSrcIdx!==i) {
+        const o=[...myHandOrder]; const [m]=o.splice(dragSrcIdx,1); o.splice(i,0,m);
+        myHandOrder=o; dragSrcIdx=null; swapSrc=null;
+        saveHandOrder(); renderHand(round, phase, canAct);
+      }
+    });
+
+    slot.appendChild(el);
+    container.appendChild(slot);
+  }
+}
+
+function onCardClick(id, idx, phase, canAct, round) {
+  const g = roomSnap?.game;
+  if (!g) return;
+  const isDiscard = canAct && phase==='discard';
+  const isLastTurn = g.goOutPlayer!==null;
+
+  if (isDiscard) {
+    // Select/deselect for discard
+    selectedCard = (selectedCard===id) ? null : id;
+    swapSrc = null;
+    document.getElementById('btn-discard').disabled = (selectedCard===null);
+  } else {
+    // Reorder via tap-swap
+    if (swapSrc===null) {
+      swapSrc = idx;
+    } else if (swapSrc===idx) {
+      swapSrc = null;
+    } else {
+      const o=[...myHandOrder]; const [m]=o.splice(swapSrc,1); o.splice(idx,0,m);
+      myHandOrder=o; swapSrc=null;
+      saveHandOrder();
+    }
+  }
+  renderHand(round, phase, canAct);
+  document.getElementById('btn-discard').disabled = !(canAct && phase==='discard' && selectedCard!==null);
+}
+
+function makeCard(card, round, isFront=false) {
+  const el = document.createElement('div');
+  if (isFront) { el.className='card card-back'; return el; }
+  el.className = 'card';
+  if (card.suit==='joker') {
+    el.style.background='#f5f0ff'; el.style.border='2px solid #7c3aed';
+    el.innerHTML=`<div class="c-top"><span class="c-rank" style="color:#7c3aed">Jo</span></div><div class="c-mid">🃏</div><div class="c-bot"><span class="c-rank" style="color:#7c3aed">Jo</span></div>`;
+  } else {
+    const c=CLR[card.suit], s=SYM[card.suit], r=rankName(card.rank);
+    el.innerHTML=`<div class="c-top"><span class="c-rank" style="color:${c}">${r}</span><span class="c-suit" style="color:${c}">${s}</span></div><div class="c-mid" style="color:${c}">${s}</div><div class="c-bot"><span class="c-rank" style="color:${c}">${r}</span><span class="c-suit" style="color:${c}">${s}</span></div>`;
+  }
+  if (isWild(card, roomSnap?.round||1)) el.classList.add('wild');
+  return el;
+}
+
+// ─── SAVE HAND ORDER ───
+async function saveHandOrder() {
+  if (!roomId||!myPcid) return;
+  try { await set(ref(db,`rooms/${roomId}/game/handOrders/${myPcid}`), myHandOrder); } catch(e){}
+}
+
+// ─── SORT ───
+window.sortHand = function(by) {
+  const round = roomSnap?.round||1;
+  myHandOrder.sort((a,b)=>{
+    const ca=cardMap[a], cb=cardMap[b];
+    if (!ca||!cb) return 0;
+    const aw=isWild(ca,round)?1:0, bw=isWild(cb,round)?1:0;
+    if (aw!==bw) return aw-bw;
+    if (by==='suit') {
+      const so=['spade','heart','diamond','club','star','joker'];
+      const sd=so.indexOf(ca.suit)-so.indexOf(cb.suit);
+      if (sd!==0) return sd;
+      return ca.rank-cb.rank;
+    } else {
+      const rd=ca.rank-cb.rank;
+      if (rd!==0) return rd;
+      return SUITS.indexOf(ca.suit)-SUITS.indexOf(cb.suit);
+    }
+  });
+  saveHandOrder();
+  const g=roomSnap?.game||{};
+  renderHand(roomSnap?.round||1, g.phase, g.currentPlayer===myPcid);
+};
+
+// ─── DRAW FROM DECK ───
+window.drawFromDeck = async function() {
+  const d=roomSnap; if(!d) return;
+  const g=d.game; if(!g) return;
+  const lastQ=toArr(g.lastTurnQueue);
+  const myTurn = g.currentPlayer===myPcid || (g.goOutPlayer&&lastQ[0]===myPcid);
+  if (!myTurn||g.phase!=='draw') return;
+
+  let deck=toArr(g.deck), discard=toArr(g.discard);
+  if (deck.length===0) {
+    if (discard.length<=1) { toast('No cards to draw!'); return; }
+    toast('Reshuffling discard…');
+    deck=shuffle(discard.slice(0,-1));
+    discard=[discard[discard.length-1]];
+  }
+  const drawn=deck[deck.length-1]; deck=deck.slice(0,-1);
+  const hand=[...toArr((g.hands||{})[myPcid]), drawn];
+
+  await update(ref(db),{
+    [`rooms/${roomId}/game/deck`]:deck,
+    [`rooms/${roomId}/game/hands/${myPcid}`]:hand,
+    [`rooms/${roomId}/game/discard`]:discard,
+    [`rooms/${roomId}/game/phase`]:'discard'
+  });
+};
+
+// ─── DRAW FROM DISCARD ───
+window.drawFromDiscard = async function() {
+  const d=roomSnap; if(!d) return;
+  const g=d.game; if(!g) return;
+  const lastQ=toArr(g.lastTurnQueue);
+  const myTurn=g.currentPlayer===myPcid||(g.goOutPlayer&&lastQ[0]===myPcid);
+  if (!myTurn||g.phase!=='draw') return;
+
+  const discard=toArr(g.discard);
+  if (discard.length===0) { toast('Discard pile is empty'); return; }
+  const drawn=discard[discard.length-1];
+  const newDiscard=discard.slice(0,-1);
+  const hand=[...toArr((g.hands||{})[myPcid]), drawn];
+
+  await update(ref(db),{
+    [`rooms/${roomId}/game/discard`]:newDiscard,
+    [`rooms/${roomId}/game/hands/${myPcid}`]:hand,
+    [`rooms/${roomId}/game/phase`]:'discard'
+  });
+};
+
+// ─── DISCARD SELECTED ───
+window.discardSelected = async function() {
+  if (!selectedCard) return;
+  const d=roomSnap; if(!d) return;
+  const g=d.game; if(!g) return;
+  const lastQ=toArr(g.lastTurnQueue);
+  const myTurn=g.currentPlayer===myPcid||(g.goOutPlayer&&lastQ[0]===myPcid);
+  if (!myTurn||g.phase!=='discard') return;
+
+  const cardId=selectedCard; selectedCard=null;
+  const hand=toArr((g.hands||{})[myPcid]).filter(id=>id!==cardId);
+  const discard=[...toArr(g.discard), cardId];
+  myHandOrder=myHandOrder.filter(id=>id!==cardId);
+
+  await advanceTurn(d, hand, discard, false);
+};
+
+// ─── ADVANCE TURN ───
+async function advanceTurn(d, newHand, newDiscard, wentOut) {
+  const g=d.game; const round=d.round||1;
+  const order=toArr(d.playerOrder);
+  const lastQ=toArr(g.lastTurnQueue);
+  const updates={};
+
+  updates[`rooms/${roomId}/game/hands/${myPcid}`]=newHand;
+  updates[`rooms/${roomId}/game/discard`]=newDiscard;
+  updates[`rooms/${roomId}/game/handOrders/${myPcid}`]=myHandOrder.filter(id=>newHand.includes(id));
+
+  if (wentOut) {
+    // ── WENT OUT ──
+    updates[`rooms/${roomId}/game/goOutPlayer`]=myPcid;
+    updates[`rooms/${roomId}/game/roundScores/${myPcid}`]=0;
+    const myIdx=order.indexOf(myPcid);
+    const q=[];
+    for (let i=1;i<order.length;i++) q.push(order[(myIdx+i)%order.length]);
+    if (q.length===0) {
+      // Solo? End immediately
+      await update(ref(db),updates);
+      await endRound(d, updates); return;
+    }
+    updates[`rooms/${roomId}/game/lastTurnQueue`]=q;
+    updates[`rooms/${roomId}/game/currentPlayer`]=q[0];
+    updates[`rooms/${roomId}/game/phase`]='draw';
+
+  } else if (lastQ.length>0 && lastQ[0]===myPcid) {
+    // ── LAST TURN ──
+    const myScore=newHand.reduce((s,id)=>s+cardScore(cardMap[id]),0);
+    updates[`rooms/${roomId}/game/roundScores/${myPcid}`]=myScore;
+    const newQ=lastQ.slice(1);
+    if (newQ.length===0) {
+      // Everyone done — end round
+      await update(ref(db),updates);
+      await endRound({...d, game:{...g, hands:{...((g.hands)||{}), [myPcid]:newHand},
+        roundScores:{...((g.roundScores)||{}), [myPcid]:myScore}}}, {}); return;
+    }
+    updates[`rooms/${roomId}/game/lastTurnQueue`]=newQ;
+    updates[`rooms/${roomId}/game/currentPlayer`]=newQ[0];
+    updates[`rooms/${roomId}/game/phase`]='draw';
+
+  } else {
+    // ── NORMAL TURN ──
+    const myIdx=order.indexOf(myPcid);
+    const next=order[(myIdx+1)%order.length];
+    updates[`rooms/${roomId}/game/currentPlayer`]=next;
+    updates[`rooms/${roomId}/game/phase`]='draw';
+  }
+
+  await update(ref(db),updates);
+}
+
+// ─── END ROUND ───
+async function endRound(d, _ignored) {
+  const g=d.game||{}; const round=d.round||1;
+  const order=toArr(d.playerOrder);
+  const players=d.players||{};
+  const roundScores={...(g.roundScores||{})};
+
+  // Score anyone missing (safety net)
+  for (const pid of order) {
+    if (roundScores[pid]===undefined) {
+      const h=toArr((g.hands||{})[pid]);
+      roundScores[pid]=h.reduce((s,id)=>s+cardScore(cardMap[id]),0);
+    }
+  }
+
+  const updates={};
+  for (const pid of order) {
+    const cur=(players[pid]||{}).totalScore||0;
+    updates[`rooms/${roomId}/players/${pid}/totalScore`]=cur+(roundScores[pid]||0);
+  }
+  updates[`rooms/${roomId}/game/roundScores`]=roundScores;
+  updates[`rooms/${roomId}/game/phase`]='done';
+  updates[`rooms/${roomId}/state`]=round>=11?'gameOver':'roundEnd';
+
+  await update(ref(db),updates);
+}
+
+// ─── GO OUT MODAL ───
+window.openGoOut = function() {
+  const d=roomSnap; if(!d) return;
+  const g=d.game||{}; if(g.currentPlayer!==myPcid||g.phase!=='discard') return;
+  goAssign={}; activeGroup=1;
+  document.getElementById('go-error').style.display='none';
+  renderGoOutModal();
+  document.getElementById('modal-goout').classList.add('open');
+};
+window.closeGoOut = function() {
+  document.getElementById('modal-goout').classList.remove('open');
+};
+
+window.setGroup = function(g) {
+  activeGroup=g;
+  const bar=document.getElementById('group-bar');
+  bar.querySelectorAll('.gbadge').forEach(b=>{
+    b.classList.toggle('active-group', parseInt(b.dataset.g)===g);
+  });
+  const info=document.getElementById('ag-info');
+  const col=G_CLR[g]||'rgba(255,255,255,.1)';
+  const txt=G_TXT[g]||'var(--muted)';
+  info.style.background=col; info.style.color=txt;
+  info.textContent=`Active: ${G_NM[g]} — tap cards to assign`;
+};
+
+function renderGoOutModal() {
+  const round=roomSnap?.round||1;
+  const grid=document.getElementById('go-cards');
+  grid.innerHTML='';
+  document.getElementById('go-error').style.display='none';
+
+  for (const id of myHandOrder) {
+    const card=cardMap[id]; if(!card) continue;
+    const g=goAssign[id]; // undefined if unassigned
+    const col=g!==undefined?G_CLR[g]:'rgba(255,255,255,.1)';
+    const txt=g!==undefined?G_TXT[g]:'var(--muted)';
+    const gname=g!==undefined?G_NM[g]:'—';
+
+    const wrap=document.createElement('div'); wrap.className='gc-wrap';
+    const tag=document.createElement('div');
+    tag.className=`gc-tag${g!==undefined?' assigned':''}`;
+    tag.style.background=col; tag.style.color=txt; tag.textContent=gname;
+
+    const el=makeCard(card,round,false);
+    if (g!==undefined) el.style.outline=`2px solid ${col}`;
+    el.onclick=()=>{
+      if (activeGroup===-1) delete goAssign[id];
+      else goAssign[id]=activeGroup;
+      renderGoOutModal();
+    };
+
+    wrap.appendChild(tag); wrap.appendChild(el);
+    grid.appendChild(wrap);
+  }
+
+  // Groups preview
+  const preview=document.getElementById('go-preview');
+  preview.innerHTML='';
+  const groups={};
+  for (const id of myHandOrder) {
+    const g=goAssign[id];
+    if (g===undefined||g===0||g===-1) continue;
+    if (!groups[g]) groups[g]=[];
+    groups[g].push(id);
+  }
+  const round2=roomSnap?.round||1;
+  for (const g of Object.keys(groups).map(Number).sort()) {
+    const ids=groups[g];
+    const valid=isValidGroup(ids,round2);
+    const row=document.createElement('div');
+    row.className='group-preview-row';
+    row.style.background=`${G_CLR[g]}18`;
+    row.style.borderColor=G_CLR[g]+'44';
+    const cardNames=ids.map(id=>{const c=cardMap[id];return c?`${rankName(c.rank)}${SYM[c.suit]||''}`:id;}).join(' ');
+    row.innerHTML=`<div class="gp-label" style="color:${G_CLR[g]}">${G_NM[g]}</div><div style="font-size:11px;flex:1">${cardNames}</div><div class="gp-valid" style="color:${valid?'#10b981':'#ef4444'}">${valid?'✓ Valid':'✗ Invalid'}</div>`;
+    preview.appendChild(row);
+  }
+}
+
+window.validateGoOut = async function() {
+  const round=roomSnap?.round||1;
+  const errEl=document.getElementById('go-error');
+  errEl.style.display='none';
+
+  const unassigned=myHandOrder.filter(id=>goAssign[id]===undefined);
+  if (unassigned.length>0) {
+    errEl.textContent=`${unassigned.length} card(s) not assigned yet`; errEl.style.display='block'; return;
+  }
+  const discardCards=myHandOrder.filter(id=>goAssign[id]===0);
+  if (discardCards.length!==1) {
+    errEl.textContent=`Must have exactly 1 Discard card (have ${discardCards.length})`; errEl.style.display='block'; return;
+  }
+  const groups={};
+  for (const id of myHandOrder) {
+    const g=goAssign[id]; if(g===0||g===-1) continue;
+    if(!groups[g]) groups[g]=[];
+    groups[g].push(id);
+  }
+  if (Object.keys(groups).length===0) {
+    errEl.textContent='Must have at least one group'; errEl.style.display='block'; return;
+  }
+  for (const [gk,ids] of Object.entries(groups)) {
+    if (!isValidGroup(ids,round)) {
+      errEl.textContent=`${G_NM[gk]} is not valid — need 3+ same rank (book) or 3+ consecutive same suit (run)`;
+      errEl.style.display='block'; return;
+    }
+  }
+
+  closeGoOut();
+  const d=roomSnap; if(!d) return;
+  const discardId=discardCards[0];
+  const newDiscard=[...toArr(d.game?.discard||[]), discardId];
+  myHandOrder=[];
+  toast('👑 You went out!');
+  await advanceTurn(d, [], newDiscard, true);
+};
+
+// ─── HOST PASS TURN ───
+window.hostPassTurn = async function() {
+  const d=roomSnap; if(!d||d.host!==myPcid) return;
+  const g=d.game||{}; const order=toArr(d.playerOrder);
+  const curIdx=order.indexOf(g.currentPlayer);
+  const next=order[(curIdx+1)%order.length];
+  await update(ref(db),{
+    [`rooms/${roomId}/game/currentPlayer`]:next,
+    [`rooms/${roomId}/game/phase`]:'draw'
+  });
+  toast(`Passed to ${(d.players||{})[next]?.name||'next player'}`);
+};
+
+// ─── ROUND END ───
+function renderRoundEnd(d) {
+  const round=d.round||1, g=d.game||{};
+  const order=toArr(d.playerOrder), players=d.players||{};
+  const roundScores=g.roundScores||{};
+
+  document.getElementById('re-num').textContent=round;
+  const gop=g.goOutPlayer;
+  document.getElementById('re-sub').textContent = gop
+    ? `${gop===myPcid?'You':(players[gop]||{}).name||'?'} went out! 👑`
+    : 'Round ended';
+
+  const sorted=[...order].sort((a,b)=>((players[a]||{}).totalScore||0)-((players[b]||{}).totalScore||0));
+  const el=document.getElementById('re-scores'); el.innerHTML='';
+  for (const pid of sorted) {
+    const p=players[pid]||{};
+    const rs=roundScores[pid]??'?';
+    const row=document.createElement('div');
+    row.className=`score-row${pid===sorted[0]?' winner':''}`;
+    row.innerHTML=`<div><span class="sname">${p.name||'?'}${pid===myPcid?' (You)':''}</span><span class="sdelta">+${rs}</span></div><div class="stotal">${p.totalScore||0}</div>`;
+    el.appendChild(row);
+  }
+
+  const nextRound=round+1;
+  document.getElementById('re-next').textContent = round<11
+    ? `Next: Round ${nextRound} · Deal ${nextRound+2} cards · Wild: ${rankName(wildRank(nextRound))}s`
+    : 'Final round complete!';
+
+  const isHost=d.host===myPcid;
+  document.getElementById('btn-next-round').style.display=isHost?'block':'none';
+  document.getElementById('re-wait').style.display=isHost?'none':'block';
+}
+
+window.nextRound = async function() {
+  const d=roomSnap; if(!d||d.host!==myPcid) return;
+  const next=(d.round||1)+1;
+  const rotated=[...toArr(d.playerOrder).slice(1), toArr(d.playerOrder)[0]];
+  const {hands,handOrders,deck,discard}=dealRound(rotated,next);
+  myHandOrder=[]; selectedCard=null; swapSrc=null;
+  await update(ref(db),{
+    [`rooms/${roomId}/state`]:'playing',
+    [`rooms/${roomId}/round`]:next,
+    [`rooms/${roomId}/playerOrder`]:rotated,
+    [`rooms/${roomId}/game`]:{
+      currentPlayer:rotated[0], phase:'draw',
+      deck,discard,hands,handOrders,
+      goOutPlayer:null, lastTurnQueue:[], roundScores:{}
+    }
+  });
+};
+
+// ─── GAME OVER ───
+function renderGameOver(d) {
+  const order=toArr(d.playerOrder), players=d.players||{};
+  const sorted=[...order].sort((a,b)=>((players[a]||{}).totalScore||0)-((players[b]||{}).totalScore||0));
+  const winner=players[sorted[0]]||{};
+  document.getElementById('go-winner').textContent=`👑 ${winner.name||'?'} wins with the lowest score!`;
+  const el=document.getElementById('go-scores'); el.innerHTML='';
+  const medals=['👑','🥈','🥉'];
+  for (let i=0;i<sorted.length;i++) {
+    const pid=sorted[i]; const p=players[pid]||{};
+    const row=document.createElement('div');
+    row.className=`score-row${i===0?' winner':''}`;
+    row.innerHTML=`<div>${medals[i]||'  '} <span class="sname">${p.name||'?'}${pid===myPcid?' (You)':''}</span></div><div class="stotal">${p.totalScore||0} pts</div>`;
+    el.appendChild(row);
+  }
+}
+
+window.playAgain = async function() {
+  const d=roomSnap; if(!d) return;
+  if (d.host===myPcid) {
+    const players=d.players||{};
+    const reset={};
+    for (const pid of Object.keys(players)) {
+      reset[`rooms/${roomId}/players/${pid}/totalScore`]=0;
+    }
+    reset[`rooms/${roomId}/state`]='lobby';
+    reset[`rooms/${roomId}/game`]=null;
+    reset[`rooms/${roomId}/round`]=1;
+    await update(ref(db),reset);
+  }
+};
+
+// ─── INIT ───
+function init() {
+  const ok=initFirebase();
+  if (!ok) {
+    document.getElementById('loading').innerHTML='<div style="color:#ef4444;text-align:center;padding:24px;font-size:14px">Firebase config missing.<br>Edit FIREBASE_CONFIG in index.html</div>';
+    return;
+  }
+
+  myPcid=getPcid();
+  const savedName=localStorage.getItem(NAME_KEY);
+  if (savedName) document.getElementById('inp-name').value=savedName;
+
+  document.getElementById('inp-name').addEventListener('input',e=>{
+    localStorage.setItem(NAME_KEY,e.target.value);
+    document.getElementById('login-err').textContent='';
+  });
+  document.getElementById('inp-code').addEventListener('input',e=>{
+    e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+    document.getElementById('login-err').textContent='';
+  });
+  document.getElementById('inp-code').addEventListener('keydown',e=>{
+    if(e.key==='Enter') joinRoom();
+  });
+
+  document.getElementById('loading').style.display='none';
+  showScreen('screen-login');
+}
+
+// Make functions global
+window.drawFromDeck=drawFromDeck;
+window.drawFromDiscard=drawFromDiscard;
+
+init();
+</script>
+</body>
+</html>
+
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <style>
